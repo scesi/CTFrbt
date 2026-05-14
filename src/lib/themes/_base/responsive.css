@@ -1,0 +1,85 @@
+/*
+ * CTFrbt — Base Responsive
+ * 
+ * Responsive breakpoints for the base platform layout.
+ * Themes can add their own responsive rules in addition to these.
+ */
+
+/* ============================================
+ * TABLET (≤1024px)
+ * ============================================ */
+@media (max-width: 1024px) {
+  #ctf-main {
+    padding: var(--ctf-space-lg) var(--ctf-space-md);
+  }
+
+  .challenge-grid {
+    grid-template-columns: repeat(auto-fill, minmax(25rem, 1fr));
+  }
+}
+
+/* ============================================
+ * MOBILE (≤768px)
+ * ============================================ */
+@media (max-width: 768px) {
+  #ctf-nav .nav-links {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-mobile.active {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--ctf-nav-height);
+    left: 0;
+    right: 0;
+    background: var(--ctf-nav-bg);
+    border-bottom: var(--ctf-border-width) var(--ctf-border-style) var(--ctf-border-color);
+    padding: var(--ctf-space-md);
+    z-index: 99;
+  }
+
+  .nav-mobile.active a {
+    padding: var(--ctf-space-md);
+    border-bottom: 1px solid rgba(var(--ctf-color-primary-rgb), 0.1);
+  }
+
+  .challenge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flag-input-group {
+    flex-direction: column;
+  }
+
+  .scoreboard {
+    font-size: var(--ctf-font-size-sm);
+  }
+
+  .scoreboard th,
+  .scoreboard td {
+    padding: var(--ctf-space-xs) var(--ctf-space-sm);
+  }
+}
+
+/* ============================================
+ * SMALL MOBILE (≤480px)
+ * ============================================ */
+@media (max-width: 480px) {
+  :root {
+    --ctf-font-size-base: 1.4rem;
+  }
+
+  #ctf-main {
+    padding: var(--ctf-space-md) var(--ctf-space-sm);
+  }
+
+  .modal {
+    width: 95%;
+    padding: var(--ctf-space-md);
+  }
+}

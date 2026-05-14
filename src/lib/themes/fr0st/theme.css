@@ -1,0 +1,379 @@
+/*
+ * CTFrbt — Theme: fr0st
+ * 
+ * Retro-terminal / CRT monitor aesthetic inspired by fr0st.xyz
+ * 
+ * FEATURES:
+ * - Black CRT background with color overlay layers
+ * - Monospaced "Terminus" font with neon glow
+ * - Angular design (0px border-radius everywhere)
+ * - Dotted/solid borders in theme color
+ * - 11 color sub-themes that change the CRT "phosphor" color
+ * - Optional effects: CRT noise, rain, vignette, snowflakes
+ * 
+ * HOW TO CUSTOMIZE:
+ * 1. Change --ctf-color-primary to change the "phosphor" color
+ * 2. Change --ctf-color-bg-rgb for the overlay tint
+ * 3. All borders, glows, and accents follow --ctf-color-primary automatically
+ * 
+ * To switch sub-themes at runtime, use JS to call:
+ *   document.documentElement.style.setProperty('--ctf-color-primary', '#newcolor');
+ */
+
+
+/* ============================================
+ * FONT: Terminus (bitmap monospace)
+ * 
+ * Place terminus-webfont.woff2 in:
+ *   src/lib/themes/fr0st/assets/fonts/
+ * ============================================ */
+@font-face {
+  font-family: 'Terminus';
+  src: url('./assets/fonts/terminus-webfont.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* ============================================
+ * TOKEN OVERRIDES
+ * These override the _base/tokens.css defaults
+ * ============================================ */
+:root {
+  /* === Color: Ocean (default sub-theme) === */
+  --ctf-color-primary: #72b6ff;
+  --ctf-color-primary-rgb: 114, 182, 255;
+  
+  /* Background: pure black CRT */
+  --ctf-color-bg: #000000;
+  --ctf-color-bg-rgb: 0, 0, 0;
+  --ctf-color-bg-elevated: rgba(15, 15, 15, 0.8);
+  --ctf-color-bg-overlay: rgba(0, 0, 0, 0.9);
+  
+  /* fr0st overlay system */
+  --fr0st-bg-tint: 15, 129, 236;
+  --fr0st-bg-opacity: 0.31;
+  
+  /* Text */
+  --ctf-color-text: #e5e5e5;
+  --ctf-color-text-muted: rgba(229, 229, 229, 0.5);
+  --ctf-color-text-inverse: rgba(24, 45, 75, 0.616);
+  
+  /* Selection */
+  --ctf-color-selection: #3b6d8b;
+  
+  /* Typography: Terminus monospace */
+  --ctf-font-family: 'Terminus', 'Courier New', Courier, monospace;
+  --ctf-font-family-mono: 'Terminus', 'Courier New', Courier, monospace;
+  
+  /* Borders: angular, no rounding */
+  --ctf-border-radius: 0px;
+  --ctf-border-style: solid;
+  
+  /* Nav */
+  --ctf-nav-bg: rgba(28, 28, 28, 0.9);
+  
+  /* Semantic — matched to CRT aesthetic */
+  --ctf-color-success: #50C878;
+  --ctf-color-warning: rgb(240, 86, 86);
+  --ctf-color-danger: #e62b2b;
+  --ctf-color-info: #ffffff;
+}
+
+
+/* ============================================
+ * BODY & BACKGROUND LAYERS
+ * Stack: body(black) → noise → rain → overlay → g59 → vignette → snow → content
+ * ============================================ */
+body {
+  background: #000;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+
+/* Shared positioning for all background layers */
+.fr0st-layer {
+  position: fixed;
+  overflow: hidden;
+  inset: 0;
+  height: 100vh;
+  width: 100vw;
+  transform: translateZ(0); /* GPU acceleration */
+  pointer-events: none;
+}
+
+/* CRT Noise video layer */
+#fr0st-noise {
+  object-fit: cover;
+  filter: brightness(0.1);
+  opacity: 0.5;
+  display: none; /* Activated via JS when effects enabled */
+}
+
+/* Rain video layer */
+#fr0st-rain {
+  object-fit: cover;
+  opacity: 0.125;
+  display: none; /* Only visible in "rainy" sub-theme */
+}
+
+/* Color overlay — tints everything with the sub-theme color */
+#fr0st-hue {
+  background: rgba(var(--fr0st-bg-tint), var(--fr0st-bg-opacity));
+  opacity: 0.5;
+}
+
+/* G59 image overlay — only for g59 sub-theme */
+#fr0st-g59 {
+  display: none;
+}
+
+/* CRT Vignette — radial darkening at edges */
+#fr0st-vignette {
+  opacity: 0.2;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 50%,
+    rgb(var(--fr0st-bg-tint)) 250%
+  );
+}
+
+/* Snow container — only for winter sub-theme */
+#fr0st-snow {
+  z-index: 1000;
+}
+
+
+/* ============================================
+ * NAVIGATION — Terminal style
+ * ============================================ */
+#ctf-nav {
+  border-bottom-style: dotted;
+  backdrop-filter: blur(10px);
+}
+
+#ctf-nav .nav-brand {
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Terminal-style hover: invert colors */
+@media (hover: hover) {
+  #ctf-nav .nav-links a:hover {
+    background-color: var(--ctf-color-primary);
+    color: var(--ctf-color-text-inverse);
+    text-decoration: none;
+    box-shadow: 0 0 10px var(--ctf-color-primary);
+  }
+}
+
+/* Active nav item */
+#ctf-nav .nav-active {
+  background-color: var(--ctf-color-primary);
+  color: var(--ctf-color-text-inverse);
+}
+
+
+/* ============================================
+ * MAIN CONTENT
+ * ============================================ */
+#ctf-main {
+  font-size: 1.75em;
+}
+
+
+/* ============================================
+ * SECTION HEADINGS — with // prefix decoration
+ * ============================================ */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.section-title::before {
+  content: "//";
+  color: var(--ctf-color-primary);
+  opacity: 0.7;
+}
+
+/* Extending horizontal rule after heading */
+.section-title::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background-color: var(--ctf-color-primary);
+  opacity: 0.3;
+  flex-grow: 1;
+  margin-left: 0.5em;
+}
+
+
+/* ============================================
+ * CARDS — Terminal panel style
+ * ============================================ */
+.card {
+  border-style: solid;
+  backdrop-filter: blur(100px);
+  background: linear-gradient(
+    45deg,
+    rgba(var(--fr0st-bg-tint), 0.05) 70%,
+    rgba(var(--fr0st-bg-tint), 0.2) 110%
+  );
+}
+
+.card-header {
+  background-color: var(--ctf-color-primary);
+  color: #000;
+  padding: 0.25em;
+  border-bottom: none;
+  margin: calc(-1 * var(--ctf-space-lg));
+  margin-bottom: var(--ctf-space-md);
+  padding: var(--ctf-space-sm) var(--ctf-space-lg);
+}
+
+/* Challenge card hover — elevation + glow */
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: 0 0 20px rgba(var(--ctf-color-primary-rgb), 0.2);
+  }
+}
+
+
+/* ============================================
+ * TAGS — Gradient style
+ * ============================================ */
+.tag {
+  background: linear-gradient(
+    90deg,
+    transparent -5%,
+    rgba(var(--fr0st-bg-tint), 0.3) 75%
+  );
+}
+
+
+/* ============================================
+ * FORMS — Terminal input style
+ * ============================================ */
+.form-input {
+  background: rgba(0, 0, 0, 0.5);
+  border-style: dotted;
+}
+
+.form-input:focus {
+  box-shadow: 0 0 10px rgba(var(--ctf-color-primary-rgb), 0.3);
+}
+
+/* Flag input — monospace, prominent */
+.flag-input-group .form-input {
+  border-style: solid;
+  letter-spacing: 0.05em;
+}
+
+
+/* ============================================
+ * SCOREBOARD — Terminal table
+ * ============================================ */
+.scoreboard th {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+}
+
+.scoreboard td {
+  border-bottom-style: dotted;
+}
+
+
+/* ============================================
+ * LINKS — Terminal inversion hover
+ * ============================================ */
+@media (hover: hover) {
+  a:hover {
+    background-color: var(--ctf-color-primary);
+    color: var(--ctf-color-text-inverse);
+    cursor: pointer;
+    transition: color 0.1s, box-shadow 0.1s;
+    text-decoration: none;
+  }
+
+  a:hover:not(.nav-links a, .tab-link) {
+    box-shadow: 0 0 18px 0px var(--ctf-color-primary);
+  }
+}
+
+
+/* ============================================
+ * ALERTS — Left-border terminal style
+ * ============================================ */
+.alert {
+  background: transparent;
+  border: none;
+  border-left: 3px solid;
+}
+
+
+/* ============================================
+ * MODAL — Terminal panel
+ * ============================================ */
+.modal {
+  background: #000;
+  border-style: solid;
+  backdrop-filter: blur(50px);
+}
+
+
+/* ============================================
+ * DIVIDERS
+ * ============================================ */
+hr, .divider {
+  border: none;
+  border-top: 1px dotted var(--ctf-color-primary);
+}
+
+
+/* ============================================
+ * FOCUS — Accessibility with terminal look
+ * ============================================ */
+:focus {
+  outline: 2px solid var(--ctf-color-primary);
+  color: var(--ctf-color-primary);
+  background: rgba(var(--fr0st-bg-tint), 0.3);
+  text-decoration: none;
+}
+
+
+/* ============================================
+ * EMPHASIS — Subdued like fr0st
+ * ============================================ */
+em {
+  opacity: 0.7;
+}
+
+
+/* ============================================
+ * COLLAPSIBLES (details/summary)
+ * ============================================ */
+summary::before {
+  content: '>>';
+  margin-right: 0.4em;
+  opacity: 0.7;
+}
+
+details[open] summary::before {
+  content: 'vv';
+}
+
+
+/* ============================================
+ * HAMBURGER MENU — fr0st mobile style
+ * ============================================ */
+@media (max-width: 580px) {
+  .nav-mobile.active {
+    background-color: var(--ctf-nav-bg);
+  }
+
+  .nav-mobile.active a:hover {
+    box-shadow: 0 0 10px var(--ctf-color-primary);
+  }
+}

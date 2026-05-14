@@ -1,0 +1,123 @@
+/*
+ * CTFrbt — Base Layout
+ * 
+ * Core structural layout for the platform.
+ * Uses --ctf-* tokens so themes can influence layout through variables.
+ */
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctf-scrollbar-thumb) var(--ctf-scrollbar-track);
+}
+
+html::-webkit-scrollbar {
+  width: var(--ctf-scrollbar-width);
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--ctf-scrollbar-track);
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--ctf-scrollbar-thumb);
+}
+
+body {
+  font-family: var(--ctf-font-family);
+  font-size: var(--ctf-font-size-base);
+  color: var(--ctf-color-text);
+  background-color: var(--ctf-color-bg);
+  line-height: var(--ctf-line-height);
+}
+
+::selection {
+  background-color: var(--ctf-color-selection);
+}
+
+/* ============================================
+ * MAIN LAYOUT SHELL
+ * ============================================ */
+
+/* Background layers container — themes inject overlays here */
+#ctf-bg-layers {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Navigation bar */
+#ctf-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--ctf-nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--ctf-space-lg);
+  background: var(--ctf-nav-bg);
+  border-bottom: var(--ctf-border-width) var(--ctf-border-style) var(--ctf-border-color);
+}
+
+#ctf-nav .nav-brand {
+  font-size: var(--ctf-font-size-lg);
+  font-weight: var(--ctf-font-weight-bold);
+  color: var(--ctf-color-primary);
+}
+
+#ctf-nav .nav-links {
+  display: flex;
+  gap: var(--ctf-space-lg);
+  align-items: center;
+}
+
+#ctf-nav .nav-links a {
+  color: var(--ctf-color-text);
+  padding: var(--ctf-space-xs) var(--ctf-space-sm);
+  transition: all var(--ctf-transition-fast);
+}
+
+/* Main content area */
+#ctf-main {
+  max-width: 120rem;
+  margin: 0 auto;
+  padding: var(--ctf-space-xl) var(--ctf-space-lg);
+  min-height: calc(100vh - var(--ctf-nav-height));
+}
+
+/* Footer */
+#ctf-footer {
+  padding: var(--ctf-space-lg);
+  text-align: center;
+  color: var(--ctf-color-text-muted);
+  font-size: var(--ctf-font-size-sm);
+  border-top: var(--ctf-border-width) var(--ctf-border-style) var(--ctf-border-color);
+}
+
+/* ============================================
+ * HAMBURGER MENU (Mobile)
+ * ============================================ */
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: var(--ctf-space-sm);
+  background: none;
+  border: none;
+}
+
+.hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--ctf-color-primary);
+  transition: all var(--ctf-transition-fast);
+}
+
+.nav-mobile {
+  display: none;
+}

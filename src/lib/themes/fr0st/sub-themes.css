@@ -1,0 +1,108 @@
+/*
+ * CTFrbt — Theme: fr0st — Sub-themes (Color Palettes)
+ * 
+ * Each sub-theme changes the CRT "phosphor" color.
+ * Apply by adding the class to <html>: <html class="theme-terminal">
+ * Or via JS: document.documentElement.className = 'theme-terminal';
+ * 
+ * To create a new sub-theme, copy any block below and change the values.
+ */
+
+/* --- OCEAN (Default — loaded via tokens, repeated here for reference) --- */
+.theme-ocean {
+  --ctf-color-primary: #72b6ff;
+  --ctf-color-primary-rgb: 114, 182, 255;
+  --fr0st-bg-tint: 15, 129, 236;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #3b6d8b;
+}
+
+/* --- TERMINAL (Classic green phosphor) --- */
+.theme-terminal {
+  --ctf-color-primary: #6dfd60;
+  --ctf-color-primary-rgb: 109, 253, 96;
+  --fr0st-bg-tint: 61, 150, 51;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #3b8b42;
+}
+
+/* --- CHERRY (Red CRT) --- */
+.theme-cherry {
+  --ctf-color-primary: #fd6060;
+  --ctf-color-primary-rgb: 253, 96, 96;
+  --fr0st-bg-tint: 192, 63, 63;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #8b3b3b;
+}
+
+/* --- AMBER (Warm amber phosphor) --- */
+.theme-amber {
+  --ctf-color-primary: #fda93c;
+  --ctf-color-primary-rgb: 253, 169, 60;
+  --fr0st-bg-tint: 179, 105, 21;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #946612;
+}
+
+/* --- DEEPSEA (Muted teal) --- */
+.theme-deepsea {
+  --ctf-color-primary: #cbe9d1;
+  --ctf-color-primary-rgb: 203, 233, 209;
+  --fr0st-bg-tint: 9, 95, 92;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #56705a;
+}
+
+/* --- NEON (Electric blue-purple) --- */
+.theme-neon {
+  --ctf-color-primary: #5662F6;
+  --ctf-color-primary-rgb: 86, 98, 246;
+  --fr0st-bg-tint: 62, 73, 232;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #A8B2FF;
+}
+
+/* --- DANGER (Deep red alert) --- */
+.theme-danger {
+  --ctf-color-primary: #e62b2b;
+  --ctf-color-primary-rgb: 230, 43, 43;
+  --fr0st-bg-tint: 121, 6, 2;
+  --fr0st-bg-opacity: 0.494;
+  --ctf-color-selection: #941212;
+}
+
+/* --- RAINY (Soft blue + rain video) --- */
+.theme-rainy {
+  --ctf-color-primary: #a4cdf8;
+  --ctf-color-primary-rgb: 164, 205, 248;
+  --fr0st-bg-tint: 15, 129, 236;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #3b6d8b;
+}
+
+/* --- WIN95 (High contrast retro) --- */
+.theme-win95 {
+  --ctf-color-primary: #ffffff;
+  --ctf-color-primary-rgb: 255, 255, 255;
+  --fr0st-bg-tint: 0, 128, 129;
+  --fr0st-bg-opacity: 1.0;
+  --ctf-color-selection: #3b6d8b;
+}
+
+/* --- WINTER (Cold blue + snowflakes) --- */
+.theme-winter {
+  --ctf-color-primary: #a9c8d8;
+  --ctf-color-primary-rgb: 169, 200, 216;
+  --fr0st-bg-tint: 30, 40, 60;
+  --fr0st-bg-opacity: 0.85;
+  --ctf-color-selection: #536f85;
+}
+
+/* --- G59 (Monochrome + overlay image) --- */
+.theme-g59 {
+  --ctf-color-primary: #dcdcdc;
+  --ctf-color-primary-rgb: 220, 220, 220;
+  --fr0st-bg-tint: 10, 10, 10;
+  --fr0st-bg-opacity: 0.31;
+  --ctf-color-selection: #6e6e6e;
+}
