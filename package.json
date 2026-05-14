@@ -1,0 +1,14 @@
+{
+  "name": "ctfrbt",
+  "version": "0.1.0",
+  "private": true,
+  "description": "High-performance CTF platform with themeable CSS — inspired by CTFd's customization model",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

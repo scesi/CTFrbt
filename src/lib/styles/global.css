@@ -1,0 +1,28 @@
+/*
+ * CTFrbt — Global Stylesheet Entry Point
+ * 
+ * This file imports all base styles in the correct order.
+ * Themes are loaded AFTER base styles to allow overriding.
+ * 
+ * LOAD ORDER:
+ * 1. reset.css      — Normalize browser defaults
+ * 2. tokens.css     — CSS custom properties (design tokens)
+ * 3. layout.css     — Structural layout (nav, main, footer)
+ * 4. components.css — Generic component styles
+ * 5. responsive.css — Breakpoint adjustments
+ * 6. [theme].css    — Theme overrides (loaded per-theme)
+ */
+
+/* === Base (always loaded) === */
+@import './themes/_base/reset.css';
+@import './themes/_base/tokens.css';
+@import './themes/_base/layout.css';
+@import './themes/_base/components.css';
+@import './themes/_base/responsive.css';
+
+/* === Active Theme: fr0st === */
+/* To switch themes, change these imports */
+@import './themes/fr0st/theme.css';
+@import './themes/fr0st/sub-themes.css';
+@import './themes/fr0st/animations.css';
+/* effects.css is loaded dynamically via JS when enabled */
