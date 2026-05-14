@@ -42,8 +42,8 @@ To create a new theme, copy any existing theme folder, rename it, and modify the
 ## Development
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## License

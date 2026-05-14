@@ -4,7 +4,9 @@
   "private": true,
   "description": "High-performance CTF platform with themeable CSS — inspired by CTFd's customization model",
   "type": "module",
+  "packageManager": "pnpm@11.1.1",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview"
