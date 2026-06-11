@@ -133,12 +133,10 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     
     if (targetPath === "~/challenges") {
       try {
-        const data = await fetchCached("/api/challenges");
-        const challenges = data as { category: string }[];
-        const categories = Array.from(new Set(challenges.map(c => c.category)));
+        const data = await fetchCached("/api/challenges") as { categories: string[] };
         appendOutput(
           <div style={{ display: "flex", gap: "15px" }}>
-            {categories.map(c => (
+            {data.categories.map(c => (
               <span key={c} style={{ color: "var(--neon-blue)" }}>{c}/</span>
             ))}
           </div>
@@ -152,9 +150,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     if (targetPath.startsWith("~/challenges/")) {
       const category = targetPath.split("/")[2];
       try {
-        const data = await fetchCached("/api/challenges");
-        const challenges = data as { id: string, category: string, difficulty: string, points: number }[];
-        const categoryChallenges = challenges.filter(c => c.category === category);
+        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, difficulty: string, points: number }[]> };
+        const categoryChallenges = data.challengesByCategory[category] || [];
         if (categoryChallenges.length === 0) {
           appendOutput("No files found.");
           return;
@@ -219,9 +216,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = parts[parts.length - 1];
       const challengeId = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/challenges");
-        const challenges = data as { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[];
-        const challenge = challenges.find(c => c.id === challengeId);
+        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[]> };
+        const allChallenges = Object.values(data.challengesByCategory).flat();
+        const challenge = allChallenges.find(c => c.id === challengeId);
         
         if (!challenge) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
