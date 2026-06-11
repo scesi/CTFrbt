@@ -18,14 +18,31 @@ const initialState: TerminalState = {
       id: "init-1",
       type: "system",
       content: (
-        <pre style={{ color: "var(--neon-green)", margin: "0 0 10px 0", fontSize: "12px", lineHeight: 1.2 }}>
-          {ASCII_ART}
-          <br />
-          <br />
-          CTFrbt STEVENOS v1.0.4 initialized.
-          <br />
-          Type &apos;help&apos; to see available commands.
-        </pre>
+        <div style={{ marginBottom: "15px" }}>
+          <div
+            style={{
+              padding: "20px",
+              border: "1px solid var(--border)",
+              maxWidth: "fit-content",
+              marginBottom: "15px"
+            }}
+          >
+            <pre
+              style={{
+                fontSize: "12px",
+                color: "var(--fg-dim)",
+                lineHeight: 1.5,
+                margin: 0
+              }}
+            >
+              {ASCII_ART}
+            </pre>
+          </div>
+          <div style={{ color: "var(--neon-green)" }}>
+            CTFrbt STEVENOS v1.0.4 initialized.<br />
+            Type &apos;help&apos; to see available commands.
+          </div>
+        </div>
       ),
     },
   ],
