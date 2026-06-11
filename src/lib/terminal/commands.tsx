@@ -42,6 +42,51 @@ export type CommandContext = {
 
 export type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
 
+export async function getAutocompleteCandidates(input: string, cwd: string): Promise<string[]> {
+  const parts = input.split(" ");
+  const lastPart = parts[parts.length - 1] || "";
+  
+  if (parts.length === 1) {
+    // Autocomplete command
+    return Object.keys(COMMAND_REGISTRY).filter(cmd => cmd.startsWith(lastPart));
+  }
+
+  const cmd = parts[0];
+  if (!["cd", "cat", "ls", "submit", "hint"].includes(cmd)) {
+    return [];
+  }
+
+  let options: string[] = [];
+
+  // Naive filesystem mapping using local memory cache (0 server cost)
+  if (cwd === "~") {
+    options = ["challenges", "teams", "rules.txt", "announcements.txt"];
+  } else if (cwd === "~/challenges") {
+    const data = apiCache["/api/challenges"] as { categories?: string[] } | undefined;
+    if (data?.categories) {
+      options = data.categories;
+    }
+  } else if (cwd.startsWith("~/challenges/")) {
+    const category = cwd.split("/")[2];
+    const data = apiCache["/api/challenges"] as { challengesByCategory?: Record<string, { id: string }[]> } | undefined;
+    if (data?.challengesByCategory?.[category]) {
+      // For cat/ls we might want .txt, for submit/hint we just want the ID
+      if (cmd === "submit" || cmd === "hint") {
+        options = data.challengesByCategory[category].map(c => c.id);
+      } else {
+        options = data.challengesByCategory[category].map(c => c.id + ".txt");
+      }
+    }
+  } else if (cwd === "~/teams") {
+    const data = apiCache["/api/leaderboard"] as { teams?: { name: string }[] } | undefined;
+    if (data?.teams) {
+      options = data.teams.map(t => t.name.replace(/\s+/g, '_') + ".txt");
+    }
+  }
+
+  return options.filter(opt => opt.startsWith(lastPart));
+}
+
 export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   help: (args, { appendOutput }) => {
     appendOutput(
