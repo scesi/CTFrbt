@@ -2,7 +2,7 @@ import React from "react";
 import { TerminalState, TerminalAction, OutputBlock } from "./types";
 import { Session } from "next-auth";
 
-const apiCache: Record<string, any> = {};
+const apiCache: Record<string, unknown> = {};
 
 async function fetchCached(url: string) {
   if (apiCache[url]) return apiCache[url];
@@ -84,15 +84,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
             <br />
             ----------------------------------
           </div>
-          {teams.map((t: any, i: number) => (
+          {(teams as { id: string, name: string, score: number }[]).map((t, i) => (
             <div key={t.id}>
               {String(i + 1).padStart(4)} | {t.name.padEnd(20)} | {t.score}
             </div>
           ))}
         </div>
       );
-    } catch (e: any) {
-      appendOutput(`Error fetching scoreboard: ${e.message}`, "error");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      appendOutput(`Error fetching scoreboard: ${msg}`, "error");
     }
   },
 
@@ -112,15 +113,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     if (state.cwd === "~/challenges") {
       try {
         const data = await fetchCached("/api/challenges");
-        const categories = Array.from(new Set(data.map((c: any) => c.category)));
+        const challenges = data as { category: string }[];
+        const categories = Array.from(new Set(challenges.map(c => c.category)));
         appendOutput(
           <div style={{ display: "flex", gap: "15px" }}>
-            {categories.map((c: any) => (
+            {categories.map(c => (
               <span key={c} style={{ color: "var(--neon-blue)" }}>{c}/</span>
             ))}
           </div>
         );
-      } catch (e) {
+      } catch {
         appendOutput("Error listing challenges", "error");
       }
       return;
@@ -130,19 +132,20 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const category = state.cwd.split("/")[2];
       try {
         const data = await fetchCached("/api/challenges");
-        const categoryChallenges = data.filter((c: any) => c.category === category);
+        const challenges = data as { id: string, category: string, difficulty: string, points: number }[];
+        const categoryChallenges = challenges.filter(c => c.category === category);
         if (categoryChallenges.length === 0) {
           appendOutput("No files found.");
           return;
         }
         appendOutput(
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            {categoryChallenges.map((c: any) => (
+            {categoryChallenges.map(c => (
               <span key={c.id}>{c.id}.txt ({c.difficulty}, {c.points} pts)</span>
             ))}
           </div>
         );
-      } catch (e) {
+      } catch {
         appendOutput("Error listing challenges", "error");
       }
       return;
@@ -194,7 +197,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       try {
         const rules = await fetchCached("/api/rules");
         appendOutput(<div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>);
-      } catch (e) {
+      } catch {
         appendOutput("Error reading rules.txt", "error");
       }
       return;
@@ -204,7 +207,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const challengeId = target.replace(".txt", "");
       try {
         const data = await fetchCached("/api/challenges");
-        const challenge = data.find((c: any) => c.id === challengeId);
+        const challenges = data as { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[];
+        const challenge = challenges.find(c => c.id === challengeId);
         
         if (!challenge) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
@@ -228,7 +232,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
             </div>
           </div>
         );
-      } catch (e) {
+      } catch {
         appendOutput("Error reading challenge", "error");
       }
       return;
@@ -304,8 +308,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error);
           ctx.appendOutput("Registration successful. You can now 'login'.", "system");
-        } catch (e: any) {
-          ctx.appendOutput(`Registration failed: ${e.message}`, "error");
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : "Unknown error";
+          ctx.appendOutput(`Registration failed: ${msg}`, "error");
         } finally {
           ctx.dispatch({ type: "SET_PROCESSING", payload: false });
         }
@@ -321,7 +326,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     const flag = args[args.length - 1]; // Flag is last arg
     // Optional challenge id if not in challenge dir
-    let challengeId = args.length > 1 ? args[0] : null;
+    const challengeId = args.length > 1 ? args[0] : null;
 
     if (!flag) {
       ctx.appendOutput("Usage: submit [challenge_id] <flag>", "error");
@@ -360,8 +365,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       } else {
         ctx.appendOutput(<div style={{ color: "var(--neon-amber)" }}>[FAILED] Incorrect flag.</div>);
       }
-    } catch (e: any) {
-      ctx.appendOutput(`Error: ${e.message}`, "error");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      ctx.appendOutput(`Error: ${msg}`, "error");
     } finally {
       ctx.dispatch({ type: "SET_PROCESSING", payload: false });
     }
@@ -392,7 +398,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         <div style={{ border: "1px dashed var(--neon-amber)", padding: "10px", margin: "10px 0" }}>
           <strong style={{ color: "var(--neon-amber)" }}>Available Hints for {challengeId}:</strong>
           <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
-            {hints.map((h: any, i: number) => (
+            {(hints as { id: string, cost: number, isUnlocked: boolean, content: string }[]).map((h, i) => (
               <li key={h.id}>
                 Hint #{i + 1} ({h.cost} points) - {h.isUnlocked ? <span style={{color: "var(--neon-green)"}}>[UNLOCKED]: {h.content}</span> : "[LOCKED]"}
               </li>
@@ -400,8 +406,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
           </ul>
         </div>
       );
-    } catch (e: any) {
-      ctx.appendOutput(`Error: ${e.message}`, "error");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      ctx.appendOutput(`Error: ${msg}`, "error");
     } finally {
       ctx.dispatch({ type: "SET_PROCESSING", payload: false });
     }
