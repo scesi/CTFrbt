@@ -105,7 +105,7 @@ export default function TerminalInput() {
 
   return (
     <div className="terminal-prompt-line" style={{ display: "flex", gap: "10px", marginTop: "10px", alignItems: "center" }}>
-      <span className="prompt-prefix" style={{ color: "var(--neon-green)", whiteSpace: "nowrap" }}>
+      <span className="prompt-prefix" style={{ color: "var(--gray-300)", whiteSpace: "nowrap" }}>
         {userPrefix}
       </span>
       <input
@@ -122,7 +122,7 @@ export default function TerminalInput() {
           flex: 1,
           background: "transparent",
           border: "none",
-          color: "var(--neon-green)",
+          color: "var(--gray-300)",
           fontFamily: "var(--font-mono)",
           fontSize: "1rem",
           outline: "none",

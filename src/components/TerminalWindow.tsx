@@ -10,20 +10,19 @@ function TerminalWindowContent({ children }: { children: React.ReactNode }) {
   const [isMinimized, setIsMinimized] = useState(false);
   
   return (
-    <div className="app-shell" style={isMinimized ? { alignItems: "flex-start", paddingTop: "20px" } : {}}>
+    <div className="app-shell">
       <div 
         className="terminal-window"
         style={isMinimized ? {
-          height: "auto",
           background: "transparent",
           backdropFilter: "none",
           border: "none",
           boxShadow: "none",
-          width: "96vw",
+          pointerEvents: "none",
         } : {}}
       >
         {/* ---- Title Bar ---- */}
-        <div className="title-bar" style={isMinimized ? { borderRadius: "10px", border: "1px solid var(--border)" } : {}}>
+        <div className="title-bar" style={isMinimized ? { borderRadius: "10px", border: "1px solid var(--border)", pointerEvents: "auto" } : { pointerEvents: "auto" }}>
           <div className="window-controls">
             <button className="window-btn close" title="Close" />
             <button className="window-btn minimize" title="Minimize" onClick={() => setIsMinimized(true)} />
