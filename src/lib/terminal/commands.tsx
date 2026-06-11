@@ -169,6 +169,28 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
+    if (targetPath === "~/teams") {
+      try {
+        const res = await fetch("/api/leaderboard");
+        if (!res.ok) throw new Error("API error");
+        const teams = await res.json() as { id: string, name: string, score: number }[];
+        if (teams.length === 0) {
+          appendOutput("No files found.");
+          return;
+        }
+        appendOutput(
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px", color: "var(--neon-cyan)" }}>
+            {teams.map(t => (
+              <span key={t.id}>{t.name.replace(/\s+/g, '_')}.txt</span>
+            ))}
+          </div>
+        );
+      } catch {
+        appendOutput("Error listing teams", "error");
+      }
+      return;
+    }
+
     appendOutput(`ls: ${args[0] || targetPath}: No such file or directory`, "error");
   },
 
@@ -211,6 +233,11 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
+    if (targetPath === "~/announcements.txt") {
+      appendOutput("No new announcements.");
+      return;
+    }
+
     if (targetPath.startsWith("~/challenges/") && targetPath.endsWith(".txt")) {
       const parts = targetPath.split("/");
       const filename = parts[parts.length - 1];
@@ -244,6 +271,30 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         );
       } catch {
         appendOutput("Error reading challenge", "error");
+      }
+      return;
+    }
+
+    if (targetPath.startsWith("~/teams/") && targetPath.endsWith(".txt")) {
+      const filename = targetPath.split("/").pop() || "";
+      const teamName = filename.replace(".txt", "");
+      try {
+        const res = await fetch("/api/leaderboard");
+        if (!res.ok) throw new Error("API error");
+        const teams = await res.json() as { id: string, name: string, score: number }[];
+        const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
+        if (!team) {
+          appendOutput(`cat: ${target}: No such file or directory`, "error");
+          return;
+        }
+        appendOutput(
+          <div style={{ border: "1px dashed var(--neon-cyan)", padding: "10px", margin: "10px 0" }}>
+            <h3 style={{ color: "var(--neon-green)", margin: "0 0 10px 0" }}>Team: {team.name}</h3>
+            <div style={{ color: "var(--neon-amber)" }}>Score: {team.score}</div>
+          </div>
+        );
+      } catch {
+        appendOutput("Error reading team info", "error");
       }
       return;
     }
