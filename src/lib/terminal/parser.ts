@@ -35,8 +35,8 @@ export async function parseCommand(input: string, ctx: CommandContext) {
   const parts = input.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || [];
   if (parts.length === 0) return;
 
-  const cmd = parts[0].toLowerCase();
-  const args = parts.slice(1).map(arg => arg.replace(/^"|"$/g, '')); // Strip quotes
+  const cmd = (parts[0] as string).toLowerCase();
+  const args = parts.slice(1).map(arg => (arg as string).replace(/^"|"$/g, '')); // Strip quotes
 
   // Dynamic import to avoid circular dependencies if needed, or just import registry
   const { COMMAND_REGISTRY } = await import("./commands");

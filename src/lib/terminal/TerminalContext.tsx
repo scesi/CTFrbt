@@ -24,7 +24,7 @@ const initialState: TerminalState = {
           <br />
           CTFrbt STEVENOS v1.0.4 initialized.
           <br />
-          Type 'help' to see available commands.
+          Type &apos;help&apos; to see available commands.
         </pre>
       ),
     },
@@ -87,8 +87,9 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
 
       try {
         await parseCommand(trimmed, { state, dispatch, appendOutput, clearHistory, session });
-      } catch (error: any) {
-        appendOutput(`Error: ${error.message || "Command failed"}`, "error");
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Command failed";
+        appendOutput(`Error: ${msg}`, "error");
       } finally {
         dispatch({ type: "SET_PROCESSING", payload: false });
       }
