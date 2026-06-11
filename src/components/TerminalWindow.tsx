@@ -1,14 +1,12 @@
 "use client";
 
-import Sidebar from "./Sidebar";
 import StatusBar from "./StatusBar";
 import CRTSettings from "./CRTSettings";
+import { TerminalProvider, useTerminal } from "@/lib/terminal/TerminalContext";
 
-export default function TerminalWindow({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function TerminalWindowContent({ children }: { children: React.ReactNode }) {
+  const { state } = useTerminal();
+  
   return (
     <div className="app-shell">
       <div className="terminal-window">
@@ -20,7 +18,7 @@ export default function TerminalWindow({
             <button className="window-btn maximize" title="Maximize" />
           </div>
 
-          <span className="title-text">guest@ctfrbt: ~</span>
+          <span className="title-text">guest@ctfrbt: {state.cwd}</span>
 
           <div className="title-actions">
             <CRTSettings />
@@ -29,9 +27,10 @@ export default function TerminalWindow({
 
         {/* ---- Window Body ---- */}
         <div className="window-body">
-          <Sidebar />
-          <div className="main-panel">
-            <div className="main-content">{children}</div>
+          <div className="main-panel" style={{ width: "100%" }}>
+            <div className="main-content" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              {children}
+            </div>
           </div>
         </div>
 
@@ -39,5 +38,13 @@ export default function TerminalWindow({
         <StatusBar />
       </div>
     </div>
+  );
+}
+
+export default function TerminalWindow({ children }: { children: React.ReactNode }) {
+  return (
+    <TerminalProvider>
+      <TerminalWindowContent>{children}</TerminalWindowContent>
+    </TerminalProvider>
   );
 }
