@@ -1,21 +1,24 @@
 # Dependencies
 node_modules/
-package-lock.json
-yarn.lock
+.pnpm-store/
 
-# Build output
-.svelte-kit/
-build/
+# Next.js
+.next/
+out/
+
+# Build
 dist/
+build/
 
 # Database
-data/*.db
-data/*.db-wal
-data/*.db-shm
+*.db
+*.db-journal
+prisma/generated/
 
 # Environment
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
 
 # IDE
@@ -32,4 +35,8 @@ Thumbs.db
 *.log
 
 # Uploads (user-generated)
-static/uploads/
+public/uploads/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
