@@ -13,6 +13,25 @@ async function fetchCached(url: string) {
   return data;
 }
 
+function resolvePath(cwd: string, target: string): string {
+  if (!target) return cwd;
+  if (target === "~" || target === "/") return "~";
+  
+  const basePath = target.startsWith("~/") ? "~" : cwd;
+  const parts = basePath.split("/").filter(Boolean);
+  const targetParts = target.replace(/^~\/?/, "").split("/").filter(Boolean);
+
+  for (const part of targetParts) {
+    if (part === ".") continue;
+    if (part === "..") {
+      if (parts.length > 1) parts.pop();
+    } else {
+      parts.push(part);
+    }
+  }
+  return parts.join("/") || "~";
+}
+
 export type CommandContext = {
   state: TerminalState;
   dispatch: React.Dispatch<TerminalAction>;
@@ -98,7 +117,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   ls: async (args, { state, appendOutput }) => {
-    if (state.cwd === "~") {
+    const targetPath = resolvePath(state.cwd, args[0] || "");
+
+    if (targetPath === "~") {
       appendOutput(
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <span style={{ color: "var(--neon-blue)" }}>challenges/</span>
@@ -110,7 +131,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
     
-    if (state.cwd === "~/challenges") {
+    if (targetPath === "~/challenges") {
       try {
         const data = await fetchCached("/api/challenges");
         const challenges = data as { category: string }[];
@@ -128,8 +149,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
-    if (state.cwd.startsWith("~/challenges/")) {
-      const category = state.cwd.split("/")[2];
+    if (targetPath.startsWith("~/challenges/")) {
+      const category = targetPath.split("/")[2];
       try {
         const data = await fetchCached("/api/challenges");
         const challenges = data as { id: string, category: string, difficulty: string, points: number }[];
@@ -151,35 +172,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
-    appendOutput("ls: cannot open directory", "error");
+    appendOutput(`ls: ${args[0] || targetPath}: No such file or directory`, "error");
   },
 
   cd: (args, { state, dispatch, appendOutput }) => {
-    const target = args[0];
-    if (!target || target === "~") {
-      dispatch({ type: "SET_CWD", payload: "~" });
-      return;
-    }
+    const target = args[0] || "~";
+    const newPath = resolvePath(state.cwd, target);
 
-    if (target === "..") {
-      if (state.cwd === "~") return;
-      const parts = state.cwd.split("/");
-      parts.pop();
-      dispatch({ type: "SET_CWD", payload: parts.join("/") || "~" });
-      return;
-    }
-
-    // Very basic virtual filesystem routing
-    let newPath = state.cwd;
-    if (target.startsWith("/")) {
-      newPath = target; // Absolute
-    } else {
-      newPath = state.cwd === "~" ? `~/${target}` : `${state.cwd}/${target}`;
-    }
-
-    // Sanitize path (naive approach for demo)
-    if (newPath === "~/challenges" || newPath.startsWith("~/challenges/")) {
-      dispatch({ type: "SET_CWD", payload: newPath.replace(/\/$/, "") });
+    // Naive directory validation
+    if (newPath === "~" || newPath === "~/challenges" || newPath === "~/teams" || newPath.startsWith("~/challenges/")) {
+      dispatch({ type: "SET_CWD", payload: newPath });
       return;
     }
 
@@ -193,7 +195,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
-    if (state.cwd === "~" && target === "rules.txt") {
+    const targetPath = resolvePath(state.cwd, target);
+
+    // If it's a directory
+    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" || 
+       (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3)) {
+      appendOutput(`cat: ${target}: Is a directory`, "error");
+      return;
+    }
+
+    if (targetPath === "~/rules.txt") {
       try {
         const rules = await fetchCached("/api/rules");
         appendOutput(<div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>);
@@ -203,8 +214,10 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
-    if (state.cwd.startsWith("~/challenges/")) {
-      const challengeId = target.replace(".txt", "");
+    if (targetPath.startsWith("~/challenges/") && targetPath.endsWith(".txt")) {
+      const parts = targetPath.split("/");
+      const filename = parts[parts.length - 1];
+      const challengeId = filename.replace(".txt", "");
       try {
         const data = await fetchCached("/api/challenges");
         const challenges = data as { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[];
