@@ -10,7 +10,9 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "db:setup": "prisma migrate dev && prisma db seed",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
@@ -32,6 +34,10 @@
     "eslint": "^9",
     "eslint-config-next": "^15.2.5",
     "prisma": "^6.7.0",
+    "tsx": "^4.19.0",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
