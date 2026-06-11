@@ -89,7 +89,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     try {
       const res = await fetch("/api/leaderboard");
       if (!res.ok) throw new Error("Failed to fetch scoreboard");
-      const teams = await res.json();
+      const data = await res.json();
+      const teams = data.teams;
       
       if (!teams || teams.length === 0) {
         appendOutput("Scoreboard is empty. No teams registered yet.");
@@ -173,8 +174,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       try {
         const res = await fetch("/api/leaderboard");
         if (!res.ok) throw new Error("API error");
-        const teams = await res.json() as { id: string, name: string, score: number }[];
-        if (teams.length === 0) {
+        const data = await res.json();
+        const teams = data.teams as { id: string, name: string, score: number }[];
+        if (!teams || teams.length === 0) {
           appendOutput("No files found.");
           return;
         }
@@ -281,7 +283,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       try {
         const res = await fetch("/api/leaderboard");
         if (!res.ok) throw new Error("API error");
-        const teams = await res.json() as { id: string, name: string, score: number }[];
+        const data = await res.json();
+        const teams = data.teams as { id: string, name: string, score: number }[];
         const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
         if (!team) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
