@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & TEAM
+// ============================================
+
+model User {
+  id           String       @id @default(cuid())
+  alias        String       @unique /// max 32 chars
+  password     String       /// bcrypt hashed, max 128 chars
+  name         String       /// display name, max 48 chars
+  isAdmin      Boolean      @default(false)
+  isTeamLeader Boolean      @default(false)
+  teamId       String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  team         Team?        @relation(fields: [teamId], references: [id])
+  submissions  Submission[]
+  scores       Score[]
+
+  @@index([teamId])
+}
+
+model Team {
+  id           String             @id @default(cuid())
+  name         String             @unique /// max 32 chars
+  code         String             @unique /// invite code, max 12 chars
+  icon         String             @default("GiSpaceship")
+  color        String             @default("#ffffff")
+  score        Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  members      User[]
+  submissions  Submission[]
+  scores       Score[]
+  teamHints    TeamHint[]
+  activityLogs ActivityLog[]
+  pointHistory TeamPointHistory[]
+}
+
+// ============================================
+// CHALLENGES
+// ============================================
+
+model Challenge {
+  id               String            @id @default(cuid())
+  title            String
+  description      String
+  points           Int
+  flag             String?           /// single-flag mode
+  multipleFlags    Boolean           @default(false)
+  category         String
+  difficulty       String
+  isActive         Boolean           @default(true)
+  isLocked         Boolean           @default(false)
+  link             String?           /// optional external link
+  solveExplanation String?           /// shown after solving
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  flags            ChallengeFlag[]
+  files            ChallengeFile[]
+  hints            Hint[]
+  submissions      Submission[]
+  scores           Score[]
+  unlockConditions UnlockCondition[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model ChallengeFlag {
+  id          String       @id @default(cuid())
+  flag        String
+  points      Int
+  challengeId String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  challenge   Challenge    @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@index([challengeId])
+}
+
+model ChallengeFile {
+  id          String    @id @default(cuid())
+  name        String
+  path        String
+  size        Int
+  challengeId String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+}
+
+// ============================================
+// SUBMISSIONS & SCORING
+// ============================================
+
+model Submission {
+  id            String         @id @default(cuid())
+  flag          String
+  isCorrect     Boolean
+  userId        String
+  challengeId   String
+  flagId        String?
+  teamId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id])
+  challenge     Challenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  challengeFlag ChallengeFlag? @relation(fields: [flagId], references: [id])
+  team          Team           @relation(fields: [teamId], references: [id])
+
+  @@index([challengeId])
+  @@index([teamId])
+  @@index([userId])
+  @@index([flagId])
+  @@index([teamId, challengeId])
+}
+
+model Score {
+  id          String    @id @default(cuid())
+  points      Int
+  userId      String
+  teamId      String
+  challengeId String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  team        Team      @relation(fields: [teamId], references: [id])
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([userId])
+  @@index([challengeId])
+}
+
+model TeamPointHistory {
+  id          String   @id @default(cuid())
+  teamId      String
+  points      Int      /// the point change (positive or negative)
+  totalPoints Int      /// team's total after this change
+  reason      String   /// e.g. "CHALLENGE_SOLVE", "HINT_PURCHASE"
+  metadata    String?  /// additional JSON data
+  createdAt   DateTime @default(now())
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([createdAt])
+}
+
+// ============================================
+// HINTS
+// ============================================
+
+model Hint {
+  id          String     @id @default(cuid())
+  content     String
+  cost        Int        @default(0)
+  challengeId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  teamHints   TeamHint[]
+
+  @@index([challengeId])
+}
+
+model TeamHint {
+  id        String   @id @default(cuid())
+  teamId    String
+  hintId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id])
+  hint      Hint     @relation(fields: [hintId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, hintId])
+}
+
+// ============================================
+// UNLOCK CONDITIONS
+// ============================================
+
+enum UnlockConditionType {
+  CHALLENGE_SOLVED
+  TIME_REMAINDER
+}
+
+model UnlockCondition {
+  id                   String              @id @default(cuid())
+  challengeId          String
+  type                 UnlockConditionType
+  requiredChallengeId  String?             /// for CHALLENGE_SOLVED
+  timeThresholdSeconds Int?                /// for TIME_REMAINDER
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  challenge            Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+  @@index([requiredChallengeId])
+}
+
+// ============================================
+// PLATFORM CONFIG
+// ============================================
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  teamId      String?
+  createdAt   DateTime @default(now())
+  team        Team?    @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@index([createdAt])
+}
+
+model GameConfig {
+  id        String    @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model SiteConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}

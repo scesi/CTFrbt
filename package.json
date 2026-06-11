@@ -2,15 +2,36 @@
   "name": "ctfrbt",
   "version": "0.1.0",
   "private": true,
-  "description": "High-performance CTF platform with themeable CSS — inspired by CTFd's customization model",
-  "type": "module",
-  "packageManager": "pnpm@11.1.1",
+  "description": "High-performance CTF platform — retro terminal aesthetic",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev --turbopack",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
-  "devDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
+    "next": "^15.2.5",
+    "next-auth": "^4.24.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.2.5",
+    "prisma": "^6.7.0",
+    "typescript": "^5"
+  }
 }

@@ -1,48 +1,34 @@
 # CTFrbt
 
-> High-performance CTF platform with themeable CSS, inspired by CTFd's customization model.
-
-## Philosophy
-
-CTFrbt is designed to be **themeable via pure CSS** — just like CTFd allows custom themes through CSS overrides. The platform ships with a clean, generic base and supports drop-in theme folders.
-
-### Theme System
-
-Themes live in `src/lib/themes/`. Each theme is a self-contained folder:
-
-```
-src/lib/themes/
-├── _base/              ← Generic base styles (always loaded)
-│   ├── reset.css
-│   ├── tokens.css      ← CSS custom properties (colors, spacing, fonts)
-│   ├── layout.css
-│   ├── components.css
-│   └── responsive.css
-│
-└── fr0st/              ← First theme: retro-terminal CRT aesthetic
-    ├── theme.css       ← Main theme overrides
-    ├── effects.css     ← Optional: neon glow, CRT effects
-    ├── animations.css  ← Theme-specific animations
-    └── assets/         ← Theme-specific fonts, videos, images
-```
-
-To create a new theme, copy any existing theme folder, rename it, and modify the CSS custom properties and overrides.
+> Retro terminal-themed CTF platform — orbital-ctf aesthetic meets macOS terminal.
 
 ## Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | SvelteKit |
+| Framework | Next.js 15 (App Router) |
 | Runtime | Node.js |
-| Database | SQLite (WAL mode) |
-| Real-time | WebSockets |
-| Cache | In-memory LRU |
-| Styles | Vanilla CSS (themeable) |
+| Database | PostgreSQL + Prisma ORM |
+| Auth | NextAuth.js (Credentials) |
+| Styles | Vanilla CSS (CRT effects) |
+| UI | React 19 |
 
 ## Development
 
 ```bash
+# Install dependencies
 pnpm install
+
+# Set up environment
+cp .env.example .env
+
+# Generate Prisma client
+pnpm prisma:generate
+
+# Run database migrations
+pnpm prisma:migrate
+
+# Start dev server
 pnpm dev
 ```
 
