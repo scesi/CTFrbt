@@ -40,6 +40,34 @@ export default function TerminalInput() {
       setTimeout(() => {
         inputRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      if (state.isProcessing) return;
+      
+      const { getAutocompleteCandidates } = await import("@/lib/terminal/commands");
+      const candidates = await getAutocompleteCandidates(input, state.cwd);
+      
+      if (candidates.length === 1) {
+        const parts = input.split(" ");
+        parts[parts.length - 1] = candidates[0];
+        // If it's just a category/directory without extension, we might not want to append space
+        // but for simplicity, we just append a space to keep typing flowing.
+        setInput(parts.join(" ") + " ");
+      } else if (candidates.length > 1) {
+        // Optional: you could print candidates to the terminal, but for now we just 
+        // autocomplete up to the common prefix or do nothing.
+        // A simple common prefix logic:
+        const commonPrefix = candidates.reduce((a, b) => {
+          let i = 0;
+          while (a[i] === b[i] && i < a.length) i++;
+          return a.slice(0, i);
+        });
+        if (commonPrefix && commonPrefix !== input.split(" ").pop()) {
+          const parts = input.split(" ");
+          parts[parts.length - 1] = commonPrefix;
+          setInput(parts.join(" "));
+        }
+      }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       // ArrowUp history logic here - naive implementation: 
