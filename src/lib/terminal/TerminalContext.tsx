@@ -38,6 +38,15 @@ const initialState: TerminalState = {
               {ASCII_ART}
             </pre>
           </div>
+          <div style={{ marginBottom: "20px", maxWidth: "600px" }}>
+            <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "16px", letterSpacing: "1px", color: "var(--fg)" }}>
+              Welcome to CTFrbt
+            </h1>
+            <p style={{ color: "var(--fg-muted)", fontSize: "15px", lineHeight: 1.7, margin: 0 }}>
+              A retro terminal-themed Capture The Flag platform. Navigate challenges 
+              using terminal commands, submit flags, and climb the scoreboard.
+            </p>
+          </div>
           <div style={{ color: "var(--neon-green)" }}>
             CTFrbt STEVENOS v1.0.4 initialized.<br />
             Type &apos;help&apos; to see available commands.
