@@ -93,8 +93,8 @@ function TreeItem({
       tabIndex={0}
       aria-expanded={hasChildren ? isOpen : undefined}
     >
-      <span className="tree-icon">{icon}</span>
-      <span>{node.label}</span>
+      <span className="tree-icon" style={{ fontSize: "15px" }}>{icon}</span>
+      <span style={{ fontSize: "15px" }}>{node.label}</span>
     </div>
   );
 
