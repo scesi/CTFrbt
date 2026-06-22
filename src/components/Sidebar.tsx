@@ -61,6 +61,19 @@ function TreeItem({
       className={`tree-item ${isActive ? "active" : ""} ${node.solved ? "solved" : ""} ${node.icon === "locked" ? "locked" : ""}`}
       style={{ paddingLeft: `${14 + depth * 16}px` }}
       onClick={hasChildren ? () => setIsOpen(!isOpen) : undefined}
+      onKeyDown={
+        hasChildren
+          ? (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsOpen(!isOpen);
+              }
+            }
+          : undefined
+      }
+      role={hasChildren ? "button" : undefined}
+      tabIndex={hasChildren ? 0 : undefined}
+      aria-expanded={hasChildren ? isOpen : undefined}
     >
       <span className="tree-icon">{icon}</span>
       <span>{node.label}</span>
