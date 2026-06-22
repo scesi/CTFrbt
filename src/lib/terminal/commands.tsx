@@ -184,25 +184,12 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     }
 
     if (targetPath.startsWith("~/challenges/")) {
-      const category = targetPath.split("/")[2];
-      try {
-        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, difficulty: string, points: number }[]> };
-        const categoryChallenges = data.challengesByCategory[category] || [];
-        if (categoryChallenges.length === 0) {
-          appendOutput("No files found.");
-          return;
-        }
-        appendOutput(
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            {categoryChallenges.map(c => (
-              <span key={c.id}>{c.id}.txt ({c.difficulty}, {c.points} pts)</span>
-            ))}
-          </div>
-        );
-      } catch {
-        appendOutput("Error listing challenges", "error");
+      const parts = targetPath.split("/");
+      if (parts.length === 3 && !targetPath.endsWith(".txt")) {
+        const category = parts[2];
+        appendOutput(<CategoryView category={category} />);
+        return;
       }
-      return;
     }
 
     if (targetPath === "~/teams") {
@@ -252,14 +239,9 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const targetPath = resolvePath(state.cwd, target);
 
     // If it's a directory
-    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams") {
+    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" ||
+       (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3)) {
       appendOutput(`cat: ${target}: Is a directory`, "error");
-      return;
-    }
-
-    if (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3) {
-      const category = targetPath.split("/")[2];
-      appendOutput(<CategoryView category={category} />);
       return;
     }
 
