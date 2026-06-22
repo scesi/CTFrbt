@@ -85,11 +85,11 @@ function ScesiLogo() {
             </mesh>
 
             {/* UMSS pequeño alineado a la izquierda bajo la 'sc' */}
-            <Text3D 
-              font="/fonts/helvetiker_bold.typeface.json" 
-              size={1.2} 
-              letterSpacing={0.05} 
-              position={[0.2, -1.6, 0]} 
+            <Text3D
+              font="/fonts/helvetiker_bold.typeface.json"
+              size={1.2}
+              letterSpacing={0.05}
+              position={[0.2, -1.6, 0]}
               {...bevelProps}
               bevelEnabled={false}
               height={0.2}
@@ -122,8 +122,9 @@ export default function Background3D() {
         style={{
           width: "100%",
           height: "100%",
-          filter: "blur(1px) contrast(1.3) brightness(0.7) sepia(0.4) hue-rotate(180deg) saturate(2)",
-          opacity: 0.5,
+          // Un glow sutil usando drop-shadow para igualar la estética de la terminal.
+          // Al no ponerle opacidad baja, se verá claro, y los efectos globales (body::before) de la terminal le pondrán las scanlines y el parpadeo.
+          filter: "drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) blur(0.5px)",
         }}
       >
         <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
@@ -134,21 +135,6 @@ export default function Background3D() {
           <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
         </Canvas>
       </div>
-
-      {/* CRT Scanline Overlay specifically for the background */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          background: "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.4) 50%)",
-          backgroundSize: "100% 4px",
-          zIndex: 1,
-        }}
-      />
     </div>
   );
 }
