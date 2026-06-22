@@ -4,26 +4,26 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { FiDownload, FiLock, FiCheck, FiHelpCircle } from "react-icons/fi";
 
-interface ChallengeFile {
+export interface ChallengeFile {
   id: string;
   name: string;
   size: number;
 }
 
-interface HintData {
+export interface HintData {
   id: string;
   cost: number;
   purchased: boolean;
   content: string | null;
 }
 
-interface FlagData {
+export interface FlagData {
   id: string;
   points: number;
   isSolved: boolean;
 }
 
-interface ChallengeData {
+export interface ChallengeData {
   id: string;
   title: string;
   description: string;
@@ -42,8 +42,10 @@ interface ChallengeData {
 
 export default function ChallengeView({
   challenge,
+  onSolved,
 }: {
   challenge: ChallengeData;
+  onSolved?: () => void;
 }) {
   const [flag, setFlag] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -80,6 +82,7 @@ export default function ChallengeView({
           toast("Already submitted", { icon: "ℹ️" });
         } else {
           toast.success(`+${data.points} pts — ${data.message}`);
+          onSolved?.();
         }
       } else {
         toast.error(data.message || "Incorrect");
@@ -134,6 +137,7 @@ export default function ChallengeView({
 
       if (data.cost > 0) {
         toast(`Hint purchased (-${data.cost} pts)`, { icon: "💡" });
+        onSolved?.();
       }
     } catch {
       toast.error("Network error");
