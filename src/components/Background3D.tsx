@@ -115,15 +115,40 @@ export default function Background3D() {
         height: "100vh",
         zIndex: 0, // behind the terminal window
         pointerEvents: "auto", // allow orbit controls to work
+        background: "#000000",
       }}
     >
-      <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-        <pointLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
-        <ScesiLogo />
-        <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
-      </Canvas>
+      <div 
+        style={{
+          width: "100%",
+          height: "100%",
+          filter: "blur(1px) contrast(1.3) brightness(0.7) sepia(0.4) hue-rotate(180deg) saturate(2)",
+          opacity: 0.5,
+        }}
+      >
+        <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
+          <pointLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
+          <ScesiLogo />
+          <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
+        </Canvas>
+      </div>
+
+      {/* CRT Scanline Overlay specifically for the background */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          background: "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.4) 50%)",
+          backgroundSize: "100% 4px",
+          zIndex: 1,
+        }}
+      />
     </div>
   );
 }
