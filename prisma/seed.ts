@@ -52,7 +52,13 @@ async function main() {
     create: { alias: "charlie", name: "Charlie", password: userPassword },
   });
 
-  console.log(`  ✓ Sample users: @alice, @bob, @charlie (password: "password")`);
+  const user4 = await prisma.user.upsert({
+    where: { alias: "Stevenjoelrs" },
+    update: {},
+    create: { alias: "Stevenjoelrs", name: "Steven Ramos", password: userPassword },
+  });
+
+  console.log(`  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`);
 
   // ── Teams ───────────────────────────────────────────────
   const teamAlpha = await prisma.team.upsert({
@@ -380,6 +386,7 @@ async function main() {
   console.log("  User logins:  alice / password");
   console.log("                bob / password");
   console.log("                charlie / password");
+  console.log("                Stevenjoelrs / password")
   console.log("  Team codes:   ALPHA001, BRAVO001\n");
 }
 
