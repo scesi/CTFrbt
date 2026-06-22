@@ -85,7 +85,7 @@ export function CategoryView({ category }: { category: string }) {
         {challenges.map((challenge) => (
           <div
             key={challenge.id}
-            className="card"
+            className={`card ${challenge.isSolved ? "solved" : ""} ${challenge.isLocked ? "locked" : ""}`}
             onClick={() => {
               if (!challenge.isLocked) {
                 executeCommand(`cat ~/challenges/${category}/${challenge.id}.txt`);
@@ -93,9 +93,6 @@ export function CategoryView({ category }: { category: string }) {
             }}
             style={{
               cursor: challenge.isLocked ? "not-allowed" : "pointer",
-              opacity: challenge.isLocked ? 0.4 : 1,
-              borderColor: challenge.isSolved ? "var(--success)" : "var(--border)",
-              transition: "border-color 0.2s, background 0.2s",
             }}
           >
             <div
