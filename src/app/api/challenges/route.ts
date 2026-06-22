@@ -2,31 +2,41 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOrSet, CACHE_KEYS } from "@/lib/cache";
+
+const CHALLENGES_TTL_MS = 15_000; // 15 seconds
 
 // GET /api/challenges — List all challenges grouped by category
 export async function GET() {
   const session = await getServerSession(authOptions);
 
-  const challenges = await prisma.challenge.findMany({
-    where: { isActive: true },
-    include: {
-      files: {
-        select: { id: true, name: true, size: true },
-      },
-      hints: {
-        select: { id: true, cost: true },
-      },
-      flags: {
-        select: { id: true, points: true },
-      },
-      _count: {
-        select: { submissions: { where: { isCorrect: true } } },
-      },
+  // Cache the expensive challenge query (shared across all users)
+  const challenges = await getOrSet(
+    CACHE_KEYS.CHALLENGES,
+    CHALLENGES_TTL_MS,
+    async () => {
+      return prisma.challenge.findMany({
+        where: { isActive: true },
+        include: {
+          files: {
+            select: { id: true, name: true, size: true },
+          },
+          hints: {
+            select: { id: true, cost: true },
+          },
+          flags: {
+            select: { id: true, points: true },
+          },
+          _count: {
+            select: { submissions: { where: { isCorrect: true } } },
+          },
+        },
+        orderBy: [{ category: "asc" }, { points: "asc" }],
+      });
     },
-    orderBy: [{ category: "asc" }, { points: "asc" }],
-  });
+  );
 
-  // Get user's solved challenges if authenticated
+  // Per-user data — NOT cached (cheap queries, user-specific)
   let solvedChallengeIds: string[] = [];
   let solvedFlagIds: string[] = [];
 
