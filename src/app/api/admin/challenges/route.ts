@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 // GET /api/admin/challenges — List all challenges (admin)
 export async function GET() {
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
       include: { flags: true, hints: true },
     });
 
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ challenge }, { status: 201 });
   } catch (error) {
     console.error("Challenge creation error:", error);

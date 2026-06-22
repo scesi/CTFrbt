@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 // PUT /api/admin/challenges/[id] — Update a challenge
 export async function PUT(
@@ -48,6 +49,7 @@ export async function PUT(
       },
     });
 
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ challenge });
   } catch (error) {
     console.error("Challenge update error:", error);
@@ -72,6 +74,7 @@ export async function DELETE(
 
   try {
     await prisma.challenge.delete({ where: { id } });
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ message: "Challenge deleted" });
   } catch (error) {
     console.error("Challenge deletion error:", error);
