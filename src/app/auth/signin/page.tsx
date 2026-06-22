@@ -24,7 +24,11 @@ export default function SignIn() {
       });
 
       if (result?.error) {
-        toast.error("Invalid alias or password");
+        if (result.error === "CredentialsSignin") {
+          toast.error("Invalid credentials or too many attempts. Try again shortly.");
+        } else {
+          toast.error(result.error);
+        }
       } else {
         toast.success("Signed in successfully");
         router.push("/dashboard");
