@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 const MAX_TEAM_MEMBERS = 4;
+const JOIN_LOCKOUT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_JOIN_FAILURES = 5;
 
 // GET /api/teams — Get current user's team info
 export async function GET() {
@@ -82,8 +84,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a cryptographically secure invite code
-    const code = crypto.randomBytes(4).toString("hex").toUpperCase();
+    // Generate a cryptographically secure invite code (48 bits → 12 hex chars)
+    const code = crypto.randomBytes(6).toString("hex").toUpperCase();
 
     const team = await prisma.team.create({
       data: {
@@ -116,35 +118,87 @@ export async function POST(request: Request) {
       );
     }
 
-    const team = await prisma.team.findUnique({
-      where: { code: teamCode },
-      include: { members: true },
+    // Brute-force lockout — per user, 5 failures in 10 minutes
+    const recentFailures = await prisma.teamJoinAttempt.count({
+      where: {
+        userId: session.user.id,
+        success: false,
+        createdAt: { gte: new Date(Date.now() - JOIN_LOCKOUT_WINDOW_MS) },
+      },
     });
 
-    if (!team) {
+    if (recentFailures >= MAX_JOIN_FAILURES) {
+      return NextResponse.json(
+        { error: "Too many failed attempts. Try again later." },
+        { status: 429 }
+      );
+    }
+
+    let joinedTeam: { id: string; name: string } | null = null;
+    let failureReason: "INVALID_CODE" | "TEAM_FULL" | null = null;
+
+    try {
+      // Serializable transaction prevents race condition:
+      // two concurrent joins can't both read count < MAX and both succeed
+      joinedTeam = await prisma.$transaction(async (tx) => {
+        const team = await tx.team.findUnique({
+          where: { code: teamCode },
+          include: { members: { select: { id: true } } },
+        });
+
+        if (!team) {
+          throw new Error("INVALID_CODE");
+        }
+
+        if (team.members.length >= MAX_TEAM_MEMBERS) {
+          throw new Error("TEAM_FULL");
+        }
+
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { teamId: team.id },
+        });
+
+        return { id: team.id, name: team.name };
+      }, {
+        isolationLevel: "Serializable",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string; code?: string };
+      if (err.message === "TEAM_FULL") {
+        failureReason = "TEAM_FULL";
+      } else if (err.code === "P2034") {
+        // Serialization conflict — ask client to retry
+        return NextResponse.json(
+          { error: "Please try again" },
+          { status: 409 }
+        );
+      } else {
+        failureReason = "INVALID_CODE";
+      }
+    }
+
+    // Record attempt (both success and failure)
+    await prisma.teamJoinAttempt.create({
+      data: { userId: session.user.id, success: !!joinedTeam },
+    });
+
+    if (failureReason === "INVALID_CODE") {
       return NextResponse.json(
         { error: "Invalid team code" },
         { status: 404 }
       );
     }
-
-    // Enforce max team size
-    if (team.members.length >= MAX_TEAM_MEMBERS) {
+    if (failureReason === "TEAM_FULL") {
       return NextResponse.json(
         { error: `Team is full (max ${MAX_TEAM_MEMBERS} members)` },
         { status: 400 }
       );
     }
 
-    // Update user to join team
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { teamId: team.id },
-    });
-
     return NextResponse.json({
       message: "Joined team",
-      team: { id: team.id, name: team.name },
+      team: joinedTeam,
     });
   }
 
