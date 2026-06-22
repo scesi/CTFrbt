@@ -295,7 +295,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         }
 
         appendOutput(
-          <div style={{ border: "1px dashed var(--neon-blue)", padding: "16px", margin: "10px 0" }}>
+          <div style={{ margin: "16px 0" }}>
             <ChallengeView
               challenge={challenge}
               onSolved={() => {

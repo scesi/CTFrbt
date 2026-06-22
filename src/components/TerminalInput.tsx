@@ -13,7 +13,11 @@ export default function TerminalInput() {
 
   // Auto-focus logic
   useEffect(() => {
-    const handleGlobalClick = () => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Do not steal focus if the user clicked on an interactive element
+      if (target.closest("input, textarea, button, a")) return;
+
       // Small delay to allow text selection if user is dragging
       setTimeout(() => {
         if (!window.getSelection()?.toString()) {
