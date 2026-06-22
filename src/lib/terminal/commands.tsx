@@ -111,23 +111,23 @@ export async function getAutocompleteCandidates(input: string, cwd: string): Pro
 
 export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   help: (args, { appendOutput }) => {
-    appendOutput(
-      <div>
-        <strong>Available Commands:</strong>
-        <ul style={{ listStyle: "none", padding: 0, margin: "10px 0" }}>
-          <li><span style={{ color: "var(--neon-green)" }}>help</span> - Show this message</li>
-          <li><span style={{ color: "var(--neon-green)" }}>clear</span> - Clear terminal screen</li>
-          <li><span style={{ color: "var(--neon-green)" }}>challenges</span> - View available CTF challenges</li>
-          <li><span style={{ color: "var(--neon-green)" }}>logout</span> - End current session</li>
-          <li><span style={{ color: "var(--neon-green)" }}>whoami</span> - Display current user info</li>
-          <li><span style={{ color: "var(--neon-green)" }}>pwd</span> - Print working directory</li>
-          <li><span style={{ color: "var(--neon-green)" }}>ls</span> - List files and directories</li>
-          <li><span style={{ color: "var(--neon-green)" }}>cd &lt;dir&gt;</span> - Change directory</li>
-          <li><span style={{ color: "var(--neon-green)" }}>cat &lt;file&gt;</span> - View file contents</li>
-          <li><span style={{ color: "var(--neon-green)" }}>scoreboard</span> - View live leaderboard</li>
-        </ul>
-      </div>
-    );
+      appendOutput(
+        <div style={{ lineHeight: "1.6" }}>
+          <div>Available Commands:</div>
+          <ul style={{ listStyle: "none", paddingLeft: "15px", margin: "10px 0", color: "var(--fg-muted)" }}>
+            <li><span style={{ color: "var(--fg)" }}>help</span> - Show this message</li>
+            <li><span style={{ color: "var(--fg)" }}>clear</span> - Clear terminal screen</li>
+            <li><span style={{ color: "var(--fg)" }}>challenges</span> - View available CTF challenges</li>
+            <li><span style={{ color: "var(--fg)" }}>logout</span> - End current session</li>
+            <li><span style={{ color: "var(--fg)" }}>whoami</span> - Display current user info</li>
+            <li><span style={{ color: "var(--fg)" }}>pwd</span> - Print working directory</li>
+            <li><span style={{ color: "var(--fg)" }}>ls</span> - List files and directories</li>
+            <li><span style={{ color: "var(--fg)" }}>cd &lt;dir&gt;</span> - Change directory</li>
+            <li><span style={{ color: "var(--fg)" }}>cat &lt;file&gt;</span> - View file contents</li>
+            <li><span style={{ color: "var(--fg)" }}>scoreboard</span> - View live leaderboard</li>
+          </ul>
+        </div>
+      );
   },
 
   clear: (args, { clearHistory }) => {
@@ -306,7 +306,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         }
         appendOutput(
           <div style={{ border: "1px dashed var(--neon-cyan)", padding: "10px", margin: "10px 0" }}>
-            <h3 style={{ color: "var(--neon-green)", margin: "0 0 10px 0" }}>Team: {team.name}</h3>
+            <h3 style={{ margin: "0 0 10px 0" }}>Team: {team.name}</h3>
             <div style={{ color: "var(--neon-amber)" }}>Score: {team.score}</div>
           </div>
         );
@@ -358,19 +358,19 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
           </h2>
           {data.categories.map((category) => (
             <div key={category} style={{ marginBottom: "20px" }}>
-              <h3 style={{ color: "var(--neon-green)", borderBottom: "1px solid var(--neon-green)", paddingBottom: "4px", marginBottom: "8px" }}>
+              <h3 style={{ color: "var(--fg)", borderBottom: "1px solid var(--fg-muted)", paddingBottom: "4px", marginBottom: "8px" }}>
                 /challenges/{category}
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "10px" }}>
                 {data.challengesByCategory[category].map((c) => (
                   <div key={c.id} style={{ 
-                    border: `1px solid ${c.isSolved ? "var(--neon-green)" : "var(--gray-600)"}`, 
+                    border: `1px solid ${c.isSolved ? "var(--fg-muted)" : "var(--gray-600)"}`, 
                     padding: "10px", 
                     display: "flex", 
                     flexDirection: "column",
                     background: "rgba(0,0,0,0.3)"
                   }}>
-                    <strong style={{ color: c.isSolved ? "var(--neon-green)" : "var(--gray-300)" }}>
+                    <strong style={{ color: c.isSolved ? "var(--fg-muted)" : "var(--gray-300)" }}>
                       {c.title} {c.isSolved && "✓"}
                     </strong>
                     <div style={{ fontSize: "12px", color: "var(--neon-amber)", marginTop: "4px" }}>
@@ -431,8 +431,10 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       
       if (data.correct) {
         ctx.appendOutput(
-          <div style={{ color: "var(--neon-green)" }}>
-            [SUCCESS] Correct flag! You gained {data.points} points.
+          <div style={{ color: "var(--success)" }}>
+            Flag submitted successfully!
+            <br />
+            You earned {data.points} points.
           </div>
         );
         invalidateCache("/api/challenges");

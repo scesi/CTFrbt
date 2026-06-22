@@ -21,8 +21,8 @@ export default function TerminalOutput() {
           style={{ 
             marginBottom: block.type === "command" ? "5px" : "15px",
             color: block.type === "error" ? "var(--neon-amber)" : 
-                   block.type === "command" ? "var(--gray-300)" : 
-                   "var(--neon-green)"
+                   block.type === "command" ? "var(--fg-dim)" : 
+                   "var(--fg)"
           }}
         >
           {block.content}

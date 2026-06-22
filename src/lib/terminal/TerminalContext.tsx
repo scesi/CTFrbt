@@ -47,7 +47,7 @@ const initialState: TerminalState = {
               using terminal commands, submit flags, and climb the scoreboard.
             </p>
           </div>
-          <div style={{ color: "var(--neon-green)" }}>
+          <div style={{ color: "var(--fg-dim)", marginTop: "16px" }}>
             CTFrbt STEVENOS v1.0.4 initialized.<br />
             Type &apos;help&apos; to see available commands.
           </div>
