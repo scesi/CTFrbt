@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 const RATE_LIMIT_MS = 10_000;
 
@@ -178,6 +179,10 @@ export async function POST(request: Request) {
           teamId: session.user.teamId,
         },
       });
+
+      // Invalidate caches — scores and solve counts changed
+      invalidate(CACHE_KEYS.LEADERBOARD);
+      invalidate(CACHE_KEYS.CHALLENGES);
 
       return NextResponse.json({
         correct: true,
