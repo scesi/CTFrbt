@@ -141,56 +141,186 @@ body::after {
 /* ---- CRT Keyframes ---- */
 
 @keyframes flicker {
-  0%   { opacity: 0.27861; }
-  5%   { opacity: 0.34769; }
-  10%  { opacity: 0.23604; }
-  15%  { opacity: 0.90626; }
-  20%  { opacity: 0.18128; }
-  25%  { opacity: 0.83891; }
-  30%  { opacity: 0.65583; }
-  35%  { opacity: 0.67807; }
-  40%  { opacity: 0.26559; }
-  45%  { opacity: 0.84693; }
-  50%  { opacity: 0.96019; }
-  55%  { opacity: 0.08594; }
-  60%  { opacity: 0.20313; }
-  65%  { opacity: 0.71988; }
-  70%  { opacity: 0.53455; }
-  75%  { opacity: 0.37288; }
-  80%  { opacity: 0.71428; }
-  85%  { opacity: 0.70419; }
-  90%  { opacity: 0.7003;  }
-  95%  { opacity: 0.36108; }
-  100% { opacity: 0.24387; }
+  0% {
+    opacity: 0.27861;
+  }
+
+  5% {
+    opacity: 0.34769;
+  }
+
+  10% {
+    opacity: 0.23604;
+  }
+
+  15% {
+    opacity: 0.90626;
+  }
+
+  20% {
+    opacity: 0.18128;
+  }
+
+  25% {
+    opacity: 0.83891;
+  }
+
+  30% {
+    opacity: 0.65583;
+  }
+
+  35% {
+    opacity: 0.67807;
+  }
+
+  40% {
+    opacity: 0.26559;
+  }
+
+  45% {
+    opacity: 0.84693;
+  }
+
+  50% {
+    opacity: 0.96019;
+  }
+
+  55% {
+    opacity: 0.08594;
+  }
+
+  60% {
+    opacity: 0.20313;
+  }
+
+  65% {
+    opacity: 0.71988;
+  }
+
+  70% {
+    opacity: 0.53455;
+  }
+
+  75% {
+    opacity: 0.37288;
+  }
+
+  80% {
+    opacity: 0.71428;
+  }
+
+  85% {
+    opacity: 0.70419;
+  }
+
+  90% {
+    opacity: 0.7003;
+  }
+
+  95% {
+    opacity: 0.36108;
+  }
+
+  100% {
+    opacity: 0.24387;
+  }
 }
 
 @keyframes phosphor {
-  0%   { text-shadow: 0.44px 0 1px rgba(0,30,255,0.5), -0.44px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  5%   { text-shadow: 2.79px 0 1px rgba(0,30,255,0.5), -2.79px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  10%  { text-shadow: 0.03px 0 1px rgba(0,30,255,0.5), -0.03px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  15%  { text-shadow: 0.40px 0 1px rgba(0,30,255,0.5), -0.40px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  20%  { text-shadow: 3.48px 0 1px rgba(0,30,255,0.5), -3.48px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  25%  { text-shadow: 1.61px 0 1px rgba(0,30,255,0.5), -1.61px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  30%  { text-shadow: 0.70px 0 1px rgba(0,30,255,0.5), -0.70px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  35%  { text-shadow: 3.90px 0 1px rgba(0,30,255,0.5), -3.90px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  40%  { text-shadow: 3.87px 0 1px rgba(0,30,255,0.5), -3.87px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  45%  { text-shadow: 2.23px 0 1px rgba(0,30,255,0.5), -2.23px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  50%  { text-shadow: 0.08px 0 1px rgba(0,30,255,0.5), -0.08px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  55%  { text-shadow: 2.38px 0 1px rgba(0,30,255,0.5), -2.38px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  60%  { text-shadow: 2.20px 0 1px rgba(0,30,255,0.5), -2.20px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  65%  { text-shadow: 2.86px 0 1px rgba(0,30,255,0.5), -2.86px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  70%  { text-shadow: 0.49px 0 1px rgba(0,30,255,0.5), -0.49px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  75%  { text-shadow: 1.89px 0 1px rgba(0,30,255,0.5), -1.89px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  80%  { text-shadow: 0.08px 0 1px rgba(0,30,255,0.5), -0.08px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  85%  { text-shadow: 0.10px 0 1px rgba(0,30,255,0.5), -0.10px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  90%  { text-shadow: 3.44px 0 1px rgba(0,30,255,0.5), -3.44px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  95%  { text-shadow: 2.18px 0 1px rgba(0,30,255,0.5), -2.18px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
-  100% { text-shadow: 2.62px 0 1px rgba(0,30,255,0.5), -2.62px 0 1px rgba(255,0,80,0.3), 0 0 3px; }
+  0% {
+    text-shadow: 0.44px 0 1px rgba(0, 30, 255, 0.5), -0.44px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  5% {
+    text-shadow: 2.79px 0 1px rgba(0, 30, 255, 0.5), -2.79px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  10% {
+    text-shadow: 0.03px 0 1px rgba(0, 30, 255, 0.5), -0.03px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  15% {
+    text-shadow: 0.40px 0 1px rgba(0, 30, 255, 0.5), -0.40px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  20% {
+    text-shadow: 3.48px 0 1px rgba(0, 30, 255, 0.5), -3.48px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  25% {
+    text-shadow: 1.61px 0 1px rgba(0, 30, 255, 0.5), -1.61px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  30% {
+    text-shadow: 0.70px 0 1px rgba(0, 30, 255, 0.5), -0.70px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  35% {
+    text-shadow: 3.90px 0 1px rgba(0, 30, 255, 0.5), -3.90px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  40% {
+    text-shadow: 3.87px 0 1px rgba(0, 30, 255, 0.5), -3.87px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  45% {
+    text-shadow: 2.23px 0 1px rgba(0, 30, 255, 0.5), -2.23px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  50% {
+    text-shadow: 0.08px 0 1px rgba(0, 30, 255, 0.5), -0.08px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  55% {
+    text-shadow: 2.38px 0 1px rgba(0, 30, 255, 0.5), -2.38px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  60% {
+    text-shadow: 2.20px 0 1px rgba(0, 30, 255, 0.5), -2.20px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  65% {
+    text-shadow: 2.86px 0 1px rgba(0, 30, 255, 0.5), -2.86px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  70% {
+    text-shadow: 0.49px 0 1px rgba(0, 30, 255, 0.5), -0.49px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  75% {
+    text-shadow: 1.89px 0 1px rgba(0, 30, 255, 0.5), -1.89px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  80% {
+    text-shadow: 0.08px 0 1px rgba(0, 30, 255, 0.5), -0.08px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  85% {
+    text-shadow: 0.10px 0 1px rgba(0, 30, 255, 0.5), -0.10px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  90% {
+    text-shadow: 3.44px 0 1px rgba(0, 30, 255, 0.5), -3.44px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  95% {
+    text-shadow: 2.18px 0 1px rgba(0, 30, 255, 0.5), -2.18px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
+
+  100% {
+    text-shadow: 2.62px 0 1px rgba(0, 30, 255, 0.5), -2.62px 0 1px rgba(255, 0, 80, 0.3), 0 0 3px;
+  }
 }
 
 @keyframes scan {
-  0%       { background-position: 0 -100vh; }
-  35%, 100% { background-position: 0 100vh; }
+  0% {
+    background-position: 0 -100vh;
+  }
+
+  35%,
+  100% {
+    background-position: 0 100vh;
+  }
 }
 
 /* ---- CRT Effect Toggle Classes ---- */
@@ -217,6 +347,7 @@ body::after {
 
 /* ---- Accessibility: Reduced Motion ---- */
 @media (prefers-reduced-motion: reduce) {
+
   body::before,
   body::after {
     animation: none !important;
@@ -281,9 +412,17 @@ body::after {
   opacity: 1;
 }
 
-.window-btn.close    { background: #ff5f56; }
-.window-btn.minimize { background: #ffbd2e; }
-.window-btn.maximize { background: #27c93f; }
+.window-btn.close {
+  background: #ff5f56;
+}
+
+.window-btn.minimize {
+  background: #ffbd2e;
+}
+
+.window-btn.maximize {
+  background: #27c93f;
+}
 
 .title-text {
   flex: 1;
@@ -396,7 +535,7 @@ body::after {
   display: flex;
   align-items: center;
   padding: 4px 14px;
-  font-size: 15px;
+  font-size: 20px;
   color: var(--fg-muted);
   cursor: pointer;
   transition: background 0.1s ease, color 0.1s ease;
