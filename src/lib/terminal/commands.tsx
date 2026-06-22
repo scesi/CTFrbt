@@ -1,16 +1,34 @@
 import React from "react";
 import { TerminalState, TerminalAction, OutputBlock } from "./types";
+import ChallengeView, { ChallengeData } from "@/components/ChallengeView";
 import { Session } from "next-auth";
 
-const apiCache: Record<string, unknown> = {};
+const CACHE_TTL_MS = 10_000; // same order of magnitude as server cache
 
-async function fetchCached(url: string) {
-  if (apiCache[url]) return apiCache[url];
+interface CacheEntry {
+  data: unknown;
+  expiry: number;
+}
+
+const apiCache: Record<string, CacheEntry> = {};
+
+async function fetchCached(url: string, force = false): Promise<unknown> {
+  const now = Date.now();
+  const cached = apiCache[url];
+
+  if (!force && cached && cached.expiry > now) {
+    return cached.data;
+  }
+
   const res = await fetch(url);
   if (!res.ok) throw new Error("API request failed");
   const data = await res.json();
-  apiCache[url] = data;
+  apiCache[url] = { data, expiry: now + CACHE_TTL_MS };
   return data;
+}
+
+function invalidateCache(url: string) {
+  delete apiCache[url];
 }
 
 function resolvePath(cwd: string, target: string): string {
@@ -132,9 +150,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
   scoreboard: async (args, { appendOutput }) => {
     try {
-      const res = await fetch("/api/leaderboard");
-      if (!res.ok) throw new Error("Failed to fetch scoreboard");
-      const data = await res.json();
+      const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
       const teams = data.teams;
       
       if (!teams || teams.length === 0) {
@@ -217,9 +233,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/teams") {
       try {
-        const res = await fetch("/api/leaderboard");
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
+        const data = await fetchCached("/api/leaderboard") as any;
         const teams = data.teams as { id: string, name: string, score: number }[];
         if (!teams || teams.length === 0) {
           appendOutput("No files found.");
@@ -272,7 +286,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/rules.txt") {
       try {
-        const rules = await fetchCached("/api/rules");
+        const rules = await fetchCached("/api/rules") as { value: string };
         appendOutput(<div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>);
       } catch {
         appendOutput("Error reading rules.txt", "error");
@@ -290,30 +304,26 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = parts[parts.length - 1];
       const challengeId = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[]> };
+        const data = await fetchCached("/api/challenges") as {
+          challengesByCategory: Record<string, ChallengeData[]>;
+        };
         const allChallenges = Object.values(data.challengesByCategory).flat();
-        const challenge = allChallenges.find(c => c.id === challengeId);
-        
+        const challenge = allChallenges.find((c) => c.id === challengeId);
+
         if (!challenge) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
           return;
         }
 
         appendOutput(
-          <div style={{ border: "1px dashed var(--neon-blue)", padding: "10px", margin: "10px 0" }}>
-            <h3 style={{ color: "var(--neon-green)", margin: "0 0 10px 0" }}>{challenge.title}</h3>
-            <p style={{ whiteSpace: "pre-wrap", marginBottom: "10px" }}>{challenge.description}</p>
-            <div style={{ color: "var(--neon-amber)" }}>
-              Category: {challenge.category} | Difficulty: {challenge.difficulty} | Points: {challenge.points}
-            </div>
-            {challenge.link && (
-              <div style={{ marginTop: "10px" }}>
-                Target: <a href={challenge.link} target="_blank" rel="noreferrer" style={{ color: "var(--neon-cyan)" }}>{challenge.link}</a>
-              </div>
-            )}
-            <div style={{ marginTop: "10px", color: "var(--gray-400)" }}>
-              To submit: `submit {challenge.id} flag&#123;...&#125;`
-            </div>
+          <div style={{ border: "1px dashed var(--neon-blue)", padding: "16px", margin: "10px 0" }}>
+            <ChallengeView
+              challenge={challenge}
+              onSolved={() => {
+                invalidateCache("/api/challenges");
+                invalidateCache("/api/leaderboard");
+              }}
+            />
           </div>
         );
       } catch {
@@ -326,9 +336,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = targetPath.split("/").pop() || "";
       const teamName = filename.replace(".txt", "");
       try {
-        const res = await fetch("/api/leaderboard");
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
+        const data = await fetchCached("/api/leaderboard") as any;
         const teams = data.teams as { id: string, name: string, score: number }[];
         const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
         if (!team) {
@@ -465,12 +473,14 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
       
-      if (data.isCorrect) {
+      if (data.correct) {
         ctx.appendOutput(
           <div style={{ color: "var(--neon-green)" }}>
-            [SUCCESS] Correct flag! You gained {data.pointsGained} points.
+            [SUCCESS] Correct flag! You gained {data.points} points.
           </div>
         );
+        invalidateCache("/api/challenges");
+        invalidateCache("/api/leaderboard");
       } else {
         ctx.appendOutput(<div style={{ color: "var(--neon-amber)" }}>[FAILED] Incorrect flag.</div>);
       }
@@ -483,43 +493,13 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   hint: async (args, ctx) => {
-    if (!ctx.session?.user) {
-      ctx.appendOutput("You must be logged in to use hints.", "error");
-      return;
-    }
     const challengeId = args[0];
     if (!challengeId) {
-      ctx.appendOutput("Usage: hint <challenge_id>", "error");
+      ctx.appendOutput("Usage: hint <challenge_id> — or use 'cat challenges/<category>/<id>.txt' for the full interactive view.", "error");
       return;
     }
-
-    ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-    try {
-      // First fetch hints to see if any exist
-      const res = await fetch(`/api/hints?challengeId=${challengeId}`);
-      const hints = await res.json();
-      if (!hints || hints.length === 0) {
-        ctx.appendOutput("No hints available for this challenge.", "error");
-        return;
-      }
-
-      ctx.appendOutput(
-        <div style={{ border: "1px dashed var(--neon-amber)", padding: "10px", margin: "10px 0" }}>
-          <strong style={{ color: "var(--neon-amber)" }}>Available Hints for {challengeId}:</strong>
-          <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
-            {(hints as { id: string, cost: number, isUnlocked: boolean, content: string }[]).map((h, i) => (
-              <li key={h.id}>
-                Hint #{i + 1} ({h.cost} points) - {h.isUnlocked ? <span style={{color: "var(--neon-green)"}}>[UNLOCKED]: {h.content}</span> : "[LOCKED]"}
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      ctx.appendOutput(`Error: ${msg}`, "error");
-    } finally {
-      ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-    }
+    ctx.appendOutput(
+      `Tip: run 'cat challenges/<category>/${challengeId}.txt' to view and purchase hints interactively.`,
+    );
   }
 };
