@@ -5,6 +5,7 @@ import { Session } from "next-auth";
 import { ScoreboardView } from "@/components/views/ScoreboardView";
 import { RulesView } from "@/components/views/RulesView";
 import { TeamView } from "@/components/views/TeamView";
+import { CategoryView } from "@/components/views/CategoryView";
 
 const CACHE_TTL_MS = 10_000; // same order of magnitude as server cache
 
@@ -251,9 +252,14 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const targetPath = resolvePath(state.cwd, target);
 
     // If it's a directory
-    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" || 
-       (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3)) {
+    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams") {
       appendOutput(`cat: ${target}: Is a directory`, "error");
+      return;
+    }
+
+    if (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3) {
+      const category = targetPath.split("/")[2];
+      appendOutput(<CategoryView category={category} />);
       return;
     }
 
