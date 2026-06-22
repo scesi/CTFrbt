@@ -20,9 +20,7 @@ export default function TerminalOutput() {
           key={block.id} 
           style={{ 
             marginBottom: block.type === "command" ? "5px" : "15px",
-            color: block.type === "error" ? "var(--neon-amber)" : 
-                   block.type === "command" ? "var(--fg-dim)" : 
-                   "var(--fg)"
+            color: block.type === "error" ? "var(--neon-amber)" : "var(--fg)"
           }}
         >
           {block.content}
