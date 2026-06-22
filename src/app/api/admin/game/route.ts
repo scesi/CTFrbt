@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/admin/game — Get game config
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const config = await prisma.gameConfig.findFirst({
     orderBy: { createdAt: "desc" },
   });
@@ -12,6 +19,11 @@ export async function GET() {
 
 // POST /api/admin/game — Create or update game config
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { startTime, endTime, isActive } = body;

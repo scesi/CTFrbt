@@ -18,7 +18,18 @@ export async function GET(
   }
 
   try {
-    const filePath = path.join(process.cwd(), "public", file.path);
+    // Resolve the public directory and the requested file path
+    const publicDir = path.resolve(process.cwd(), "public");
+    const filePath = path.resolve(publicDir, file.path);
+
+    // Guard against path traversal: ensure the resolved path stays within public/
+    if (!filePath.startsWith(publicDir + path.sep)) {
+      return NextResponse.json(
+        { error: "Invalid file path" },
+        { status: 400 }
+      );
+    }
+
     const fileBuffer = await readFile(filePath);
 
     return new NextResponse(fileBuffer, {
