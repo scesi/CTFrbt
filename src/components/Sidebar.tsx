@@ -150,13 +150,18 @@ export default function Sidebar() {
           style={{
             position: "absolute",
             left: "0",
-            top: "5px",
+            top: "0",
+            height: "32px",
+            width: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 100,
-            background: "rgba(10, 10, 10, 0.8)",
-            border: "1px solid var(--border)",
+            background: "rgba(10, 10, 10, 0.9)",
+            borderBottom: "1px solid var(--border)",
+            borderRight: "1px solid var(--border)",
+            borderTop: "none",
             borderLeft: "none",
-            padding: "8px 4px",
-            borderTopRightRadius: "4px",
             borderBottomRightRadius: "4px",
           }}
         >
