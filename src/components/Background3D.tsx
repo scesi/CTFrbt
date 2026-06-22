@@ -20,7 +20,7 @@ function ScesiLogo() {
   const materialProps = {
     color: "#ffffff",
     emissive: "#ffffff",
-    emissiveIntensity: 0.5,
+    emissiveIntensity: 1.5,
     roughness: 0.1,
     metalness: 0.9,
     wireframe: true,
@@ -38,6 +38,7 @@ function ScesiLogo() {
   };
 
   const scesRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     if (scesRef.current) {
@@ -49,42 +50,67 @@ function ScesiLogo() {
     }
   }, []);
 
+  const scesiMaterialProps = {
+    ...materialProps,
+    color: hovered ? "#ff0000" : "#ffffff",
+    emissive: hovered ? "#dd0000" : "#ffffff",
+    emissiveIntensity: hovered ? 1.0 : 1.5,
+  };
+
   return (
     <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
       <group ref={groupRef}>
         <Center>
           <group>
-            {/* sces en grande (low poly) */}
-            <Text3D
-              ref={scesRef}
-              font="/fonts/helvetiker_bold.typeface.json"
-              size={4}
-              position={[0, 0, 0]}
-              {...bevelProps}
+            {/* Grupo interactivo solo para 'scesi' */}
+            <group
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                document.body.style.cursor = "pointer";
+                setHovered(true);
+              }}
+              onPointerOut={(e) => {
+                e.stopPropagation();
+                document.body.style.cursor = "auto";
+                setHovered(false);
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open("https://www.scesi.org", "_blank");
+              }}
             >
-              sces
-              <meshStandardMaterial {...materialProps} />
-            </Text3D>
+              {/* sces en grande (low poly) */}
+              <Text3D
+                ref={scesRef}
+                font="/fonts/helvetiker_bold.typeface.json"
+                size={4}
+                position={[0, 0, 0]}
+                {...bevelProps}
+              >
+                sces
+                <meshStandardMaterial {...scesiMaterialProps} />
+              </Text3D>
 
-            {/* Tallo de la 'i' (usando 'l' escalada) */}
-            <Text3D
-              font="/fonts/helvetiker_bold.typeface.json"
-              size={4}
-              position={[scesWidth, 0, 0]}
-              scale={[1, 0.72, 1]}
-              {...bevelProps}
-            >
-              l
-              <meshStandardMaterial {...materialProps} />
-            </Text3D>
+              {/* Tallo de la 'i' (usando 'l' escalada) */}
+              <Text3D
+                font="/fonts/helvetiker_bold.typeface.json"
+                size={4}
+                position={[scesWidth, 0, 0]}
+                scale={[1, 0.72, 1]}
+                {...bevelProps}
+              >
+                l
+                <meshStandardMaterial {...scesiMaterialProps} />
+              </Text3D>
 
-            {/* Punto circular (low poly) superpuesto exactamente sobre la 'i' */}
-            <mesh position={[scesWidth + 0.45, 3.8, 0.2]}>
-              <icosahedronGeometry args={[0.45, 0]} />
-              <meshStandardMaterial {...materialProps} />
-            </mesh>
+              {/* Punto circular (low poly) superpuesto exactamente sobre la 'i' */}
+              <mesh position={[scesWidth + 0.45, 3.8, 0.2]}>
+                <icosahedronGeometry args={[0.45, 0]} />
+                <meshStandardMaterial {...scesiMaterialProps} />
+              </mesh>
+            </group>
 
-            {/* UMSS pequeño alineado a la izquierda bajo la 'sc' */}
+            {/* UMSS pequeño alineado a la izquierda bajo la 'sc' (Sin hover) */}
             <Text3D
               font="/fonts/helvetiker_bold.typeface.json"
               size={1.2}
@@ -118,13 +144,14 @@ export default function Background3D() {
         background: "#000000",
       }}
     >
-      <div 
+      <div
         style={{
           width: "100%",
           height: "100%",
-          // Un glow sutil usando drop-shadow para igualar la estética de la terminal.
-          // Al no ponerle opacidad baja, se verá claro, y los efectos globales (body::before) de la terminal le pondrán las scanlines y el parpadeo.
-          filter: "drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) blur(0.5px)",
+          // Un drop-shadow blanco de 1-2px actúa como un "bloom" que engrosa visualmente las líneas
+          // Luego aplicamos la aberración roja y azul que copiarán ese grosor
+          filter: "drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(4px 0px 0px rgba(255, 0, 80, 0.7)) drop-shadow(-4px 0px 0px rgba(0, 30, 255, 0.7)) contrast(1.8) brightness(1.2)",
+          opacity: 0.9,
         }}
       >
         <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
@@ -135,6 +162,21 @@ export default function Background3D() {
           <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
         </Canvas>
       </div>
+
+      {/* Capa propia de scanlines para el fondo 3D (restablecida) */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          background: "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
+          backgroundSize: "100% 4px",
+          zIndex: 1,
+        }}
+      />
     </div>
   );
 }
