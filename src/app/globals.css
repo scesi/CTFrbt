@@ -396,7 +396,7 @@ body::after {
   display: flex;
   align-items: center;
   padding: 4px 14px;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--fg-muted);
   cursor: pointer;
   transition: background 0.1s ease, color 0.1s ease;
