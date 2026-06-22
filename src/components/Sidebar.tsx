@@ -144,26 +144,9 @@ export default function Sidebar() {
       </aside>
       {collapsed && (
         <button
-          className="sidebar-toggle"
+          className="sidebar-toggle floating-toggle"
           onClick={() => setCollapsed(false)}
           title="Expand sidebar"
-          style={{
-            position: "absolute",
-            left: "0",
-            top: "0",
-            height: "32px",
-            width: "32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            background: "rgba(10, 10, 10, 0.9)",
-            borderBottom: "1px solid var(--border)",
-            borderRight: "1px solid var(--border)",
-            borderTop: "none",
-            borderLeft: "none",
-            borderBottomRightRadius: "4px",
-          }}
         >
           ›
         </button>

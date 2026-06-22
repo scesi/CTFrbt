@@ -514,6 +514,30 @@ body::after {
   color: var(--fg);
 }
 
+.floating-toggle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 32px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.9);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-top: none;
+  border-left: none;
+  border-bottom-right-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.floating-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg);
+}
+
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
