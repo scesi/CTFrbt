@@ -61,7 +61,6 @@ export function CategoryView({ category }: { category: string }) {
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "1px",
-            color: "var(--neon-green)",
           }}
         >
           {category}
