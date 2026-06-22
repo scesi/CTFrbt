@@ -151,36 +151,6 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     appendOutput(state.cwd);
   },
 
-  scoreboard: async (args, { appendOutput }) => {
-    try {
-      const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
-      const teams = data.teams;
-      
-      if (!teams || teams.length === 0) {
-        appendOutput("Scoreboard is empty. No teams registered yet.");
-        return;
-      }
-
-      appendOutput(
-        <div style={{ margin: "10px 0" }}>
-          <div style={{ color: "var(--neon-cyan)", marginBottom: "5px" }}>
-            RANK | TEAM                | SCORE
-            <br />
-            ----------------------------------
-          </div>
-          {(teams as { id: string, name: string, score: number }[]).map((t, i) => (
-            <div key={t.id}>
-              {String(i + 1).padStart(4)} | {t.name.padEnd(20)} | {t.score}
-            </div>
-          ))}
-        </div>
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      appendOutput(`Error fetching scoreboard: ${msg}`, "error");
-    }
-  },
-
   ls: async (args, { state, appendOutput }) => {
     const targetPath = resolvePath(state.cwd, args[0] || "");
 
