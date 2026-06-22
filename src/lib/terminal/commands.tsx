@@ -113,7 +113,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         <ul style={{ listStyle: "none", padding: 0, margin: "10px 0" }}>
           <li><span style={{ color: "var(--neon-green)" }}>help</span> - Show this message</li>
           <li><span style={{ color: "var(--neon-green)" }}>clear</span> - Clear terminal screen</li>
-          <li><span style={{ color: "var(--neon-green)" }}>login</span> - Authenticate as user</li>
+          <li><span style={{ color: "var(--neon-green)" }}>challenges</span> - View available CTF challenges</li>
           <li><span style={{ color: "var(--neon-green)" }}>logout</span> - End current session</li>
           <li><span style={{ color: "var(--neon-green)" }}>whoami</span> - Display current user info</li>
           <li><span style={{ color: "var(--neon-green)" }}>pwd</span> - Print working directory</li>
@@ -362,7 +362,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const { signOut } = await import("next-auth/react");
     appendOutput("Logging out...");
     await signOut({ redirect: false });
-    appendOutput("Session terminated. You are now guest.", "system");
+    appendOutput("Session terminated. Reloading...", "system");
+    window.location.reload();
   },
 
   challenges: async (args, { appendOutput }) => {
