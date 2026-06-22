@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+
+const MAX_TEAM_MEMBERS = 4;
 
 // GET /api/teams — Get current user's team info
 export async function GET() {
@@ -79,8 +82,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a random invite code
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    // Generate a cryptographically secure invite code
+    const code = crypto.randomBytes(4).toString("hex").toUpperCase();
 
     const team = await prisma.team.create({
       data: {
@@ -122,6 +125,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Invalid team code" },
         { status: 404 }
+      );
+    }
+
+    // Enforce max team size
+    if (team.members.length >= MAX_TEAM_MEMBERS) {
+      return NextResponse.json(
+        { error: `Team is full (max ${MAX_TEAM_MEMBERS} members)` },
+        { status: 400 }
       );
     }
 
