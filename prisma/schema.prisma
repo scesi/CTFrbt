@@ -250,3 +250,14 @@ model SiteConfig {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  alias     String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([ip, success, createdAt])
+  @@index([alias, success, createdAt])
+}
