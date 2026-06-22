@@ -1,5 +1,4 @@
 import TerminalOutput from "@/components/TerminalOutput";
-import { TerminalProvider } from "@/lib/terminal/TerminalContext";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -11,9 +10,5 @@ export default async function Dashboard() {
     redirect("/auth/signin");
   }
 
-  return (
-    <TerminalProvider>
-      <TerminalOutput />
-    </TerminalProvider>
-  );
+  return <TerminalOutput />;
 }

@@ -2,6 +2,9 @@ import React from "react";
 import { TerminalState, TerminalAction, OutputBlock } from "./types";
 import ChallengeView, { ChallengeData } from "@/components/ChallengeView";
 import { Session } from "next-auth";
+import { ScoreboardView } from "@/components/views/ScoreboardView";
+import { RulesView } from "@/components/views/RulesView";
+import { TeamView } from "@/components/views/TeamView";
 
 const CACHE_TTL_MS = 10_000; // same order of magnitude as server cache
 
@@ -364,6 +367,18 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     await signOut({ redirect: false });
     appendOutput("Session terminated. Redirecting to home...", "system");
     window.location.href = "/";
+  },
+
+  scoreboard: (args, { appendOutput }) => {
+    appendOutput(<ScoreboardView />);
+  },
+
+  rules: (args, { appendOutput }) => {
+    appendOutput(<RulesView />);
+  },
+
+  team: (args, { appendOutput }) => {
+    appendOutput(<TeamView />);
   },
 
   challenges: async (args, { appendOutput }) => {
