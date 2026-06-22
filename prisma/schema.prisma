@@ -25,6 +25,7 @@ model User {
   team         Team?        @relation(fields: [teamId], references: [id])
   submissions  Submission[]
   scores       Score[]
+  sessions     UserSession[]
 
   @@index([teamId])
 }
@@ -260,4 +261,15 @@ model LoginAttempt {
 
   @@index([ip, success, createdAt])
   @@index([alias, success, createdAt])
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
