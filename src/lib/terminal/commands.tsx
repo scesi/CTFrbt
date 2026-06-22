@@ -233,8 +233,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/teams") {
       try {
-        const data = await fetchCached("/api/leaderboard") as any;
-        const teams = data.teams as { id: string, name: string, score: number }[];
+        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const teams = data.teams;
         if (!teams || teams.length === 0) {
           appendOutput("No files found.");
           return;
@@ -336,8 +336,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = targetPath.split("/").pop() || "";
       const teamName = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/leaderboard") as any;
-        const teams = data.teams as { id: string, name: string, score: number }[];
+        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const teams = data.teams;
         const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
         if (!team) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
