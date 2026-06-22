@@ -40,12 +40,19 @@ export default function Dashboard() {
   const [selectedChallenge, setSelectedChallenge] =
     useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [gameStatus, setGameStatus] = useState<{
+    state: string;
+    startsAt?: string;
+  } | null>(null);
 
   const loadChallenges = useCallback(async () => {
     try {
       const res = await fetch("/api/challenges");
       const data = await res.json();
       setChallengesByCategory(data.challengesByCategory || {});
+      if (data.gameStatus) {
+        setGameStatus(data.gameStatus);
+      }
     } catch {
       toast.error("Failed to load challenges");
     } finally {
@@ -70,6 +77,26 @@ export default function Dashboard() {
         }}
       >
         Loading challenges...
+      </div>
+    );
+  }
+
+  // Game not started — show informational message
+  if (gameStatus?.state === "not_started") {
+    const startsAt = gameStatus.startsAt
+      ? new Date(gameStatus.startsAt).toLocaleString()
+      : null;
+
+    return (
+      <div style={{ paddingTop: "32px", textAlign: "center" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "12px" }}>
+          CTF Not Started
+        </h1>
+        <p style={{ color: "var(--fg-dim)", fontSize: "14px" }}>
+          {startsAt
+            ? `The competition starts on ${startsAt}.`
+            : "The competition hasn\u2019t started yet. Stay tuned."}
+        </p>
       </div>
     );
   }

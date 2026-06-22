@@ -2,31 +2,53 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getOrSet, CACHE_KEYS } from "@/lib/cache";
+import { getGameWindowStatus } from "@/lib/game-window";
+
+const CHALLENGES_TTL_MS = 15_000; // 15 seconds
 
 // GET /api/challenges — List all challenges grouped by category
 export async function GET() {
   const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.isAdmin === true;
 
-  const challenges = await prisma.challenge.findMany({
-    where: { isActive: true },
-    include: {
-      files: {
-        select: { id: true, name: true, size: true },
-      },
-      hints: {
-        select: { id: true, cost: true },
-      },
-      flags: {
-        select: { id: true, points: true },
-      },
-      _count: {
-        select: { submissions: { where: { isCorrect: true } } },
-      },
+  // Game window enforcement — admins always see full content
+  const gameStatus = await getGameWindowStatus();
+  if (gameStatus.state === "not_started" && !isAdmin) {
+    return NextResponse.json({
+      categories: [],
+      challengesByCategory: {},
+      gameStatus: { state: "not_started", startsAt: gameStatus.startsAt },
+    });
+  }
+
+  // Cache the expensive challenge query (shared across all users)
+  const challenges = await getOrSet(
+    CACHE_KEYS.CHALLENGES,
+    CHALLENGES_TTL_MS,
+    async () => {
+      return prisma.challenge.findMany({
+        where: { isActive: true },
+        include: {
+          files: {
+            select: { id: true, name: true, size: true },
+          },
+          hints: {
+            select: { id: true, cost: true },
+          },
+          flags: {
+            select: { id: true, points: true },
+          },
+          _count: {
+            select: { submissions: { where: { isCorrect: true } } },
+          },
+        },
+        orderBy: [{ category: "asc" }, { points: "asc" }],
+      });
     },
-    orderBy: [{ category: "asc" }, { points: "asc" }],
-  });
+  );
 
-  // Get user's solved challenges if authenticated
+  // Per-user data — NOT cached (cheap queries, user-specific)
   let solvedChallengeIds: string[] = [];
   let solvedFlagIds: string[] = [];
 
@@ -106,5 +128,6 @@ export async function GET() {
   return NextResponse.json({
     categories: Object.keys(categories),
     challengesByCategory: categories,
+    gameStatus: { state: gameStatus.state },
   });
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
+import { getGameWindowStatus } from "@/lib/game-window";
 
 const RATE_LIMIT_MS = 10_000;
 
@@ -16,6 +18,21 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "You must be in a team to submit flags" },
       { status: 400 }
+    );
+  }
+
+  // Game window enforcement — block before rate limit to save DB queries
+  const gameStatus = await getGameWindowStatus();
+  if (gameStatus.state === "not_started") {
+    return NextResponse.json(
+      { error: "The CTF hasn't started yet" },
+      { status: 403 }
+    );
+  }
+  if (gameStatus.state === "ended") {
+    return NextResponse.json(
+      { error: "The CTF has ended" },
+      { status: 403 }
     );
   }
 
@@ -178,6 +195,10 @@ export async function POST(request: Request) {
           teamId: session.user.teamId,
         },
       });
+
+      // Invalidate caches — scores and solve counts changed
+      invalidate(CACHE_KEYS.LEADERBOARD);
+      invalidate(CACHE_KEYS.CHALLENGES);
 
       return NextResponse.json({
         correct: true,

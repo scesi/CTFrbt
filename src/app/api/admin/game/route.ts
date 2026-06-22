@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 // GET /api/admin/game — Get game config
 export async function GET() {
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       });
     }
 
+    invalidate(CACHE_KEYS.GAME_CONFIG);
     return NextResponse.json({ config });
   } catch (error) {
     console.error("Game config error:", error);
