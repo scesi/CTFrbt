@@ -3,12 +3,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, CACHE_KEYS } from "@/lib/cache";
+import { getGameWindowStatus } from "@/lib/game-window";
 
 const CHALLENGES_TTL_MS = 15_000; // 15 seconds
 
 // GET /api/challenges — List all challenges grouped by category
 export async function GET() {
   const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.isAdmin === true;
+
+  // Game window enforcement — admins always see full content
+  const gameStatus = await getGameWindowStatus();
+  if (gameStatus.state === "not_started" && !isAdmin) {
+    return NextResponse.json({
+      categories: [],
+      challengesByCategory: {},
+      gameStatus: { state: "not_started", startsAt: gameStatus.startsAt },
+    });
+  }
 
   // Cache the expensive challenge query (shared across all users)
   const challenges = await getOrSet(
@@ -116,5 +128,6 @@ export async function GET() {
   return NextResponse.json({
     categories: Object.keys(categories),
     challengesByCategory: categories,
+    gameStatus: { state: gameStatus.state },
   });
 }
