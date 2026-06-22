@@ -94,6 +94,7 @@ export const authOptions: NextAuthOptions = {
         // Helper to run pruning probabilistically (2% chance)
         const runProbabilisticPruning = () => {
           if (Math.random() < 0.02) {
+            // Delete old login attempts
             prisma.loginAttempt
               .deleteMany({
                 where: {
@@ -103,6 +104,15 @@ export const authOptions: NextAuthOptions = {
                 },
               })
               .catch((err) => console.error("Pruning attempts failed:", err));
+
+            // Delete expired sessions
+            prisma.userSession
+              .deleteMany({
+                where: {
+                  expiresAt: { lt: new Date() },
+                },
+              })
+              .catch((err) => console.error("Pruning expired sessions failed:", err));
           }
         };
 
@@ -133,6 +143,16 @@ export const authOptions: NextAuthOptions = {
         });
         runProbabilisticPruning();
 
+        // 4. Create database session
+        const sessionToken = crypto.randomBytes(32).toString("hex");
+        await prisma.userSession.create({
+          data: {
+            userId: user.id,
+            sessionToken,
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          },
+        });
+
         return {
           id: user.id,
           alias: user.alias,
@@ -140,6 +160,7 @@ export const authOptions: NextAuthOptions = {
           isAdmin: user.isAdmin,
           teamId: user.teamId || undefined,
           isTeamLeader: user.isTeamLeader,
+          sessionToken,
         };
       },
     }),
@@ -152,18 +173,49 @@ export const authOptions: NextAuthOptions = {
         token.isAdmin = user.isAdmin;
         token.teamId = user.teamId;
         token.isTeamLeader = user.isTeamLeader;
+        token.sessionToken = user.sessionToken;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.alias = token.alias as string;
-        session.user.isAdmin = token.isAdmin as boolean;
-        session.user.teamId = token.teamId as string | undefined;
-        session.user.isTeamLeader = token.isTeamLeader as boolean;
+      if (session.user && token.sessionToken) {
+        // Query the database to verify the session exists, is not expired, and belongs to the correct user
+        const dbSession = await prisma.userSession.findUnique({
+          where: { sessionToken: token.sessionToken as string },
+          include: { user: true },
+        });
+
+        if (
+          !dbSession ||
+          dbSession.userId !== token.id ||
+          dbSession.expiresAt < new Date()
+        ) {
+          // Invalidate session
+          return null as any;
+        }
+
+        // Rehydrate session from database fresh to prevent privilege escalation via client JWT tampering
+        session.user.id = dbSession.user.id;
+        session.user.alias = dbSession.user.alias;
+        session.user.name = dbSession.user.name;
+        session.user.isAdmin = dbSession.user.isAdmin;
+        session.user.teamId = dbSession.user.teamId || undefined;
+        session.user.isTeamLeader = dbSession.user.isTeamLeader;
+      } else {
+        return null as any;
       }
       return session;
+    },
+  },
+  events: {
+    async signOut({ token }) {
+      if (token?.sessionToken) {
+        await prisma.userSession
+          .delete({
+            where: { sessionToken: token.sessionToken as string },
+          })
+          .catch((err) => console.error("Error deleting session on signout:", err));
+      }
     },
   },
   pages: {
