@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// Simple in-memory rate limiter (per user, 1 submission per 10 seconds)
-const lastSubmission = new Map<string, number>();
 const RATE_LIMIT_MS = 10_000;
 
 export async function POST(request: Request) {
@@ -21,11 +19,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // Rate limiting
+  // Rate limiting — DB-backed (works across serverless/multi-instance)
   const now = Date.now();
-  const lastTime = lastSubmission.get(session.user.id);
-  if (lastTime && now - lastTime < RATE_LIMIT_MS) {
-    const waitSec = Math.ceil((RATE_LIMIT_MS - (now - lastTime)) / 1000);
+  const lastSub = await prisma.submission.findFirst({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+
+  if (lastSub && now - lastSub.createdAt.getTime() < RATE_LIMIT_MS) {
+    const waitSec = Math.ceil(
+      (RATE_LIMIT_MS - (now - lastSub.createdAt.getTime())) / 1000
+    );
     return NextResponse.json(
       { error: `Rate limited. Wait ${waitSec}s before submitting again.` },
       { status: 429 }
@@ -62,9 +67,6 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-
-    // Update rate limiter
-    lastSubmission.set(session.user.id, now);
 
     // Check flag — multi-flag or single-flag mode
     let isCorrect = false;

@@ -1,6 +1,17 @@
 import { PrismaClient } from "./generated/client";
 import bcrypt from "bcryptjs";
 
+// Guard: refuse to seed production unless explicitly overridden
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.ALLOW_PROD_SEED !== "true"
+) {
+  console.error(
+    "❌ Refusing to seed in production. Set ALLOW_PROD_SEED=true to override."
+  );
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
