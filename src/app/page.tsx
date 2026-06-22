@@ -45,7 +45,9 @@ export default function Home() {
           marginTop: "48px",
           padding: "20px",
           border: "1px solid var(--border)",
-          maxWidth: "520px",
+          width: "fit-content",
+          marginLeft: "auto",
+          marginRight: "auto",
         }}
       >
         <pre
