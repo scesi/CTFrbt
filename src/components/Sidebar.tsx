@@ -122,24 +122,47 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <span>Explorer</span>
+    <>
+      <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-header">
+          <span>Explorer</span>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            title={collapsed ? "Expand" : "Collapse"}
+          >
+            {collapsed ? "›" : "‹"}
+          </button>
+        </div>
+        <nav className="sidebar-content">
+          <ul className="file-tree">
+            {FILE_TREE.map((node) => (
+              <TreeItem key={node.label} node={node} pathname={pathname} />
+            ))}
+          </ul>
+        </nav>
+      </aside>
+      {collapsed && (
         <button
           className="sidebar-toggle"
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? "Expand" : "Collapse"}
+          onClick={() => setCollapsed(false)}
+          title="Expand sidebar"
+          style={{
+            position: "absolute",
+            left: "0",
+            top: "5px",
+            zIndex: 100,
+            background: "rgba(10, 10, 10, 0.8)",
+            border: "1px solid var(--border)",
+            borderLeft: "none",
+            padding: "8px 4px",
+            borderTopRightRadius: "4px",
+            borderBottomRightRadius: "4px",
+          }}
         >
-          {collapsed ? "›" : "‹"}
+          ›
         </button>
-      </div>
-      <nav className="sidebar-content">
-        <ul className="file-tree">
-          {FILE_TREE.map((node) => (
-            <TreeItem key={node.label} node={node} pathname={pathname} />
-          ))}
-        </ul>
-      </nav>
-    </aside>
+      )}
+    </>
   );
 }
