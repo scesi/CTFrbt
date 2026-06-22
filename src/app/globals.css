@@ -215,6 +215,19 @@ body::after {
   animation: none !important;
 }
 
+/* ---- Accessibility: Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none !important;
+  }
+
+  * {
+    text-shadow: none !important;
+    animation: none !important;
+  }
+}
+
 /* ============================================================
    TERMINAL WINDOW — macOS Style
    ============================================================ */

@@ -13,9 +13,9 @@ function TerminalWindowContent({ children }: { children: React.ReactNode }) {
         {/* ---- Title Bar ---- */}
         <div className="title-bar">
           <div className="window-controls">
-            <button className="window-btn close" title="Close" />
-            <button className="window-btn minimize" title="Minimize" />
-            <button className="window-btn maximize" title="Maximize" />
+            <button type="button" className="window-btn close" aria-label="Close" disabled />
+            <button type="button" className="window-btn minimize" aria-label="Minimize" disabled />
+            <button type="button" className="window-btn maximize" aria-label="Maximize" disabled />
           </div>
 
           <span className="title-text">guest@ctfrbt: {state.cwd}</span>
