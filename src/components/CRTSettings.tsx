@@ -25,7 +25,12 @@ export default function CRTSettings() {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("crtEffects");
       if (stored) {
-        setEffects(JSON.parse(stored));
+        try {
+          setEffects(JSON.parse(stored));
+        } catch {
+          // Corrupted data — clear and fall back to defaults
+          localStorage.removeItem("crtEffects");
+        }
       }
     }
   }, []);

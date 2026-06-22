@@ -8,6 +8,7 @@ declare module "next-auth" {
     isAdmin: boolean;
     teamId?: string;
     isTeamLeader: boolean;
+    sessionToken?: string;
   }
 
   interface Session {
@@ -29,5 +30,6 @@ declare module "next-auth/jwt" {
     isAdmin: boolean;
     teamId?: string;
     isTeamLeader: boolean;
+    sessionToken?: string;
   }
 }
