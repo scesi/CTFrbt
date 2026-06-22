@@ -365,74 +365,56 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     appendOutput("Session terminated. You are now guest.", "system");
   },
 
-  login: async (args, ctx) => {
-    const { setTerminalPrompt } = await import("./parser");
-    const { signIn } = await import("next-auth/react");
-
-    if (ctx.session?.user) {
-      ctx.appendOutput("Already logged in. Use 'logout' first.", "error");
-      return;
-    }
-
-    setTerminalPrompt(ctx, "Username: ", "prompt", (username) => {
-      if (!username) {
-        ctx.appendOutput("Login cancelled.", "error");
+  challenges: async (args, { appendOutput }) => {
+    try {
+      const data = await fetchCached("/api/challenges") as {
+        categories: string[];
+        challengesByCategory: Record<string, { id: string, title: string, difficulty: string, points: number, isSolved: boolean }[]>;
+      };
+      
+      if (!data.categories || data.categories.length === 0) {
+        appendOutput("No challenges available yet.");
         return;
       }
-      setTerminalPrompt(ctx, "Password: ", "password", async (password) => {
-        ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-        try {
-          const res = await signIn("credentials", {
-            alias: username,
-            password,
-            redirect: false,
-          });
-          if (res?.error) {
-            ctx.appendOutput(`Login failed: ${res.error}`, "error");
-          } else {
-            ctx.appendOutput(`Welcome back, ${username}. Access granted.`, "system");
-            // Force a reload to get session via next-auth
-            window.location.reload();
-          }
-        } finally {
-          ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-        }
-      });
-    });
-  },
 
-  register: async (args, ctx) => {
-    const { setTerminalPrompt } = await import("./parser");
-
-    if (ctx.session?.user) {
-      ctx.appendOutput("Already logged in. Use 'logout' first.", "error");
-      return;
+      appendOutput(
+        <div style={{ margin: "10px 0" }}>
+          <h2 style={{ color: "var(--neon-cyan)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "2px" }}>
+            CTF Challenges
+          </h2>
+          {data.categories.map((category) => (
+            <div key={category} style={{ marginBottom: "20px" }}>
+              <h3 style={{ color: "var(--neon-green)", borderBottom: "1px solid var(--neon-green)", paddingBottom: "4px", marginBottom: "8px" }}>
+                /challenges/{category}
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "10px" }}>
+                {data.challengesByCategory[category].map((c) => (
+                  <div key={c.id} style={{ 
+                    border: `1px solid ${c.isSolved ? "var(--neon-green)" : "var(--gray-600)"}`, 
+                    padding: "10px", 
+                    display: "flex", 
+                    flexDirection: "column",
+                    background: "rgba(0,0,0,0.3)"
+                  }}>
+                    <strong style={{ color: c.isSolved ? "var(--neon-green)" : "var(--gray-300)" }}>
+                      {c.title} {c.isSolved && "✓"}
+                    </strong>
+                    <div style={{ fontSize: "12px", color: "var(--neon-amber)", marginTop: "4px" }}>
+                      {c.difficulty} | {c.points} pts
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--gray-400)", marginTop: "8px" }}>
+                      Run: `cat challenges/{category}/{c.id}.txt`
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } catch {
+      appendOutput("Error loading challenges", "error");
     }
-
-    setTerminalPrompt(ctx, "New Username: ", "prompt", (username) => {
-      if (!username) {
-        ctx.appendOutput("Registration cancelled.", "error");
-        return;
-      }
-      setTerminalPrompt(ctx, "New Password: ", "password", async (password) => {
-        ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-        try {
-          const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ alias: username, name: username, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          ctx.appendOutput("Registration successful. You can now 'login'.", "system");
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : "Unknown error";
-          ctx.appendOutput(`Registration failed: ${msg}`, "error");
-        } finally {
-          ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-        }
-      });
-    });
   },
 
   submit: async (args, ctx) => {
