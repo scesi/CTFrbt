@@ -54,7 +54,7 @@ export default function Home() {
       >
         <pre
           style={{
-            fontSize: "12px",
+            fontSize: "clamp(12px, 2.2vw, 24px)",
             color: "var(--fg-dim)",
             lineHeight: 1.5,
           }}

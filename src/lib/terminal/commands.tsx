@@ -362,8 +362,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const { signOut } = await import("next-auth/react");
     appendOutput("Logging out...");
     await signOut({ redirect: false });
-    appendOutput("Session terminated. Reloading...", "system");
-    window.location.reload();
+    appendOutput("Session terminated. Redirecting to home...", "system");
+    window.location.href = "/";
   },
 
   challenges: async (args, { appendOutput }) => {
