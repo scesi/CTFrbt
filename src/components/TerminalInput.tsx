@@ -13,7 +13,11 @@ export default function TerminalInput() {
 
   // Auto-focus logic
   useEffect(() => {
-    const handleGlobalClick = () => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Do not steal focus if the user clicked on an interactive element
+      if (target.closest("input, textarea, button, a")) return;
+
       // Small delay to allow text selection if user is dragging
       setTimeout(() => {
         if (!window.getSelection()?.toString()) {
@@ -43,10 +47,10 @@ export default function TerminalInput() {
     } else if (e.key === "Tab") {
       e.preventDefault();
       if (state.isProcessing) return;
-      
+
       const { getAutocompleteCandidates } = await import("@/lib/terminal/commands");
       const candidates = await getAutocompleteCandidates(input, state.cwd);
-      
+
       if (candidates.length === 1) {
         const parts = input.split(" ");
         parts[parts.length - 1] = candidates[0];
@@ -105,7 +109,7 @@ export default function TerminalInput() {
 
   return (
     <div className="terminal-prompt-line" style={{ display: "flex", gap: "10px", marginTop: "10px", alignItems: "center" }}>
-      <span className="prompt-prefix" style={{ color: "var(--gray-300)", whiteSpace: "nowrap" }}>
+      <span className="prompt-prefix" style={{ color: "var(--fg)", whiteSpace: "nowrap" }}>
         {userPrefix}
       </span>
       <input
@@ -122,7 +126,7 @@ export default function TerminalInput() {
           flex: 1,
           background: "transparent",
           border: "none",
-          color: "var(--gray-300)",
+          color: "var(--fg)",
           fontFamily: "var(--font-mono)",
           fontSize: "1rem",
           outline: "none",

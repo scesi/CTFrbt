@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 // GET /api/admin/challenges — List all challenges (admin)
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const challenges = await prisma.challenge.findMany({
     include: {
       flags: true,
@@ -21,6 +29,11 @@ export async function GET() {
 
 // POST /api/admin/challenges — Create a new challenge
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const {
@@ -79,6 +92,7 @@ export async function POST(request: Request) {
       include: { flags: true, hints: true },
     });
 
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ challenge }, { status: 201 });
   } catch (error) {
     console.error("Challenge creation error:", error);

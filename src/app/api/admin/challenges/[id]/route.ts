@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { invalidate, CACHE_KEYS } from "@/lib/cache";
 
 // PUT /api/admin/challenges/[id] — Update a challenge
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {
@@ -41,6 +49,7 @@ export async function PUT(
       },
     });
 
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ challenge });
   } catch (error) {
     console.error("Challenge update error:", error);
@@ -56,10 +65,16 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {
     await prisma.challenge.delete({ where: { id } });
+    invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ message: "Challenge deleted" });
   } catch (error) {
     console.error("Challenge deletion error:", error);

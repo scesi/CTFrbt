@@ -1,16 +1,38 @@
 import React from "react";
 import { TerminalState, TerminalAction, OutputBlock } from "./types";
+import ChallengeView, { ChallengeData } from "@/components/ChallengeView";
 import { Session } from "next-auth";
+import { ScoreboardView } from "@/components/views/ScoreboardView";
+import { RulesView } from "@/components/views/RulesView";
+import { TeamView } from "@/components/views/TeamView";
+import { CategoryView } from "@/components/views/CategoryView";
 
-const apiCache: Record<string, unknown> = {};
+const CACHE_TTL_MS = 10_000; // same order of magnitude as server cache
 
-async function fetchCached(url: string) {
-  if (apiCache[url]) return apiCache[url];
+interface CacheEntry {
+  data: unknown;
+  expiry: number;
+}
+
+const apiCache: Record<string, CacheEntry> = {};
+
+async function fetchCached(url: string, force = false): Promise<unknown> {
+  const now = Date.now();
+  const cached = apiCache[url];
+
+  if (!force && cached && cached.expiry > now) {
+    return cached.data;
+  }
+
   const res = await fetch(url);
   if (!res.ok) throw new Error("API request failed");
   const data = await res.json();
-  apiCache[url] = data;
+  apiCache[url] = { data, expiry: now + CACHE_TTL_MS };
   return data;
+}
+
+function invalidateCache(url: string) {
+  delete apiCache[url];
 }
 
 function resolvePath(cwd: string, target: string): string {
@@ -89,23 +111,23 @@ export async function getAutocompleteCandidates(input: string, cwd: string): Pro
 
 export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   help: (args, { appendOutput }) => {
-    appendOutput(
-      <div>
-        <strong>Available Commands:</strong>
-        <ul style={{ listStyle: "none", padding: 0, margin: "10px 0" }}>
-          <li><span style={{ color: "var(--neon-green)" }}>help</span> - Show this message</li>
-          <li><span style={{ color: "var(--neon-green)" }}>clear</span> - Clear terminal screen</li>
-          <li><span style={{ color: "var(--neon-green)" }}>login</span> - Authenticate as user</li>
-          <li><span style={{ color: "var(--neon-green)" }}>logout</span> - End current session</li>
-          <li><span style={{ color: "var(--neon-green)" }}>whoami</span> - Display current user info</li>
-          <li><span style={{ color: "var(--neon-green)" }}>pwd</span> - Print working directory</li>
-          <li><span style={{ color: "var(--neon-green)" }}>ls</span> - List files and directories</li>
-          <li><span style={{ color: "var(--neon-green)" }}>cd &lt;dir&gt;</span> - Change directory</li>
-          <li><span style={{ color: "var(--neon-green)" }}>cat &lt;file&gt;</span> - View file contents</li>
-          <li><span style={{ color: "var(--neon-green)" }}>scoreboard</span> - View live leaderboard</li>
-        </ul>
-      </div>
-    );
+      appendOutput(
+        <div style={{ lineHeight: "1.6" }}>
+          <div>Available Commands:</div>
+          <ul style={{ listStyle: "none", paddingLeft: "15px", margin: "10px 0", color: "var(--fg-muted)" }}>
+            <li><span style={{ color: "var(--fg)" }}>help</span> - Show this message</li>
+            <li><span style={{ color: "var(--fg)" }}>clear</span> - Clear terminal screen</li>
+            <li><span style={{ color: "var(--fg)" }}>challenges</span> - View available CTF challenges</li>
+            <li><span style={{ color: "var(--fg)" }}>logout</span> - End current session</li>
+            <li><span style={{ color: "var(--fg)" }}>whoami</span> - Display current user info</li>
+            <li><span style={{ color: "var(--fg)" }}>pwd</span> - Print working directory</li>
+            <li><span style={{ color: "var(--fg)" }}>ls</span> - List files and directories</li>
+            <li><span style={{ color: "var(--fg)" }}>cd &lt;dir&gt;</span> - Change directory</li>
+            <li><span style={{ color: "var(--fg)" }}>cat &lt;file&gt;</span> - View file contents</li>
+            <li><span style={{ color: "var(--fg)" }}>scoreboard</span> - View live leaderboard</li>
+          </ul>
+        </div>
+      );
   },
 
   clear: (args, { clearHistory }) => {
@@ -128,38 +150,6 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
   pwd: (args, { state, appendOutput }) => {
     appendOutput(state.cwd);
-  },
-
-  scoreboard: async (args, { appendOutput }) => {
-    try {
-      const res = await fetch("/api/leaderboard");
-      if (!res.ok) throw new Error("Failed to fetch scoreboard");
-      const data = await res.json();
-      const teams = data.teams;
-      
-      if (!teams || teams.length === 0) {
-        appendOutput("Scoreboard is empty. No teams registered yet.");
-        return;
-      }
-
-      appendOutput(
-        <div style={{ margin: "10px 0" }}>
-          <div style={{ color: "var(--neon-cyan)", marginBottom: "5px" }}>
-            RANK | TEAM                | SCORE
-            <br />
-            ----------------------------------
-          </div>
-          {(teams as { id: string, name: string, score: number }[]).map((t, i) => (
-            <div key={t.id}>
-              {String(i + 1).padStart(4)} | {t.name.padEnd(20)} | {t.score}
-            </div>
-          ))}
-        </div>
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      appendOutput(`Error fetching scoreboard: ${msg}`, "error");
-    }
   },
 
   ls: async (args, { state, appendOutput }) => {
@@ -194,33 +184,18 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     }
 
     if (targetPath.startsWith("~/challenges/")) {
-      const category = targetPath.split("/")[2];
-      try {
-        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, difficulty: string, points: number }[]> };
-        const categoryChallenges = data.challengesByCategory[category] || [];
-        if (categoryChallenges.length === 0) {
-          appendOutput("No files found.");
-          return;
-        }
-        appendOutput(
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-            {categoryChallenges.map(c => (
-              <span key={c.id}>{c.id}.txt ({c.difficulty}, {c.points} pts)</span>
-            ))}
-          </div>
-        );
-      } catch {
-        appendOutput("Error listing challenges", "error");
+      const parts = targetPath.split("/");
+      if (parts.length === 3 && !targetPath.endsWith(".txt")) {
+        const category = parts[2];
+        appendOutput(<CategoryView category={category} />);
+        return;
       }
-      return;
     }
 
     if (targetPath === "~/teams") {
       try {
-        const res = await fetch("/api/leaderboard");
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        const teams = data.teams as { id: string, name: string, score: number }[];
+        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const teams = data.teams;
         if (!teams || teams.length === 0) {
           appendOutput("No files found.");
           return;
@@ -264,7 +239,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const targetPath = resolvePath(state.cwd, target);
 
     // If it's a directory
-    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" || 
+    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" ||
        (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3)) {
       appendOutput(`cat: ${target}: Is a directory`, "error");
       return;
@@ -272,7 +247,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/rules.txt") {
       try {
-        const rules = await fetchCached("/api/rules");
+        const rules = await fetchCached("/api/rules") as { value: string };
         appendOutput(<div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>);
       } catch {
         appendOutput("Error reading rules.txt", "error");
@@ -290,30 +265,26 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = parts[parts.length - 1];
       const challengeId = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/challenges") as { challengesByCategory: Record<string, { id: string, title: string, description: string, category: string, difficulty: string, points: number, link?: string }[]> };
+        const data = await fetchCached("/api/challenges") as {
+          challengesByCategory: Record<string, ChallengeData[]>;
+        };
         const allChallenges = Object.values(data.challengesByCategory).flat();
-        const challenge = allChallenges.find(c => c.id === challengeId);
-        
+        const challenge = allChallenges.find((c) => c.id === challengeId);
+
         if (!challenge) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
           return;
         }
 
         appendOutput(
-          <div style={{ border: "1px dashed var(--neon-blue)", padding: "10px", margin: "10px 0" }}>
-            <h3 style={{ color: "var(--neon-green)", margin: "0 0 10px 0" }}>{challenge.title}</h3>
-            <p style={{ whiteSpace: "pre-wrap", marginBottom: "10px" }}>{challenge.description}</p>
-            <div style={{ color: "var(--neon-amber)" }}>
-              Category: {challenge.category} | Difficulty: {challenge.difficulty} | Points: {challenge.points}
-            </div>
-            {challenge.link && (
-              <div style={{ marginTop: "10px" }}>
-                Target: <a href={challenge.link} target="_blank" rel="noreferrer" style={{ color: "var(--neon-cyan)" }}>{challenge.link}</a>
-              </div>
-            )}
-            <div style={{ marginTop: "10px", color: "var(--gray-400)" }}>
-              To submit: `submit {challenge.id} flag&#123;...&#125;`
-            </div>
+          <div style={{ margin: "16px 0" }}>
+            <ChallengeView
+              challenge={challenge}
+              onSolved={() => {
+                invalidateCache("/api/challenges");
+                invalidateCache("/api/leaderboard");
+              }}
+            />
           </div>
         );
       } catch {
@@ -326,10 +297,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = targetPath.split("/").pop() || "";
       const teamName = filename.replace(".txt", "");
       try {
-        const res = await fetch("/api/leaderboard");
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        const teams = data.teams as { id: string, name: string, score: number }[];
+        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const teams = data.teams;
         const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
         if (!team) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
@@ -337,7 +306,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         }
         appendOutput(
           <div style={{ border: "1px dashed var(--neon-cyan)", padding: "10px", margin: "10px 0" }}>
-            <h3 style={{ color: "var(--neon-green)", margin: "0 0 10px 0" }}>Team: {team.name}</h3>
+            <h3 style={{ margin: "0 0 10px 0" }}>Team: {team.name}</h3>
             <div style={{ color: "var(--neon-amber)" }}>Score: {team.score}</div>
           </div>
         );
@@ -354,77 +323,72 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const { signOut } = await import("next-auth/react");
     appendOutput("Logging out...");
     await signOut({ redirect: false });
-    appendOutput("Session terminated. You are now guest.", "system");
+    appendOutput("Session terminated. Redirecting to home...", "system");
+    window.location.href = "/";
   },
 
-  login: async (args, ctx) => {
-    const { setTerminalPrompt } = await import("./parser");
-    const { signIn } = await import("next-auth/react");
-
-    if (ctx.session?.user) {
-      ctx.appendOutput("Already logged in. Use 'logout' first.", "error");
-      return;
-    }
-
-    setTerminalPrompt(ctx, "Username: ", "prompt", (username) => {
-      if (!username) {
-        ctx.appendOutput("Login cancelled.", "error");
-        return;
-      }
-      setTerminalPrompt(ctx, "Password: ", "password", async (password) => {
-        ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-        try {
-          const res = await signIn("credentials", {
-            alias: username,
-            password,
-            redirect: false,
-          });
-          if (res?.error) {
-            ctx.appendOutput(`Login failed: ${res.error}`, "error");
-          } else {
-            ctx.appendOutput(`Welcome back, ${username}. Access granted.`, "system");
-            // Force a reload to get session via next-auth
-            window.location.reload();
-          }
-        } finally {
-          ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-        }
-      });
-    });
+  scoreboard: (args, { appendOutput }) => {
+    appendOutput(<ScoreboardView />);
   },
 
-  register: async (args, ctx) => {
-    const { setTerminalPrompt } = await import("./parser");
+  rules: (args, { appendOutput }) => {
+    appendOutput(<RulesView />);
+  },
 
-    if (ctx.session?.user) {
-      ctx.appendOutput("Already logged in. Use 'logout' first.", "error");
-      return;
-    }
+  team: (args, { appendOutput }) => {
+    appendOutput(<TeamView />);
+  },
 
-    setTerminalPrompt(ctx, "New Username: ", "prompt", (username) => {
-      if (!username) {
-        ctx.appendOutput("Registration cancelled.", "error");
+  challenges: async (args, { appendOutput }) => {
+    try {
+      const data = await fetchCached("/api/challenges") as {
+        categories: string[];
+        challengesByCategory: Record<string, { id: string, title: string, difficulty: string, points: number, isSolved: boolean }[]>;
+      };
+      
+      if (!data.categories || data.categories.length === 0) {
+        appendOutput("No challenges available yet.");
         return;
       }
-      setTerminalPrompt(ctx, "New Password: ", "password", async (password) => {
-        ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-        try {
-          const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ alias: username, name: username, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          ctx.appendOutput("Registration successful. You can now 'login'.", "system");
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : "Unknown error";
-          ctx.appendOutput(`Registration failed: ${msg}`, "error");
-        } finally {
-          ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-        }
-      });
-    });
+
+      appendOutput(
+        <div style={{ margin: "10px 0" }}>
+          <h2 style={{ color: "var(--neon-cyan)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "2px" }}>
+            CTF Challenges
+          </h2>
+          {data.categories.map((category) => (
+            <div key={category} style={{ marginBottom: "20px" }}>
+              <h3 style={{ color: "var(--fg)", borderBottom: "1px solid var(--fg-muted)", paddingBottom: "4px", marginBottom: "8px" }}>
+                /challenges/{category}
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "10px" }}>
+                {data.challengesByCategory[category].map((c) => (
+                  <div key={c.id} style={{ 
+                    border: `1px solid ${c.isSolved ? "var(--fg-muted)" : "var(--gray-600)"}`, 
+                    padding: "10px", 
+                    display: "flex", 
+                    flexDirection: "column",
+                    background: "rgba(0,0,0,0.3)"
+                  }}>
+                    <strong style={{ color: c.isSolved ? "var(--fg-muted)" : "var(--gray-300)" }}>
+                      {c.title} {c.isSolved && "✓"}
+                    </strong>
+                    <div style={{ fontSize: "12px", color: "var(--neon-amber)", marginTop: "4px" }}>
+                      {c.difficulty} | {c.points} pts
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--gray-400)", marginTop: "8px" }}>
+                      Run: `cat challenges/{category}/{c.id}.txt`
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } catch {
+      appendOutput("Error loading challenges", "error");
+    }
   },
 
   submit: async (args, ctx) => {
@@ -465,12 +429,16 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
       
-      if (data.isCorrect) {
+      if (data.correct) {
         ctx.appendOutput(
-          <div style={{ color: "var(--neon-green)" }}>
-            [SUCCESS] Correct flag! You gained {data.pointsGained} points.
+          <div style={{ color: "var(--success)" }}>
+            Flag submitted successfully!
+            <br />
+            You earned {data.points} points.
           </div>
         );
+        invalidateCache("/api/challenges");
+        invalidateCache("/api/leaderboard");
       } else {
         ctx.appendOutput(<div style={{ color: "var(--neon-amber)" }}>[FAILED] Incorrect flag.</div>);
       }
@@ -483,43 +451,13 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   hint: async (args, ctx) => {
-    if (!ctx.session?.user) {
-      ctx.appendOutput("You must be logged in to use hints.", "error");
-      return;
-    }
     const challengeId = args[0];
     if (!challengeId) {
-      ctx.appendOutput("Usage: hint <challenge_id>", "error");
+      ctx.appendOutput("Usage: hint <challenge_id> — or use 'cat challenges/<category>/<id>.txt' for the full interactive view.", "error");
       return;
     }
-
-    ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-    try {
-      // First fetch hints to see if any exist
-      const res = await fetch(`/api/hints?challengeId=${challengeId}`);
-      const hints = await res.json();
-      if (!hints || hints.length === 0) {
-        ctx.appendOutput("No hints available for this challenge.", "error");
-        return;
-      }
-
-      ctx.appendOutput(
-        <div style={{ border: "1px dashed var(--neon-amber)", padding: "10px", margin: "10px 0" }}>
-          <strong style={{ color: "var(--neon-amber)" }}>Available Hints for {challengeId}:</strong>
-          <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
-            {(hints as { id: string, cost: number, isUnlocked: boolean, content: string }[]).map((h, i) => (
-              <li key={h.id}>
-                Hint #{i + 1} ({h.cost} points) - {h.isUnlocked ? <span style={{color: "var(--neon-green)"}}>[UNLOCKED]: {h.content}</span> : "[LOCKED]"}
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      ctx.appendOutput(`Error: ${msg}`, "error");
-    } finally {
-      ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-    }
+    ctx.appendOutput(
+      `Tip: run 'cat challenges/<category>/${challengeId}.txt' to view and purchase hints interactively.`,
+    );
   }
 };
