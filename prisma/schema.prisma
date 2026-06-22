@@ -273,3 +273,12 @@ model UserSession {
 
   @@index([userId])
 }
+
+model TeamJoinAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
