@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <h1
         style={{
           fontSize: "28px",
@@ -45,9 +45,11 @@ export default function Home() {
           marginTop: "48px",
           padding: "20px",
           border: "1px solid var(--border)",
-          width: "fit-content",
-          marginLeft: "auto",
-          marginRight: "auto",
+          width: "100%",
+          flexGrow: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <pre
