@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { fetchCached } from "@/lib/terminal/cache";
 
 interface TeamMember {
   id: string;
@@ -29,8 +30,7 @@ export function TeamView() {
 
   const loadTeam = useCallback(async () => {
     try {
-      const res = await fetch("/api/teams");
-      const data = await res.json();
+      const data = await fetchCached("/api/teams") as { team: TeamData | null };
       setTeam(data.team);
     } catch (error) {
       console.error("Failed to load team:", error);

@@ -6,34 +6,8 @@ import { ScoreboardView } from "@/components/views/ScoreboardView";
 import { RulesView } from "@/components/views/RulesView";
 import { TeamView } from "@/components/views/TeamView";
 import { CategoryView } from "@/components/views/CategoryView";
+import { fetchCached, invalidateCache, apiCache } from "./cache";
 
-const CACHE_TTL_MS = 10_000; // same order of magnitude as server cache
-
-interface CacheEntry {
-  data: unknown;
-  expiry: number;
-}
-
-const apiCache: Record<string, CacheEntry> = {};
-
-async function fetchCached(url: string, force = false): Promise<unknown> {
-  const now = Date.now();
-  const cached = apiCache[url];
-
-  if (!force && cached && cached.expiry > now) {
-    return cached.data;
-  }
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("API request failed");
-  const data = await res.json();
-  apiCache[url] = { data, expiry: now + CACHE_TTL_MS };
-  return data;
-}
-
-function invalidateCache(url: string) {
-  delete apiCache[url];
-}
 
 function resolvePath(cwd: string, target: string): string {
   if (!target) return cwd;
