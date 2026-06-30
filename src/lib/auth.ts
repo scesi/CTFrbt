@@ -191,7 +191,7 @@ export const authOptions: NextAuthOptions = {
           dbSession.expiresAt < new Date()
         ) {
           // Invalidate session
-          return null as any;
+          return null as unknown as typeof session;
         }
 
         // Rehydrate session from database fresh to prevent privilege escalation via client JWT tampering
@@ -202,7 +202,7 @@ export const authOptions: NextAuthOptions = {
         session.user.teamId = dbSession.user.teamId || undefined;
         session.user.isTeamLeader = dbSession.user.isTeamLeader;
       } else {
-        return null as any;
+        return null as unknown as typeof session;
       }
       return session;
     },

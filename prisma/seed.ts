@@ -327,10 +327,12 @@ async function main() {
   console.log("  ✓ Unlock condition: pwn/Buffer Overflow requires web/SQL or Nothing");
 
   // ── Game config ─────────────────────────────────────────
+  const now = new Date();
+  // Set end time to 1 year from now so it doesn't end anytime soon
+  const endTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+
   const existingConfig = await prisma.gameConfig.findFirst();
   if (!existingConfig) {
-    const now = new Date();
-    const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     await prisma.gameConfig.create({
       data: {
         startTime: now,
@@ -338,9 +340,17 @@ async function main() {
         isActive: true,
       },
     });
+  } else {
+    await prisma.gameConfig.update({
+      where: { id: existingConfig.id },
+      data: {
+        endTime,
+        isActive: true,
+      },
+    });
   }
 
-  console.log("  ✓ Game config: 24h from now");
+  console.log("  ✓ Game config: 1 year from now");
 
   // ── Site config ─────────────────────────────────────────
   await prisma.siteConfig.upsert({
