@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { FiRefreshCw } from "react-icons/fi";
+import { fetchCached } from "@/lib/terminal/cache";
 
 interface TeamRank {
   rank: number;
@@ -22,23 +24,27 @@ export function ScoreboardView() {
     currentUserTeam: null,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const loadLeaderboard = useCallback(async () => {
+  const loadLeaderboard = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) setRefreshing(true);
     try {
-      const res = await fetch("/api/leaderboard");
-      const json = await res.json();
+      // force=true on manual refresh to bypass cache TTL
+      const json = await fetchCached("/api/leaderboard", isManualRefresh) as LeaderboardData;
       setData(json);
     } catch (error) {
       console.error("Failed to load leaderboard:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
+  // Single fetch on mount — no setInterval.
+  // Re-running the 'scoreboard' command is the refresh mechanism,
+  // just like running 'ls' again in a real terminal.
   useEffect(() => {
     loadLeaderboard();
-    const interval = setInterval(loadLeaderboard, 30000);
-    return () => clearInterval(interval);
   }, [loadLeaderboard]);
 
   if (loading) {
@@ -60,11 +66,35 @@ export function ScoreboardView() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
+        }}
       >
-        Scoreboard
-      </h1>
+        <h1 style={{ fontSize: "24px", fontWeight: 700 }}>Scoreboard</h1>
+        <button
+          onClick={() => loadLeaderboard(true)}
+          disabled={refreshing}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "transparent",
+            border: "1px solid var(--border)",
+            color: "var(--fg-dim)",
+            fontSize: "12px",
+            padding: "6px 10px",
+            cursor: refreshing ? "default" : "pointer",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          <FiRefreshCw size={12} className={refreshing ? "spin" : ""} />
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
 
       {/* Current team highlight */}
       {data.currentUserTeam && (
