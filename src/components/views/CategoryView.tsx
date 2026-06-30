@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 import toast from "react-hot-toast";
 import { ChallengeData } from "@/components/ChallengeView";
+import { fetchCached } from "@/lib/terminal/cache";
 
 export function CategoryView({ category }: { category: string }) {
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
@@ -12,8 +13,9 @@ export function CategoryView({ category }: { category: string }) {
 
   const loadChallenges = useCallback(async () => {
     try {
-      const res = await fetch("/api/challenges");
-      const data = await res.json();
+      const data = await fetchCached("/api/challenges") as {
+        challengesByCategory?: Record<string, ChallengeData[]>;
+      };
       const byCategory = data.challengesByCategory || {};
       setChallenges(byCategory[category] || []);
     } catch {

@@ -47,10 +47,10 @@ export default function TerminalInput() {
     } else if (e.key === "Tab") {
       e.preventDefault();
       if (state.isProcessing) return;
-      
+
       const { getAutocompleteCandidates } = await import("@/lib/terminal/commands");
       const candidates = await getAutocompleteCandidates(input, state.cwd);
-      
+
       if (candidates.length === 1) {
         const parts = input.split(" ");
         parts[parts.length - 1] = candidates[0];

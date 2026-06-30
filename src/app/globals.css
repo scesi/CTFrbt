@@ -373,6 +373,7 @@ body::after {
   border: 1px solid var(--border);
   border-radius: var(--terminal-radius);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
   overflow: hidden;
   backdrop-filter: blur(12px);
   position: relative;
@@ -389,6 +390,7 @@ body::after {
   border-bottom: 1px solid var(--border);
   user-select: none;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .window-controls {
@@ -764,6 +766,7 @@ a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
 }
 
 /* ---- Responsive ---- */
@@ -797,4 +800,14 @@ a:hover {
   .title-actions {
     display: none;
   }
+}
+
+/* ---- Utility Animations ---- */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }
