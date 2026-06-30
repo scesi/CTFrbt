@@ -10,13 +10,13 @@ export default function StatusBar() {
 
       <div className="status-item">
         <span style={{ color: "var(--fg-dim)" }}>
-          Type <strong style={{ color: "var(--fg-muted)" }}>help</strong> for
-          commands
+          Developed by <strong style={{ color: "var(--fg-muted)" }}>Stevenjoelrs</strong> for
+          SCESI security area
         </span>
       </div>
 
       <div className="status-item">
-        <span>CTFrbt v0.1.0</span>
+        <span>CTFrbt v1.0.4</span>
       </div>
     </footer>
   );

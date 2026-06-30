@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Providers from "@/components/Providers";
 import TerminalWindow from "@/components/TerminalWindow";
+import Background3D from "@/components/Background3D";
 import { Toaster } from "react-hot-toast";
 import { FaCheck, FaTimes } from "react-icons/fa";
 
@@ -34,6 +35,7 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${robotoMono.variable} ${inter.variable}`}>
         <Providers session={session}>
+          <Background3D />
           <TerminalWindow>{children}</TerminalWindow>
           <Toaster
             position="top-center"
