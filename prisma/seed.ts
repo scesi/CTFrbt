@@ -52,7 +52,13 @@ async function main() {
     create: { alias: "charlie", name: "Charlie", password: userPassword },
   });
 
-  console.log(`  ✓ Sample users: @alice, @bob, @charlie (password: "password")`);
+  const user4 = await prisma.user.upsert({
+    where: { alias: "Stevenjoelrs" },
+    update: {},
+    create: { alias: "Stevenjoelrs", name: "Steven Ramos", password: userPassword },
+  });
+
+  console.log(`  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`);
 
   // ── Teams ───────────────────────────────────────────────
   const teamAlpha = await prisma.team.upsert({
@@ -327,10 +333,12 @@ async function main() {
   console.log("  ✓ Unlock condition: pwn/Buffer Overflow requires web/SQL or Nothing");
 
   // ── Game config ─────────────────────────────────────────
+  const now = new Date();
+  // Set end time to 1 year from now so it doesn't end anytime soon
+  const endTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+
   const existingConfig = await prisma.gameConfig.findFirst();
   if (!existingConfig) {
-    const now = new Date();
-    const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     await prisma.gameConfig.create({
       data: {
         startTime: now,
@@ -338,9 +346,17 @@ async function main() {
         isActive: true,
       },
     });
+  } else {
+    await prisma.gameConfig.update({
+      where: { id: existingConfig.id },
+      data: {
+        endTime,
+        isActive: true,
+      },
+    });
   }
 
-  console.log("  ✓ Game config: 24h from now");
+  console.log("  ✓ Game config: 1 year from now");
 
   // ── Site config ─────────────────────────────────────────
   await prisma.siteConfig.upsert({
@@ -380,6 +396,7 @@ async function main() {
   console.log("  User logins:  alice / password");
   console.log("                bob / password");
   console.log("                charlie / password");
+  console.log("                Stevenjoelrs / password")
   console.log("  Team codes:   ALPHA001, BRAVO001\n");
 }
 
