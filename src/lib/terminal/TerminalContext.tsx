@@ -1,9 +1,21 @@
 "use client";
 
-import React, { createContext, useReducer, useContext, useCallback } from "react";
-import { TerminalAction, TerminalContextType, TerminalState, OutputBlock } from "./types";
+import React, {
+  createContext,
+  useReducer,
+  useContext,
+  useCallback,
+} from "react";
+import {
+  TerminalAction,
+  TerminalContextType,
+  TerminalState,
+  OutputBlock,
+} from "./types";
 import { parseCommand } from "./parser";
 import { useSession } from "next-auth/react";
+
+const MAX_HISTORY = 30; // Cantidad de comandos a mantener (cada uno genera 2 bloques: eco + salida)
 
 const ASCII_ART = `  ██████╗████████╗███████╗██████╗ ██████╗ ████████╗
  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗██╔══██╗╚══██╔══╝
@@ -24,7 +36,7 @@ const initialState: TerminalState = {
               padding: "20px",
               border: "1px solid var(--border)",
               maxWidth: "fit-content",
-              marginBottom: "15px"
+              marginBottom: "15px",
             }}
           >
             <pre
@@ -32,23 +44,40 @@ const initialState: TerminalState = {
                 fontSize: "12px",
                 color: "var(--fg-dim)",
                 lineHeight: 1.5,
-                margin: 0
+                margin: 0,
               }}
             >
               {ASCII_ART}
             </pre>
           </div>
           <div style={{ marginBottom: "20px", maxWidth: "600px" }}>
-            <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "16px", letterSpacing: "1px", color: "var(--fg)" }}>
+            <h1
+              style={{
+                fontSize: "28px",
+                fontWeight: 700,
+                marginBottom: "16px",
+                letterSpacing: "1px",
+                color: "var(--fg)",
+              }}
+            >
               Welcome to CTFrbt
             </h1>
-            <p style={{ color: "var(--fg-muted)", fontSize: "15px", lineHeight: 1.7, margin: 0 }}>
-              A retro terminal-themed Capture The Flag platform. Navigate challenges 
-              using terminal commands, submit flags, and climb the scoreboard.
+            <p
+              style={{
+                color: "var(--fg-muted)",
+                fontSize: "15px",
+                lineHeight: 1.7,
+                margin: 0,
+              }}
+            >
+              A retro terminal-themed Capture The Flag platform. Navigate
+              challenges using terminal commands, submit flags, and climb the
+              scoreboard.
             </p>
           </div>
           <div style={{ color: "var(--fg)", marginTop: "16px" }}>
-            CTFrbt STEVENOS v1.0.4 initialized.<br />
+            CTFrbt STEVENOS v1.0.4 initialized.
+            <br />
             Type &apos;help&apos; to see available commands.
           </div>
         </div>
@@ -61,10 +90,26 @@ const initialState: TerminalState = {
   promptPrefix: "",
 };
 
-function terminalReducer(state: TerminalState, action: TerminalAction): TerminalState {
+function terminalReducer(
+  state: TerminalState,
+  action: TerminalAction,
+): TerminalState {
   switch (action.type) {
-    case "APPEND_BLOCK":
-      return { ...state, history: [...state.history, action.payload] };
+    case "APPEND_BLOCK": {
+      const newHistory = [...state.history, action.payload];
+      const maxBlocks = MAX_HISTORY * 2 + 1; // +1 por el welcome
+
+      if (newHistory.length <= maxBlocks) {
+        return { ...state, history: newHistory };
+      }
+
+      // Mantener welcome + últimos MAX_HISTORY * 2 bloques
+      const trimmed = [
+        newHistory[0],
+        ...newHistory.slice(newHistory.length - MAX_HISTORY * 2),
+      ];
+      return { ...state, history: trimmed };
+    }
     case "CLEAR_HISTORY":
       return { ...state, history: [] };
     case "SET_CWD":
@@ -80,22 +125,30 @@ function terminalReducer(state: TerminalState, action: TerminalAction): Terminal
   }
 }
 
-const TerminalContext = createContext<TerminalContextType | undefined>(undefined);
+const TerminalContext = createContext<TerminalContextType | undefined>(
+  undefined,
+);
 
 export function TerminalProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(terminalReducer, initialState);
   const { data: session } = useSession();
 
-  const appendOutput = useCallback((content: React.ReactNode | string, type: OutputBlock["type"] = "output") => {
-    dispatch({
-      type: "APPEND_BLOCK",
-      payload: {
-        id: crypto.randomUUID(),
-        type,
-        content,
-      },
-    });
-  }, []);
+  const appendOutput = useCallback(
+    (
+      content: React.ReactNode | string,
+      type: OutputBlock["type"] = "output",
+    ) => {
+      dispatch({
+        type: "APPEND_BLOCK",
+        payload: {
+          id: crypto.randomUUID(),
+          type,
+          content,
+        },
+      });
+    },
+    [],
+  );
 
   const clearHistory = useCallback(() => {
     dispatch({ type: "CLEAR_HISTORY" });
@@ -107,12 +160,21 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
       if (!trimmed) return;
 
       // Echo command back to terminal
-      appendOutput(`${session?.user?.alias || "guest"}@ctfrbt:${state.cwd}$ ${trimmed}`, "command");
+      appendOutput(
+        `${session?.user?.alias || "guest"}@ctfrbt:${state.cwd}$ ${trimmed}`,
+        "command",
+      );
 
       dispatch({ type: "SET_PROCESSING", payload: true });
 
       try {
-        await parseCommand(trimmed, { state, dispatch, appendOutput, clearHistory, session });
+        await parseCommand(trimmed, {
+          state,
+          dispatch,
+          appendOutput,
+          clearHistory,
+          session,
+        });
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : "Command failed";
         appendOutput(`Error: ${msg}`, "error");
@@ -120,11 +182,13 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "SET_PROCESSING", payload: false });
       }
     },
-    [state, appendOutput, clearHistory, session]
+    [state, appendOutput, clearHistory, session],
   );
 
   return (
-    <TerminalContext.Provider value={{ state, dispatch, executeCommand, clearHistory, appendOutput }}>
+    <TerminalContext.Provider
+      value={{ state, dispatch, executeCommand, clearHistory, appendOutput }}
+    >
       {children}
     </TerminalContext.Provider>
   );
