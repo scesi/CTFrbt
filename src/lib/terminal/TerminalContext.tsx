@@ -103,11 +103,8 @@ function terminalReducer(
         return { ...state, history: newHistory };
       }
 
-      // Mantener welcome + últimos MAX_HISTORY * 2 bloques
-      const trimmed = [
-        newHistory[0],
-        ...newHistory.slice(newHistory.length - MAX_HISTORY * 2),
-      ];
+      // Mantener últimos MAX_HISTORY * 2 bloques (el welcome se descarta al truncar)
+      const trimmed = newHistory.slice(newHistory.length - MAX_HISTORY * 2);
       return { ...state, history: trimmed };
     }
     case "CLEAR_HISTORY":
