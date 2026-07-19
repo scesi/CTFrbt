@@ -1,9 +1,25 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text3D, Float, Center, OrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+
+// Decorative background — cap the render loop at this rate instead of the
+// display's 60/120Hz. The float/rotation animation reads the real clock,
+// so motion speed is unaffected.
+const BACKGROUND_FPS = 30;
+
+function FrameLimiter({ fps }: { fps: number }) {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    const id = setInterval(() => invalidate(), 1000 / fps);
+    return () => clearInterval(id);
+  }, [fps, invalidate]);
+
+  return null;
+}
 
 function ScesiLogo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -11,9 +27,10 @@ function ScesiLogo() {
 
   useFrame((state) => {
     if (groupRef.current) {
-      // Gentle pulsing or rotation
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+      groupRef.current.rotation.y =
+        Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
+      groupRef.current.rotation.x =
+        Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
     }
   });
 
@@ -62,24 +79,34 @@ function ScesiLogo() {
       <group ref={groupRef}>
         <Center>
           <group>
-            {/* Grupo interactivo solo para 'scesi' */}
-            <group
-              onPointerOver={(e) => {
-                e.stopPropagation();
-                document.body.style.cursor = "pointer";
-                setHovered(true);
-              }}
-              onPointerOut={(e) => {
-                e.stopPropagation();
-                document.body.style.cursor = "auto";
-                setHovered(false);
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open("https://www.scesi.org", "_blank");
-              }}
-            >
-              {/* sces en grande (low poly) */}
+            <group>
+              {/* Hitbox invisible: el raycast por mousemove golpea esta caja
+                  (12 triángulos) en vez de la geometría extruida del texto */}
+              <mesh
+                position={[(scesWidth + 1.2) / 2, 1.9, 0.2]}
+                visible={false}
+                onPointerOver={(e) => {
+                  e.stopPropagation();
+                  document.body.style.cursor = "pointer";
+                  setHovered(true);
+                }}
+                onPointerOut={(e) => {
+                  e.stopPropagation();
+                  document.body.style.cursor = "auto";
+                  setHovered(false);
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(
+                    "https://www.scesi.org",
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }}
+              >
+                <boxGeometry args={[scesWidth + 1.6, 4.8, 1.6]} />
+              </mesh>
+
               <Text3D
                 ref={scesRef}
                 font="/fonts/helvetiker_bold.typeface.json"
@@ -110,7 +137,6 @@ function ScesiLogo() {
               </mesh>
             </group>
 
-            {/* UMSS pequeño alineado a la izquierda bajo la 'sc' (Sin hover) */}
             <Text3D
               font="/fonts/helvetiker_bold.typeface.json"
               size={1.2}
@@ -150,20 +176,40 @@ export default function Background3D() {
           height: "100%",
           // Un drop-shadow blanco de 1-2px actúa como un "bloom" que engrosa visualmente las líneas
           // Luego aplicamos la aberración roja y azul que copiarán ese grosor
-          filter: "drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(4px 0px 0px rgba(255, 0, 80, 0.7)) drop-shadow(-4px 0px 0px rgba(0, 30, 255, 0.7)) contrast(1.8) brightness(1.2)",
+          filter:
+            "drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(4px 0px 0px rgba(255, 0, 80, 0.7)) drop-shadow(-4px 0px 0px rgba(0, 30, 255, 0.7)) contrast(1.8) brightness(1.2)",
           opacity: 0.9,
         }}
       >
-        <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
+        <Canvas
+          camera={{ position: [0, 0, 15], fov: 50 }}
+          // demand + FrameLimiter caps rendering at BACKGROUND_FPS instead of
+          // repainting at the display's refresh rate
+          frameloop="demand"
+          // Retina screens report dpr 2-3 → up to 9x the pixels for a blurred
+          // background; 1.5 is indistinguishable under the CRT filter
+          dpr={[1, 1.5]}
+          // The CRT filter already thickens/blurs lines, so antialiasing adds
+          // GPU cost with no visible benefit; low-power prefers the iGPU
+          gl={{ antialias: false, powerPreference: "low-power" }}
+        >
+          <FrameLimiter fps={BACKGROUND_FPS} />
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-          <pointLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
+          <pointLight
+            position={[-10, -10, -10]}
+            intensity={1}
+            color="#ffffff"
+          />
           <ScesiLogo />
-          <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
+          <OrbitControls
+            enableZoom={true}
+            enablePan={true}
+            enableRotate={true}
+          />
         </Canvas>
       </div>
 
-      {/* Capa propia de scanlines para el fondo 3D (restablecida) */}
       <div
         style={{
           position: "absolute",
@@ -172,7 +218,8 @@ export default function Background3D() {
           width: "100%",
           height: "100%",
           pointerEvents: "none",
-          background: "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
+          background:
+            "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
           backgroundSize: "100% 4px",
           zIndex: 1,
         }}

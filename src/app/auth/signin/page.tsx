@@ -25,7 +25,9 @@ export default function SignIn() {
 
       if (result?.error) {
         if (result.error === "CredentialsSignin") {
-          toast.error("Invalid credentials or too many attempts. Try again shortly.");
+          toast.error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         } else {
           toast.error(result.error);
         }

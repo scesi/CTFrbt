@@ -14,15 +14,27 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { title, content } = body;
 
-    if (!title || !content) {
+    if (
+      typeof title !== "string" ||
+      typeof content !== "string" ||
+      !title.trim() ||
+      !content.trim()
+    ) {
       return NextResponse.json(
         { error: "title and content are required" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    if (title.length > 120 || content.length > 2000) {
+      return NextResponse.json(
+        { error: "title (max 120 chars) or content (max 2000 chars) too long" },
+        { status: 400 },
       );
     }
 
     const announcement = await prisma.announcement.create({
-      data: { title, content },
+      data: { title: title.trim(), content: content.trim() },
     });
 
     return NextResponse.json({ announcement }, { status: 201 });
@@ -30,7 +42,7 @@ export async function POST(request: Request) {
     console.error("Announcement creation error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

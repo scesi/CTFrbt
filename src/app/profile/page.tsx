@@ -58,7 +58,9 @@ export default function Profile() {
         toast.error(data.error);
         return;
       }
-      toast.success(`Team "${data.team.name}" created! Code: ${data.team.code}`);
+      toast.success(
+        `Team "${data.team.name}" created! Code: ${data.team.code}`,
+      );
       loadTeam();
     } catch {
       toast.error("Failed to create team");
@@ -93,9 +95,7 @@ export default function Profile() {
   if (!session) {
     return (
       <div style={{ paddingTop: "32px" }}>
-        <p style={{ color: "var(--fg-dim)" }}>
-          Sign in to view your profile.
-        </p>
+        <p style={{ color: "var(--fg-dim)" }}>Sign in to view your profile.</p>
       </div>
     );
   }
@@ -119,9 +119,7 @@ export default function Profile() {
 
   return (
     <div style={{ paddingTop: "8px", maxWidth: "520px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
-      >
+      <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
         Profile
       </h1>
 
@@ -293,11 +291,7 @@ export default function Profile() {
                   required
                   style={{ flex: 1 }}
                 />
-                <button
-                  type="submit"
-                  className="btn"
-                  disabled={creating}
-                >
+                <button type="submit" className="btn" disabled={creating}>
                   Join
                 </button>
               </div>

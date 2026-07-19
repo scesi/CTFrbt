@@ -30,7 +30,9 @@ export function TeamView() {
 
   const loadTeam = useCallback(async () => {
     try {
-      const data = await fetchCached("/api/teams") as { team: TeamData | null };
+      const data = (await fetchCached("/api/teams")) as {
+        team: TeamData | null;
+      };
       setTeam(data.team);
     } catch (error) {
       console.error("Failed to load team:", error);
@@ -58,7 +60,9 @@ export function TeamView() {
         toast.error(data.error);
         return;
       }
-      toast.success(`Team "${data.team.name}" created! Code: ${data.team.code}`);
+      toast.success(
+        `Team "${data.team.name}" created! Code: ${data.team.code}`,
+      );
       invalidateCache("/api/teams");
       loadTeam();
     } catch {
@@ -95,9 +99,7 @@ export function TeamView() {
   if (!session) {
     return (
       <div style={{ paddingTop: "32px" }}>
-        <p style={{ color: "var(--fg-dim)" }}>
-          Sign in to view your profile.
-        </p>
+        <p style={{ color: "var(--fg-dim)" }}>Sign in to view your profile.</p>
       </div>
     );
   }
@@ -121,13 +123,10 @@ export function TeamView() {
 
   return (
     <div style={{ paddingTop: "8px", maxWidth: "520px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
-      >
+      <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
         Profile
       </h1>
 
-      {/* User info */}
       <div className="card" style={{ marginBottom: "24px" }}>
         <div
           style={{
@@ -148,7 +147,6 @@ export function TeamView() {
         </div>
       </div>
 
-      {/* Team section */}
       {team ? (
         <div className="card" style={{ marginBottom: "24px" }}>
           <div
@@ -233,7 +231,6 @@ export function TeamView() {
             You are not in a team
           </div>
 
-          {/* Create team */}
           <div className="card" style={{ marginBottom: "12px" }}>
             <form onSubmit={createTeam}>
               <label
@@ -270,7 +267,6 @@ export function TeamView() {
             </form>
           </div>
 
-          {/* Join team */}
           <div className="card">
             <form onSubmit={joinTeam}>
               <label
@@ -295,11 +291,7 @@ export function TeamView() {
                   required
                   style={{ flex: 1 }}
                 />
-                <button
-                  type="submit"
-                  className="btn"
-                  disabled={creating}
-                >
+                <button type="submit" className="btn" disabled={creating}>
                   Join
                 </button>
               </div>

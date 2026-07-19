@@ -8,7 +8,9 @@ import type { NextRequest } from "next/server";
 // prevention (not a hard security boundary, but raises the bar).
 
 const WINDOW_MS = 10_000; // 10-second window
-const MAX_REQUESTS = 30;  // 30 requests per window
+const MAX_REQUESTS = 30; // 30 requests per window
+const MAX_BUCKETS = 10_000; // hard cap — XFF is client-controlled, so an
+// attacker could otherwise grow the map unbounded
 
 interface Bucket {
   count: number;
@@ -22,6 +24,11 @@ function isRateLimited(ip: string): boolean {
   const bucket = ipBuckets.get(ip);
 
   if (!bucket || now >= bucket.resetAt) {
+    if (!bucket && ipBuckets.size >= MAX_BUCKETS) {
+      // Memory-exhaustion guard: drop all counters rather than grow further.
+      // Worst case is a briefly reset rate limit, not an OOM.
+      ipBuckets.clear();
+    }
     ipBuckets.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     return false;
   }
@@ -57,10 +64,7 @@ export async function middleware(request: NextRequest) {
   cleanupStale();
 
   if (isRateLimited(ip)) {
-    return NextResponse.json(
-      { error: "Too many requests" },
-      { status: 429 },
-    );
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   // --- Protect admin API routes ---
