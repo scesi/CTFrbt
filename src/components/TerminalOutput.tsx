@@ -14,13 +14,21 @@ export default function TerminalOutput() {
   }, [state.history]);
 
   return (
-    <div style={{ padding: "20px", display: "flex", flexDirection: "column", flexGrow: 1, overflowY: "auto" }}>
+    <div
+      style={{
+        padding: "20px",
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        overflowY: "auto",
+      }}
+    >
       {state.history.map((block) => (
         <div
           key={block.id}
           style={{
             marginBottom: block.type === "command" ? "5px" : "15px",
-            color: block.type === "error" ? "var(--neon-amber)" : "var(--fg)"
+            color: block.type === "error" ? "var(--neon-amber)" : "var(--fg)",
           }}
         >
           {block.content}

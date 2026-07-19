@@ -8,11 +8,28 @@ import crypto from "crypto";
 async function getClientIp(): Promise<string> {
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
-  if (!forwarded) {
-    console.error("X-Forwarded-For header missing — check Nginx config");
-    return `unknown-${crypto.randomUUID()}`;
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
   }
-  return forwarded.split(",")[0].trim();
+  const realIp = headersList.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+  console.error("X-Forwarded-For header missing — check Nginx config");
+  return `unknown-${crypto.randomUUID()}`;
+}
+
+const MAX_PASSWORD_LENGTH = 128;
+
+// Valid bcrypt hash compared against when the alias doesn't exist, so the
+// response takes the same time as a real password check (prevents user
+// enumeration via timing). Generated once per process.
+let dummyHash: string | null = null;
+async function getDummyHash(): Promise<string> {
+  if (!dummyHash) {
+    dummyHash = await bcrypt.hash(crypto.randomUUID(), 12);
+  }
+  return dummyHash;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -25,6 +42,12 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.alias || !credentials?.password) {
+          return null;
+        }
+
+        // Registration caps passwords at 128 chars — anything longer is
+        // invalid and would only waste bcrypt cycles (DoS vector).
+        if (credentials.password.length > MAX_PASSWORD_LENGTH) {
           return null;
         }
 
@@ -41,7 +64,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (failedAttemptsByIp >= 5) {
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         // 2. Alias Backoff check
@@ -81,7 +106,9 @@ export const authOptions: NextAuthOptions = {
             else if (failedAttemptsByAlias >= 5) requiredDelay = 120;
 
             if (secondsPassed < requiredDelay) {
-              throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+              throw new Error(
+                "Invalid credentials or too many attempts. Try again shortly.",
+              );
             }
           }
         }
@@ -112,21 +139,27 @@ export const authOptions: NextAuthOptions = {
                   expiresAt: { lt: new Date() },
                 },
               })
-              .catch((err) => console.error("Pruning expired sessions failed:", err));
+              .catch((err) =>
+                console.error("Pruning expired sessions failed:", err),
+              );
           }
         };
 
         if (!user) {
+          // Burn the same bcrypt time as a real check — see getDummyHash()
+          await bcrypt.compare(credentials.password, await getDummyHash());
           await prisma.loginAttempt.create({
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isValid) {
@@ -134,7 +167,9 @@ export const authOptions: NextAuthOptions = {
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         // Log successful login
@@ -214,7 +249,9 @@ export const authOptions: NextAuthOptions = {
           .delete({
             where: { sessionToken: token.sessionToken as string },
           })
-          .catch((err) => console.error("Error deleting session on signout:", err));
+          .catch((err) =>
+            console.error("Error deleting session on signout:", err),
+          );
       }
     },
   },

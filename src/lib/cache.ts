@@ -19,10 +19,14 @@ interface CacheEntry<T> {
 }
 
 const store = new Map<string, CacheEntry<unknown>>();
+const pending = new Map<string, Promise<unknown>>();
 
 /**
  * Returns cached data if still valid, otherwise calls `fetcher`,
  * caches the result for `ttlMs` milliseconds, and returns it.
+ *
+ * Concurrent misses for the same key share a single in-flight fetch
+ * instead of each hitting the database (cache-stampede protection).
  */
 export async function getOrSet<T>(
   key: string,
@@ -36,14 +40,28 @@ export async function getOrSet<T>(
     return cached.data;
   }
 
-  const data = await fetcher();
-  store.set(key, { data, expiry: now + ttlMs });
-  return data;
+  const inFlight = pending.get(key) as Promise<T> | undefined;
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = fetcher()
+    .then((data) => {
+      store.set(key, { data, expiry: Date.now() + ttlMs });
+      return data;
+    })
+    .finally(() => {
+      pending.delete(key);
+    });
+
+  pending.set(key, promise);
+  return promise;
 }
 
 /** Drop a specific cache entry (call after mutations). */
 export function invalidate(key: string): void {
   store.delete(key);
+  pending.delete(key);
 }
 
 // --------------- Well-known cache keys ---------------

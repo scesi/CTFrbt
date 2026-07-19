@@ -10,6 +10,18 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Running eslint directly (next lint is deprecated) lints the whole tree,
+  // so build artifacts and generated code must be ignored explicitly.
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "dist/**",
+      "prisma/generated/**",
+      "next-env.d.ts",
+    ],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 
