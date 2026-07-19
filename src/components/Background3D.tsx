@@ -27,7 +27,6 @@ function ScesiLogo() {
 
   useFrame((state) => {
     if (groupRef.current) {
-      // Gentle pulsing or rotation
       groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
       groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
     }
@@ -78,7 +77,6 @@ function ScesiLogo() {
       <group ref={groupRef}>
         <Center>
           <group>
-            {/* Grupo interactivo solo para 'scesi' */}
             <group>
               {/* Hitbox invisible: el raycast por mousemove golpea esta caja
                   (12 triángulos) en vez de la geometría extruida del texto */}
@@ -103,7 +101,6 @@ function ScesiLogo() {
                 <boxGeometry args={[scesWidth + 1.6, 4.8, 1.6]} />
               </mesh>
 
-              {/* sces en grande (low poly) */}
               <Text3D
                 ref={scesRef}
                 font="/fonts/helvetiker_bold.typeface.json"
@@ -134,7 +131,6 @@ function ScesiLogo() {
               </mesh>
             </group>
 
-            {/* UMSS pequeño alineado a la izquierda bajo la 'sc' (Sin hover) */}
             <Text3D
               font="/fonts/helvetiker_bold.typeface.json"
               size={1.2}
@@ -199,7 +195,6 @@ export default function Background3D() {
         </Canvas>
       </div>
 
-      {/* Capa propia de scanlines para el fondo 3D (restablecida) */}
       <div
         style={{
           position: "absolute",

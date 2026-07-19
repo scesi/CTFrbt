@@ -173,7 +173,6 @@ export default function ChallengeView({
 
   return (
     <div style={{ padding: "8px 0" }}>
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -203,7 +202,6 @@ export default function ChallengeView({
         <span>{challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}</span>
       </div>
 
-      {/* Description */}
       <div
         style={{
           marginBottom: "24px",
@@ -216,7 +214,6 @@ export default function ChallengeView({
         {challenge.description}
       </div>
 
-      {/* External link */}
       {challenge.link && (
         <div style={{ marginBottom: "20px" }}>
           <a
@@ -234,7 +231,6 @@ export default function ChallengeView({
         </div>
       )}
 
-      {/* Files */}
       {challenge.files.length > 0 && (
         <div style={{ marginBottom: "24px" }}>
           <h3
