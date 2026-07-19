@@ -96,7 +96,6 @@ export function ScoreboardView() {
         </button>
       </div>
 
-      {/* Current team highlight */}
       {data.currentUserTeam && (
         <div
           style={{
@@ -127,7 +126,6 @@ export function ScoreboardView() {
         </div>
       )}
 
-      {/* Leaderboard table */}
       {data.teams.length === 0 ? (
         <p style={{ color: "var(--fg-dim)", fontSize: "14px" }}>
           No teams registered yet.

@@ -24,7 +24,6 @@ export default function TerminalWindow({
           pointerEvents: "none",
         } : {}}
       >
-        {/* ---- Title Bar ---- */}
         <div className="title-bar" style={isMinimized ? { borderRadius: "10px", border: "1px solid var(--border)", pointerEvents: "auto" } : { pointerEvents: "auto" }}>
           <div className="window-controls">
             <button className="window-btn close" title="Close" />
@@ -39,7 +38,6 @@ export default function TerminalWindow({
           </div>
         </div>
 
-        {/* ---- Window Body ---- */}
         {!isMinimized && (
           <>
             <div className="window-body">
@@ -49,7 +47,6 @@ export default function TerminalWindow({
               </div>
             </div>
 
-            {/* ---- Status Bar ---- */}
             <StatusBar />
           </>
         )}

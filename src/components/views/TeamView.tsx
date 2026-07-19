@@ -127,7 +127,6 @@ export function TeamView() {
         Profile
       </h1>
 
-      {/* User info */}
       <div className="card" style={{ marginBottom: "24px" }}>
         <div
           style={{
@@ -148,7 +147,6 @@ export function TeamView() {
         </div>
       </div>
 
-      {/* Team section */}
       {team ? (
         <div className="card" style={{ marginBottom: "24px" }}>
           <div
@@ -233,7 +231,6 @@ export function TeamView() {
             You are not in a team
           </div>
 
-          {/* Create team */}
           <div className="card" style={{ marginBottom: "12px" }}>
             <form onSubmit={createTeam}>
               <label
@@ -270,7 +267,6 @@ export function TeamView() {
             </form>
           </div>
 
-          {/* Join team */}
           <div className="card">
             <form onSubmit={joinTeam}>
               <label
