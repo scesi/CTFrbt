@@ -22,14 +22,14 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "title and content are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (title.length > 120 || content.length > 2000) {
       return NextResponse.json(
         { error: "title (max 120 chars) or content (max 2000 chars) too long" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     console.error("Announcement creation error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

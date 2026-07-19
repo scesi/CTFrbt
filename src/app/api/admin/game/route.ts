@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     if (!startTime) {
       return NextResponse.json(
         { error: "startTime is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,14 +42,14 @@ export async function POST(request: Request) {
     if (isNaN(start.getTime()) || (end && isNaN(end.getTime()))) {
       return NextResponse.json(
         { error: "startTime/endTime must be valid dates" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (end && end <= start) {
       return NextResponse.json(
         { error: "endTime must be after startTime" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     console.error("Game config error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

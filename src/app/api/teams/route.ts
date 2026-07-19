@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   if (currentUser?.teamId) {
     return NextResponse.json(
       { error: "You are already in a team" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     if (!trimmedName || trimmedName.length > 32) {
       return NextResponse.json(
         { error: "Team name is required (max 32 chars)" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -103,34 +103,41 @@ export async function POST(request: Request) {
       if (err.code === "P2002") {
         return NextResponse.json(
           { error: "Team name is already taken" },
-          { status: 409 }
+          { status: 409 },
         );
       }
       if (err.message === "ALREADY_IN_TEAM") {
         return NextResponse.json(
           { error: "You are already in a team" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       console.error("Team creation error:", error);
       return NextResponse.json(
         { error: "Internal server error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json(
-      { message: "Team created", team: { id: team.id, name: team.name, code: team.code } },
-      { status: 201 }
+      {
+        message: "Team created",
+        team: { id: team.id, name: team.name, code: team.code },
+      },
+      { status: 201 },
     );
   }
 
   if (action === "join") {
     // Join an existing team by invite code
-    if (typeof teamCode !== "string" || !teamCode.trim() || teamCode.length > 64) {
+    if (
+      typeof teamCode !== "string" ||
+      !teamCode.trim() ||
+      teamCode.length > 64
+    ) {
       return NextResponse.json(
         { error: "Team code is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,7 +153,7 @@ export async function POST(request: Request) {
     if (recentFailures >= MAX_JOIN_FAILURES) {
       return NextResponse.json(
         { error: "Too many failed attempts. Try again later." },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -156,34 +163,37 @@ export async function POST(request: Request) {
     try {
       // Serializable transaction prevents race condition:
       // two concurrent joins can't both read count < MAX and both succeed
-      joinedTeam = await prisma.$transaction(async (tx) => {
-        const team = await tx.team.findUnique({
-          where: { code: teamCode.trim() },
-          include: { members: { select: { id: true } } },
-        });
+      joinedTeam = await prisma.$transaction(
+        async (tx) => {
+          const team = await tx.team.findUnique({
+            where: { code: teamCode.trim() },
+            include: { members: { select: { id: true } } },
+          });
 
-        if (!team) {
-          throw new Error("INVALID_CODE");
-        }
+          if (!team) {
+            throw new Error("INVALID_CODE");
+          }
 
-        if (team.members.length >= MAX_TEAM_MEMBERS) {
-          throw new Error("TEAM_FULL");
-        }
+          if (team.members.length >= MAX_TEAM_MEMBERS) {
+            throw new Error("TEAM_FULL");
+          }
 
-        // Conditional update guards the "already in a team" TOCTOU race
-        const joined = await tx.user.updateMany({
-          where: { id: session.user.id, teamId: null },
-          data: { teamId: team.id },
-        });
+          // Conditional update guards the "already in a team" TOCTOU race
+          const joined = await tx.user.updateMany({
+            where: { id: session.user.id, teamId: null },
+            data: { teamId: team.id },
+          });
 
-        if (joined.count === 0) {
-          throw new Error("ALREADY_IN_TEAM");
-        }
+          if (joined.count === 0) {
+            throw new Error("ALREADY_IN_TEAM");
+          }
 
-        return { id: team.id, name: team.name };
-      }, {
-        isolationLevel: "Serializable",
-      });
+          return { id: team.id, name: team.name };
+        },
+        {
+          isolationLevel: "Serializable",
+        },
+      );
     } catch (error: unknown) {
       const err = error as { message?: string; code?: string };
       if (err.message === "TEAM_FULL") {
@@ -191,13 +201,13 @@ export async function POST(request: Request) {
       } else if (err.message === "ALREADY_IN_TEAM") {
         return NextResponse.json(
           { error: "You are already in a team" },
-          { status: 400 }
+          { status: 400 },
         );
       } else if (err.code === "P2034") {
         // Serialization conflict — ask client to retry
         return NextResponse.json(
           { error: "Please try again" },
-          { status: 409 }
+          { status: 409 },
         );
       } else {
         failureReason = "INVALID_CODE";
@@ -210,15 +220,12 @@ export async function POST(request: Request) {
     });
 
     if (failureReason === "INVALID_CODE") {
-      return NextResponse.json(
-        { error: "Invalid team code" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Invalid team code" }, { status: 404 });
     }
     if (failureReason === "TEAM_FULL") {
       return NextResponse.json(
         { error: `Team is full (max ${MAX_TEAM_MEMBERS} members)` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

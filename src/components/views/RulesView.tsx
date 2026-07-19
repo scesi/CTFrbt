@@ -9,7 +9,7 @@ export function RulesView() {
 
   const loadRules = useCallback(async () => {
     try {
-      const data = await fetchCached("/api/rules") as { rules?: string };
+      const data = (await fetchCached("/api/rules")) as { rules?: string };
       setRules(data.rules || "");
     } catch (error) {
       console.error("Failed to load rules:", error);
@@ -41,9 +41,7 @@ export function RulesView() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
-      >
+      <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
         Rules
       </h1>
 

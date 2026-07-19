@@ -21,7 +21,10 @@ export type TerminalContextType = {
   dispatch: React.Dispatch<TerminalAction>;
   executeCommand: (cmd: string) => Promise<void>;
   clearHistory: () => void;
-  appendOutput: (content: ReactNode | string, type?: OutputBlock["type"]) => void;
+  appendOutput: (
+    content: ReactNode | string,
+    type?: OutputBlock["type"],
+  ) => void;
 };
 
 export type TerminalAction =

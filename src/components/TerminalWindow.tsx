@@ -16,19 +16,42 @@ export default function TerminalWindow({
     <div className="app-shell">
       <div
         className="terminal-window"
-        style={isMinimized ? {
-          background: "transparent",
-          backdropFilter: "none",
-          border: "none",
-          boxShadow: "none",
-          pointerEvents: "none",
-        } : {}}
+        style={
+          isMinimized
+            ? {
+                background: "transparent",
+                backdropFilter: "none",
+                border: "none",
+                boxShadow: "none",
+                pointerEvents: "none",
+              }
+            : {}
+        }
       >
-        <div className="title-bar" style={isMinimized ? { borderRadius: "10px", border: "1px solid var(--border)", pointerEvents: "auto" } : { pointerEvents: "auto" }}>
+        <div
+          className="title-bar"
+          style={
+            isMinimized
+              ? {
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  pointerEvents: "auto",
+                }
+              : { pointerEvents: "auto" }
+          }
+        >
           <div className="window-controls">
             <button className="window-btn close" title="Close" />
-            <button className="window-btn minimize" title="Minimize" onClick={() => setIsMinimized(true)} />
-            <button className="window-btn maximize" title="Restore" onClick={() => setIsMinimized(false)} />
+            <button
+              className="window-btn minimize"
+              title="Minimize"
+              onClick={() => setIsMinimized(true)}
+            />
+            <button
+              className="window-btn maximize"
+              title="Restore"
+              onClick={() => setIsMinimized(false)}
+            />
           </div>
 
           <span className="title-text">guest@ctfrbt: ~</span>

@@ -64,7 +64,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (failedAttemptsByIp >= 5) {
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         // 2. Alias Backoff check
@@ -104,7 +106,9 @@ export const authOptions: NextAuthOptions = {
             else if (failedAttemptsByAlias >= 5) requiredDelay = 120;
 
             if (secondsPassed < requiredDelay) {
-              throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+              throw new Error(
+                "Invalid credentials or too many attempts. Try again shortly.",
+              );
             }
           }
         }
@@ -135,7 +139,9 @@ export const authOptions: NextAuthOptions = {
                   expiresAt: { lt: new Date() },
                 },
               })
-              .catch((err) => console.error("Pruning expired sessions failed:", err));
+              .catch((err) =>
+                console.error("Pruning expired sessions failed:", err),
+              );
           }
         };
 
@@ -146,12 +152,14 @@ export const authOptions: NextAuthOptions = {
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isValid) {
@@ -159,7 +167,9 @@ export const authOptions: NextAuthOptions = {
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
         // Log successful login
@@ -239,7 +249,9 @@ export const authOptions: NextAuthOptions = {
           .delete({
             where: { sessionToken: token.sessionToken as string },
           })
-          .catch((err) => console.error("Error deleting session on signout:", err));
+          .catch((err) =>
+            console.error("Error deleting session on signout:", err),
+          );
       }
     },
   },

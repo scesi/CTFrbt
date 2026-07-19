@@ -7,7 +7,10 @@ interface CacheEntry {
 
 export const apiCache: Record<string, CacheEntry> = {};
 
-export async function fetchCached(url: string, force = false): Promise<unknown> {
+export async function fetchCached(
+  url: string,
+  force = false,
+): Promise<unknown> {
   const now = Date.now();
   const cached = apiCache[url];
 

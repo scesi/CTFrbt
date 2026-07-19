@@ -27,8 +27,10 @@ function ScesiLogo() {
 
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+      groupRef.current.rotation.y =
+        Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
+      groupRef.current.rotation.x =
+        Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
     }
   });
 
@@ -95,7 +97,11 @@ function ScesiLogo() {
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.open("https://www.scesi.org", "_blank", "noopener,noreferrer");
+                  window.open(
+                    "https://www.scesi.org",
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
                 }}
               >
                 <boxGeometry args={[scesWidth + 1.6, 4.8, 1.6]} />
@@ -170,7 +176,8 @@ export default function Background3D() {
           height: "100%",
           // Un drop-shadow blanco de 1-2px actúa como un "bloom" que engrosa visualmente las líneas
           // Luego aplicamos la aberración roja y azul que copiarán ese grosor
-          filter: "drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(4px 0px 0px rgba(255, 0, 80, 0.7)) drop-shadow(-4px 0px 0px rgba(0, 30, 255, 0.7)) contrast(1.8) brightness(1.2)",
+          filter:
+            "drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(4px 0px 0px rgba(255, 0, 80, 0.7)) drop-shadow(-4px 0px 0px rgba(0, 30, 255, 0.7)) contrast(1.8) brightness(1.2)",
           opacity: 0.9,
         }}
       >
@@ -189,9 +196,17 @@ export default function Background3D() {
           <FrameLimiter fps={BACKGROUND_FPS} />
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
-          <pointLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
+          <pointLight
+            position={[-10, -10, -10]}
+            intensity={1}
+            color="#ffffff"
+          />
           <ScesiLogo />
-          <OrbitControls enableZoom={true} enablePan={true} enableRotate={true} />
+          <OrbitControls
+            enableZoom={true}
+            enablePan={true}
+            enableRotate={true}
+          />
         </Canvas>
       </div>
 
@@ -203,7 +218,8 @@ export default function Background3D() {
           width: "100%",
           height: "100%",
           pointerEvents: "none",
-          background: "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
+          background:
+            "linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
           backgroundSize: "100% 4px",
           zIndex: 1,
         }}
