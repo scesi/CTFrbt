@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGameWindowStatus } from "@/lib/game-window";
+import { isChallengeUnlockedForTeam } from "@/lib/unlock";
 
-// GET /api/hints?challengeId=xxx — Get hints for a challenge
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId },
-    select: { isActive: true },
+    select: { id: true, isActive: true, isLocked: true },
   });
 
   if (!challenge?.isActive) {
@@ -32,6 +32,16 @@ export async function GET(request: Request) {
   }
 
   const teamId = session.user.teamId;
+
+  // Don't reveal hint ids/costs for a challenge the team hasn't unlocked
+  const unlocked = await isChallengeUnlockedForTeam(
+    challenge.id,
+    challenge.isLocked,
+    teamId,
+  );
+  if (!unlocked) {
+    return NextResponse.json({ error: "Challenge is locked" }, { status: 403 });
+  }
 
   const hints = await prisma.hint.findMany({
     where: { challengeId },
@@ -42,9 +52,9 @@ export async function GET(request: Request) {
       content: true,
       teamHints: teamId
         ? {
-            where: { teamId },
-            select: { id: true },
-          }
+          where: { teamId },
+          select: { id: true },
+        }
         : false,
     },
   });
@@ -104,17 +114,24 @@ export async function POST(request: Request) {
 
   const hint = await prisma.hint.findUnique({
     where: { id: hintId },
-    include: { challenge: { select: { isActive: true } } },
+    include: {
+      challenge: { select: { id: true, isActive: true, isLocked: true } },
+    },
   });
 
   if (!hint || !hint.challenge.isActive) {
     return NextResponse.json({ error: "Hint not found" }, { status: 404 });
   }
+  const unlocked = await isChallengeUnlockedForTeam(
+    hint.challenge.id,
+    hint.challenge.isLocked,
+    teamId,
+  );
+  if (!unlocked) {
+    return NextResponse.json({ error: "Challenge is locked" }, { status: 403 });
+  }
 
   try {
-    // Atomic purchase: the unique (teamId, hintId) constraint gates
-    // duplicates, and the balance check + deduction can't interleave
-    // with a concurrent purchase.
     await prisma.$transaction(
       async (tx) => {
         await tx.teamHint.create({
@@ -155,7 +172,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
     if (err.code === "P2002") {
-      // Already purchased by the team — safe to return the content
       return NextResponse.json(
         { message: "Hint already purchased", content: hint.content, cost: 0 },
         { status: 200 },
