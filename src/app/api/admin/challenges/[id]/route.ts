@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { invalidate, CACHE_KEYS } from "@/lib/cache";
+import { isValidChallengeLink, isValidPoints } from "@/lib/validation";
 
 // PUT /api/admin/challenges/[id] — Update a challenge
 export async function PUT(
@@ -31,6 +32,20 @@ export async function PUT(
       link,
       solveExplanation,
     } = body;
+
+    if (points !== undefined && !isValidPoints(points)) {
+      return NextResponse.json(
+        { error: "points must be a non-negative integer" },
+        { status: 400 }
+      );
+    }
+
+    if (link !== undefined && !isValidChallengeLink(link)) {
+      return NextResponse.json(
+        { error: "link must be an http(s) URL" },
+        { status: 400 }
+      );
+    }
 
     const challenge = await prisma.challenge.update({
       where: { id },

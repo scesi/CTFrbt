@@ -36,6 +36,23 @@ export async function POST(request: Request) {
       );
     }
 
+    const start = new Date(startTime);
+    const end = endTime ? new Date(endTime) : null;
+
+    if (isNaN(start.getTime()) || (end && isNaN(end.getTime()))) {
+      return NextResponse.json(
+        { error: "startTime/endTime must be valid dates" },
+        { status: 400 }
+      );
+    }
+
+    if (end && end <= start) {
+      return NextResponse.json(
+        { error: "endTime must be after startTime" },
+        { status: 400 }
+      );
+    }
+
     // Upsert — only one active game config
     const existing = await prisma.gameConfig.findFirst({
       orderBy: { createdAt: "desc" },
@@ -46,16 +63,16 @@ export async function POST(request: Request) {
       config = await prisma.gameConfig.update({
         where: { id: existing.id },
         data: {
-          startTime: new Date(startTime),
-          endTime: endTime ? new Date(endTime) : null,
+          startTime: start,
+          endTime: end,
           isActive: isActive !== false,
         },
       });
     } else {
       config = await prisma.gameConfig.create({
         data: {
-          startTime: new Date(startTime),
-          endTime: endTime ? new Date(endTime) : null,
+          startTime: start,
+          endTime: end,
           isActive: isActive !== false,
         },
       });
