@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import crypto from "crypto";
+import { withBcryptSlot } from "./bcrypt-limit";
 
 async function getClientIp(): Promise<string> {
   const headersList = await headers();
@@ -21,13 +22,10 @@ async function getClientIp(): Promise<string> {
 
 const MAX_PASSWORD_LENGTH = 128;
 
-// Valid bcrypt hash compared against when the alias doesn't exist, so the
-// response takes the same time as a real password check (prevents user
-// enumeration via timing). Generated once per process.
 let dummyHash: string | null = null;
 async function getDummyHash(): Promise<string> {
   if (!dummyHash) {
-    dummyHash = await bcrypt.hash(crypto.randomUUID(), 12);
+    dummyHash = await withBcryptSlot(() => bcrypt.hash(crypto.randomUUID(), 12));
   }
   return dummyHash;
 }
@@ -45,8 +43,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Registration caps passwords at 128 chars — anything longer is
-        // invalid and would only waste bcrypt cycles (DoS vector).
         if (credentials.password.length > MAX_PASSWORD_LENGTH) {
           return null;
         }
@@ -54,7 +50,6 @@ export const authOptions: NextAuthOptions = {
         const ip = await getClientIp();
         const minutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-        // 1. IP Hard Lockout check
         const failedAttemptsByIp = await prisma.loginAttempt.count({
           where: {
             ip,
@@ -69,14 +64,10 @@ export const authOptions: NextAuthOptions = {
           );
         }
 
-        // 2. Alias Backoff check
-        // Find last successful login for the alias
         const lastSuccess = await prisma.loginAttempt.findFirst({
           where: { alias: credentials.alias, success: true },
           orderBy: { createdAt: "desc" },
         });
-
-        // Count failed attempts since the last success (or last 15 mins)
         const sinceDate =
           lastSuccess && lastSuccess.createdAt > minutesAgo
             ? lastSuccess.createdAt
@@ -90,7 +81,6 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        // If backoff is active, check time since last failure
         if (failedAttemptsByAlias >= 3) {
           const lastFailed = await prisma.loginAttempt.findFirst({
             where: { alias: credentials.alias, success: false },
@@ -113,15 +103,11 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
-        // 3. User verification
         const user = await prisma.user.findUnique({
           where: { alias: credentials.alias },
         });
-
-        // Helper to run pruning probabilistically (2% chance)
         const runProbabilisticPruning = () => {
           if (Math.random() < 0.02) {
-            // Delete old login attempts
             prisma.loginAttempt
               .deleteMany({
                 where: {
@@ -132,7 +118,6 @@ export const authOptions: NextAuthOptions = {
               })
               .catch((err) => console.error("Pruning attempts failed:", err));
 
-            // Delete expired sessions
             prisma.userSession
               .deleteMany({
                 where: {
@@ -146,8 +131,10 @@ export const authOptions: NextAuthOptions = {
         };
 
         if (!user) {
-          // Burn the same bcrypt time as a real check — see getDummyHash()
-          await bcrypt.compare(credentials.password, await getDummyHash());
+          const dummyHashRef = await getDummyHash();
+          await withBcryptSlot(() =>
+            bcrypt.compare(credentials.password, dummyHashRef),
+          );
           await prisma.loginAttempt.create({
             data: { ip, alias: credentials.alias, success: false },
           });
@@ -157,9 +144,8 @@ export const authOptions: NextAuthOptions = {
           );
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password,
+        const isValid = await withBcryptSlot(() =>
+          bcrypt.compare(credentials.password, user.password),
         );
 
         if (!isValid) {
@@ -172,13 +158,10 @@ export const authOptions: NextAuthOptions = {
           );
         }
 
-        // Log successful login
         await prisma.loginAttempt.create({
           data: { ip, alias: credentials.alias, success: true },
         });
         runProbabilisticPruning();
-
-        // 4. Create database session
         const sessionToken = crypto.randomBytes(32).toString("hex");
         await prisma.userSession.create({
           data: {
@@ -225,11 +208,9 @@ export const authOptions: NextAuthOptions = {
           dbSession.userId !== token.id ||
           dbSession.expiresAt < new Date()
         ) {
-          // Invalidate session
           return null as unknown as typeof session;
         }
 
-        // Rehydrate session from database fresh to prevent privilege escalation via client JWT tampering
         session.user.id = dbSession.user.id;
         session.user.alias = dbSession.user.alias;
         session.user.name = dbSession.user.name;
@@ -261,6 +242,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours — typical CTF duration
+    maxAge: 24 * 60 * 60,
   },
 };
