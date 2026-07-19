@@ -1,9 +1,25 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text3D, Float, Center, OrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+
+// Decorative background — cap the render loop at this rate instead of the
+// display's 60/120Hz. The float/rotation animation reads the real clock,
+// so motion speed is unaffected.
+const BACKGROUND_FPS = 30;
+
+function FrameLimiter({ fps }: { fps: number }) {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    const id = setInterval(() => invalidate(), 1000 / fps);
+    return () => clearInterval(id);
+  }, [fps, invalidate]);
+
+  return null;
+}
 
 function ScesiLogo() {
   const groupRef = useRef<THREE.Group>(null);
@@ -63,22 +79,30 @@ function ScesiLogo() {
         <Center>
           <group>
             {/* Grupo interactivo solo para 'scesi' */}
-            <group
-              onPointerOver={(e) => {
-                e.stopPropagation();
-                document.body.style.cursor = "pointer";
-                setHovered(true);
-              }}
-              onPointerOut={(e) => {
-                e.stopPropagation();
-                document.body.style.cursor = "auto";
-                setHovered(false);
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open("https://www.scesi.org", "_blank");
-              }}
-            >
+            <group>
+              {/* Hitbox invisible: el raycast por mousemove golpea esta caja
+                  (12 triángulos) en vez de la geometría extruida del texto */}
+              <mesh
+                position={[(scesWidth + 1.2) / 2, 1.9, 0.2]}
+                visible={false}
+                onPointerOver={(e) => {
+                  e.stopPropagation();
+                  document.body.style.cursor = "pointer";
+                  setHovered(true);
+                }}
+                onPointerOut={(e) => {
+                  e.stopPropagation();
+                  document.body.style.cursor = "auto";
+                  setHovered(false);
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open("https://www.scesi.org", "_blank", "noopener,noreferrer");
+                }}
+              >
+                <boxGeometry args={[scesWidth + 1.6, 4.8, 1.6]} />
+              </mesh>
+
               {/* sces en grande (low poly) */}
               <Text3D
                 ref={scesRef}
@@ -154,7 +178,19 @@ export default function Background3D() {
           opacity: 0.9,
         }}
       >
-        <Canvas camera={{ position: [0, 0, 15], fov: 50 }}>
+        <Canvas
+          camera={{ position: [0, 0, 15], fov: 50 }}
+          // demand + FrameLimiter caps rendering at BACKGROUND_FPS instead of
+          // repainting at the display's refresh rate
+          frameloop="demand"
+          // Retina screens report dpr 2-3 → up to 9x the pixels for a blurred
+          // background; 1.5 is indistinguishable under the CRT filter
+          dpr={[1, 1.5]}
+          // The CRT filter already thickens/blurs lines, so antialiasing adds
+          // GPU cost with no visible benefit; low-power prefers the iGPU
+          gl={{ antialias: false, powerPreference: "low-power" }}
+        >
+          <FrameLimiter fps={BACKGROUND_FPS} />
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
           <pointLight position={[-10, -10, -10]} intensity={1} color="#ffffff" />
