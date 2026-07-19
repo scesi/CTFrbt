@@ -4,14 +4,14 @@
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) |
-| Runtime | Node.js |
-| Database | PostgreSQL + Prisma ORM |
-| Auth | NextAuth.js (Credentials) |
-| Styles | Vanilla CSS (CRT effects) |
-| UI | React 19 |
+| Layer     | Technology                |
+| --------- | ------------------------- |
+| Framework | Next.js 15 (App Router)   |
+| Runtime   | Node.js                   |
+| Database  | PostgreSQL + Prisma ORM   |
+| Auth      | NextAuth.js (Credentials) |
+| Styles    | Vanilla CSS (CRT effects) |
+| UI        | React 19                  |
 
 ## Development
 

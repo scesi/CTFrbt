@@ -41,7 +41,8 @@ export async function GET() {
 
   let currentUserTeam = null;
   if (session?.user?.teamId) {
-    currentUserTeam = rankedTeams.find((t) => t.id === session.user.teamId) || null;
+    currentUserTeam =
+      rankedTeams.find((t) => t.id === session.user.teamId) || null;
   }
 
   return NextResponse.json({ teams: rankedTeams, currentUserTeam });

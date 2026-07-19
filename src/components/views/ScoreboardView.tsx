@@ -30,7 +30,10 @@ export function ScoreboardView() {
     if (isManualRefresh) setRefreshing(true);
     try {
       // force=true on manual refresh to bypass cache TTL
-      const json = await fetchCached("/api/leaderboard", isManualRefresh) as LeaderboardData;
+      const json = (await fetchCached(
+        "/api/leaderboard",
+        isManualRefresh,
+      )) as LeaderboardData;
       setData(json);
     } catch (error) {
       console.error("Failed to load leaderboard:", error);
@@ -111,7 +114,9 @@ export function ScoreboardView() {
             <span style={{ color: "var(--fg-dim)", fontSize: "12px" }}>
               YOUR TEAM
             </span>
-            <div style={{ fontSize: "16px", fontWeight: 600, marginTop: "4px" }}>
+            <div
+              style={{ fontSize: "16px", fontWeight: 600, marginTop: "4px" }}
+            >
               #{data.currentUserTeam.rank} {data.currentUserTeam.name}
             </div>
           </div>

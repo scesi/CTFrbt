@@ -131,8 +131,10 @@ export default function ChallengeView({
       // Update hint in state
       setHints((prev) =>
         prev.map((h) =>
-          h.id === hintId ? { ...h, purchased: true, content: data.content } : h
-        )
+          h.id === hintId
+            ? { ...h, purchased: true, content: data.content }
+            : h,
+        ),
       );
 
       if (data.cost > 0) {
@@ -199,7 +201,9 @@ export default function ChallengeView({
         <span>{challenge.points} pts</span>
         <span>{challenge.difficulty}</span>
         <span>{challenge.category}</span>
-        <span>{challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}</span>
+        <span>
+          {challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}
+        </span>
       </div>
 
       <div
@@ -388,11 +392,11 @@ export default function ChallengeView({
                       marginBottom: hint.purchased ? "8px" : "0",
                     }}
                   >
-                    <span style={{ color: "var(--fg-dim)" }}>
-                      Hint {i + 1}
-                    </span>
+                    <span style={{ color: "var(--fg-dim)" }}>Hint {i + 1}</span>
                     {hint.purchased ? (
-                      <span style={{ color: "var(--success)", fontSize: "11px" }}>
+                      <span
+                        style={{ color: "var(--success)", fontSize: "11px" }}
+                      >
                         Purchased
                       </span>
                     ) : (

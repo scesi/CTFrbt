@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!session.user.teamId) {
     return NextResponse.json(
       { error: "You must be in a team to submit flags" },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const teamId = session.user.teamId;
@@ -38,14 +38,11 @@ export async function POST(request: Request) {
   if (gameStatus.state === "not_started") {
     return NextResponse.json(
       { error: "The CTF hasn't started yet" },
-      { status: 403 }
+      { status: 403 },
     );
   }
   if (gameStatus.state === "ended") {
-    return NextResponse.json(
-      { error: "The CTF has ended" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "The CTF has ended" }, { status: 403 });
   }
 
   // Rate limiting — DB-backed (works across serverless/multi-instance)
@@ -58,11 +55,11 @@ export async function POST(request: Request) {
 
   if (lastSub && now - lastSub.createdAt.getTime() < RATE_LIMIT_MS) {
     const waitSec = Math.ceil(
-      (RATE_LIMIT_MS - (now - lastSub.createdAt.getTime())) / 1000
+      (RATE_LIMIT_MS - (now - lastSub.createdAt.getTime())) / 1000,
     );
     return NextResponse.json(
       { error: `Rate limited. Wait ${waitSec}s before submitting again.` },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -73,15 +70,19 @@ export async function POST(request: Request) {
     if (typeof challengeId !== "string" || typeof flag !== "string") {
       return NextResponse.json(
         { error: "challengeId and flag are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const submittedFlag = flag.trim();
-    if (!challengeId || !submittedFlag || submittedFlag.length > MAX_FLAG_LENGTH) {
+    if (
+      !challengeId ||
+      !submittedFlag ||
+      submittedFlag.length > MAX_FLAG_LENGTH
+    ) {
       return NextResponse.json(
         { error: "challengeId and flag are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
     if (!challenge || !challenge.isActive) {
       return NextResponse.json(
         { error: "Challenge not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -103,12 +104,12 @@ export async function POST(request: Request) {
     const unlocked = await isChallengeUnlockedForTeam(
       challenge.id,
       challenge.isLocked,
-      teamId
+      teamId,
     );
     if (!unlocked) {
       return NextResponse.json(
         { error: "Challenge is locked" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
 
     if (challenge.multipleFlags && challenge.flags.length > 0) {
       const matchedFlag = challenge.flags.find((f) =>
-        safeEqual(f.flag, submittedFlag)
+        safeEqual(f.flag, submittedFlag),
       );
       if (matchedFlag) {
         isCorrect = true;
@@ -212,7 +213,7 @@ export async function POST(request: Request) {
 
         return { alreadySubmitted: false as const };
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "Serializable" },
     );
 
     if (result.alreadySubmitted) {
@@ -238,15 +239,12 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     // Serialization conflict — concurrent solve attempt; client can retry
     if ((error as { code?: string }).code === "P2034") {
-      return NextResponse.json(
-        { error: "Please try again" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Please try again" }, { status: 409 });
     }
     console.error("Submission error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

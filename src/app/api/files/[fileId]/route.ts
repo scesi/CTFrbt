@@ -15,7 +15,7 @@ function sanitizeFilename(name: string): string {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ fileId: string }> }
+  { params }: { params: Promise<{ fileId: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -40,13 +40,13 @@ export async function GET(
     const unlocked = await isChallengeUnlockedForTeam(
       file.challenge.id,
       file.challenge.isLocked,
-      session.user.teamId
+      session.user.teamId,
     );
 
     if (!unlocked) {
       return NextResponse.json(
         { error: "Challenge is locked" },
-        { status: 403 }
+        { status: 403 },
       );
     }
   }
@@ -58,10 +58,7 @@ export async function GET(
 
     // Guard against path traversal: ensure the resolved path stays within public/
     if (!filePath.startsWith(publicDir + path.sep)) {
-      return NextResponse.json(
-        { error: "Invalid file path" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid file path" }, { status: 400 });
     }
 
     const fileBuffer = await readFile(filePath);
@@ -74,9 +71,6 @@ export async function GET(
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: "File not accessible" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "File not accessible" }, { status: 500 });
   }
 }

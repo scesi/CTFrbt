@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   if (!challengeId) {
     return NextResponse.json(
       { error: "challengeId is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -28,10 +28,7 @@ export async function GET(request: Request) {
   });
 
   if (!challenge?.isActive) {
-    return NextResponse.json(
-      { error: "Challenge not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Challenge not found" }, { status: 404 });
   }
 
   const teamId = session.user.teamId;
@@ -81,7 +78,7 @@ export async function POST(request: Request) {
   if (!session.user.teamId) {
     return NextResponse.json(
       { error: "You must be in a team to purchase hints" },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const teamId = session.user.teamId;
@@ -91,7 +88,7 @@ export async function POST(request: Request) {
   if (gameStatus.state === "not_started") {
     return NextResponse.json(
       { error: "The CTF hasn't started yet" },
-      { status: 403 }
+      { status: 403 },
     );
   }
   if (gameStatus.state === "ended") {
@@ -102,10 +99,7 @@ export async function POST(request: Request) {
   const { hintId } = body;
 
   if (typeof hintId !== "string" || !hintId) {
-    return NextResponse.json(
-      { error: "hintId is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "hintId is required" }, { status: 400 });
   }
 
   const hint = await prisma.hint.findUnique({
@@ -148,12 +142,15 @@ export async function POST(request: Request) {
               points: -hint.cost,
               totalPoints: updatedTeam.score,
               reason: "HINT_PURCHASE",
-              metadata: JSON.stringify({ hintId, challengeId: hint.challengeId }),
+              metadata: JSON.stringify({
+                hintId,
+                challengeId: hint.challengeId,
+              }),
             },
           });
         }
       },
-      { isolationLevel: "Serializable" }
+      { isolationLevel: "Serializable" },
     );
   } catch (error: unknown) {
     const err = error as { message?: string; code?: string };
@@ -161,13 +158,13 @@ export async function POST(request: Request) {
       // Already purchased by the team — safe to return the content
       return NextResponse.json(
         { message: "Hint already purchased", content: hint.content, cost: 0 },
-        { status: 200 }
+        { status: 200 },
       );
     }
     if (err.message === "INSUFFICIENT_POINTS") {
       return NextResponse.json(
         { error: "Not enough points to purchase this hint" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (err.code === "P2034") {
@@ -176,7 +173,7 @@ export async function POST(request: Request) {
     console.error("Hint purchase error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

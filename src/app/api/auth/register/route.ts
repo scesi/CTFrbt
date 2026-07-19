@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Alias, name, and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     if (!trimmedAlias || !trimmedName || !password) {
       return NextResponse.json(
         { error: "Alias, name, and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,21 +37,21 @@ export async function POST(request: Request) {
           error:
             "Alias must be 3-32 characters: letters, numbers, underscore, dot, or dash",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (trimmedName.length > 48) {
       return NextResponse.json(
         { error: "Name must be 48 characters or less" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 6 || password.length > 128) {
       return NextResponse.json(
         { error: "Password must be between 6 and 128 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Alias is already taken" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -84,20 +84,20 @@ export async function POST(request: Request) {
         message: "Account created successfully",
         user: { id: user.id, alias: user.alias, name: user.name },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: unknown) {
     // Unique-constraint race between the existence check and the insert
     if ((error as { code?: string }).code === "P2002") {
       return NextResponse.json(
         { error: "Alias is already taken" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
