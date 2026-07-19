@@ -17,11 +17,9 @@ export async function GET() {
       const teams = await prisma.team.findMany({
         orderBy: { score: "desc" },
         include: {
-          members: {
-            select: { id: true, alias: true, name: true },
-          },
           _count: {
             select: {
+              members: true,
               submissions: { where: { isCorrect: true } },
             },
           },
@@ -35,7 +33,7 @@ export async function GET() {
         score: team.score,
         icon: team.icon,
         color: team.color,
-        memberCount: team.members.length,
+        memberCount: team._count.members,
         solveCount: team._count.submissions,
       }));
     },

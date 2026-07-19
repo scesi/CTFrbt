@@ -66,42 +66,58 @@ export async function POST(request: Request) {
 
   if (action === "create") {
     // Create a new team
-    if (!teamName || teamName.length > 32) {
+    const trimmedName = typeof teamName === "string" ? teamName.trim() : "";
+    if (!trimmedName || trimmedName.length > 32) {
       return NextResponse.json(
         { error: "Team name is required (max 32 chars)" },
         { status: 400 }
       );
     }
 
-    const existingTeam = await prisma.team.findUnique({
-      where: { name: teamName },
-    });
-
-    if (existingTeam) {
-      return NextResponse.json(
-        { error: "Team name is already taken" },
-        { status: 409 }
-      );
-    }
-
     // Generate a cryptographically secure invite code (48 bits → 12 hex chars)
     const code = crypto.randomBytes(6).toString("hex").toUpperCase();
 
-    const team = await prisma.team.create({
-      data: {
-        name: teamName,
-        code,
-        members: {
-          connect: { id: session.user.id },
-        },
-      },
-    });
+    let team: { id: string; name: string; code: string };
+    try {
+      // Atomic: if the leader assignment fails (user grabbed a team
+      // concurrently), the team creation rolls back too.
+      team = await prisma.$transaction(async (tx) => {
+        const created = await tx.team.create({
+          data: { name: trimmedName, code },
+        });
 
-    // Make user team leader
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { isTeamLeader: true },
-    });
+        // Conditional update guards the "already in a team" TOCTOU race
+        const joined = await tx.user.updateMany({
+          where: { id: session.user.id, teamId: null },
+          data: { teamId: created.id, isTeamLeader: true },
+        });
+
+        if (joined.count === 0) {
+          throw new Error("ALREADY_IN_TEAM");
+        }
+
+        return created;
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string; code?: string };
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { error: "Team name is already taken" },
+          { status: 409 }
+        );
+      }
+      if (err.message === "ALREADY_IN_TEAM") {
+        return NextResponse.json(
+          { error: "You are already in a team" },
+          { status: 400 }
+        );
+      }
+      console.error("Team creation error:", error);
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { message: "Team created", team: { id: team.id, name: team.name, code: team.code } },
@@ -111,7 +127,7 @@ export async function POST(request: Request) {
 
   if (action === "join") {
     // Join an existing team by invite code
-    if (!teamCode) {
+    if (typeof teamCode !== "string" || !teamCode.trim() || teamCode.length > 64) {
       return NextResponse.json(
         { error: "Team code is required" },
         { status: 400 }
@@ -142,7 +158,7 @@ export async function POST(request: Request) {
       // two concurrent joins can't both read count < MAX and both succeed
       joinedTeam = await prisma.$transaction(async (tx) => {
         const team = await tx.team.findUnique({
-          where: { code: teamCode },
+          where: { code: teamCode.trim() },
           include: { members: { select: { id: true } } },
         });
 
@@ -154,10 +170,15 @@ export async function POST(request: Request) {
           throw new Error("TEAM_FULL");
         }
 
-        await tx.user.update({
-          where: { id: session.user.id },
+        // Conditional update guards the "already in a team" TOCTOU race
+        const joined = await tx.user.updateMany({
+          where: { id: session.user.id, teamId: null },
           data: { teamId: team.id },
         });
+
+        if (joined.count === 0) {
+          throw new Error("ALREADY_IN_TEAM");
+        }
 
         return { id: team.id, name: team.name };
       }, {
@@ -167,6 +188,11 @@ export async function POST(request: Request) {
       const err = error as { message?: string; code?: string };
       if (err.message === "TEAM_FULL") {
         failureReason = "TEAM_FULL";
+      } else if (err.message === "ALREADY_IN_TEAM") {
+        return NextResponse.json(
+          { error: "You are already in a team" },
+          { status: 400 }
+        );
       } else if (err.code === "P2034") {
         // Serialization conflict — ask client to retry
         return NextResponse.json(

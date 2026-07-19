@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { invalidate, CACHE_KEYS } from "@/lib/cache";
+import { isValidChallengeLink, isValidPoints } from "@/lib/validation";
 
 // GET /api/admin/challenges — List all challenges (admin)
 export async function GET() {
@@ -52,9 +53,33 @@ export async function POST(request: Request) {
       hints,
     } = body;
 
-    if (!title || !description || !points || !category || !difficulty) {
+    if (!title || !description || points === undefined || !category || !difficulty) {
       return NextResponse.json(
         { error: "title, description, points, category, and difficulty are required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidPoints(points)) {
+      return NextResponse.json(
+        { error: "points must be a non-negative integer" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      (flags?.length && !flags.every((f: { points: unknown }) => isValidPoints(f.points))) ||
+      (hints?.length && !hints.every((h: { cost: unknown }) => isValidPoints(h.cost)))
+    ) {
+      return NextResponse.json(
+        { error: "flag points and hint costs must be non-negative integers" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidChallengeLink(link)) {
+      return NextResponse.json(
+        { error: "link must be an http(s) URL" },
         { status: 400 }
       );
     }
