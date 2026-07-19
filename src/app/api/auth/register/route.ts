@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
 
 const ALIAS_REGEX = /^[a-zA-Z0-9_.-]{3,32}$/;
 
@@ -9,7 +10,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { alias, name, password } = body;
 
-    // Validation — reject non-string payloads outright
     if (
       typeof alias !== "string" ||
       typeof name !== "string" ||
@@ -55,7 +55,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if alias already exists
     const existingUser = await prisma.user.findUnique({
       where: { alias: trimmedAlias },
     });
@@ -67,10 +66,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await withBcryptSlot(() => bcrypt.hash(password, 12));
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         alias: trimmedAlias,
@@ -87,11 +84,16 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: unknown) {
-    // Unique-constraint race between the existence check and the insert
     if ((error as { code?: string }).code === "P2002") {
       return NextResponse.json(
         { error: "Alias is already taken" },
         { status: 409 },
+      );
+    }
+    if (error instanceof BcryptBusyError) {
+      return NextResponse.json(
+        { error: "Server busy, please try again shortly" },
+        { status: 503 },
       );
     }
     console.error("Registration error:", error);
