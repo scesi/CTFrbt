@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const MAX_TITLE_LENGTH = 120;
+const MAX_CONTENT_LENGTH = 2000;
+
 // POST /api/admin/announcements — Create announcement
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -26,9 +29,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (title.length > 120 || content.length > 2000) {
+    if (title.length > MAX_TITLE_LENGTH) {
       return NextResponse.json(
-        { error: "title (max 120 chars) or content (max 2000 chars) too long" },
+        { error: `Title cannot exceed ${MAX_TITLE_LENGTH} characters` },
+        { status: 400 },
+      );
+    }
+
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json(
+        { error: `Content cannot exceed ${MAX_CONTENT_LENGTH} characters` },
         { status: 400 },
       );
     }
