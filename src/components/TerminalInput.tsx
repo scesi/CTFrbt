@@ -48,7 +48,8 @@ export default function TerminalInput() {
       e.preventDefault();
       if (state.isProcessing) return;
 
-      const { getAutocompleteCandidates } = await import("@/lib/terminal/commands");
+      const { getAutocompleteCandidates } =
+        await import("@/lib/terminal/commands");
       const candidates = await getAutocompleteCandidates(input, state.cwd);
 
       if (candidates.length === 1) {
@@ -58,7 +59,7 @@ export default function TerminalInput() {
         // but for simplicity, we just append a space to keep typing flowing.
         setInput(parts.join(" ") + " ");
       } else if (candidates.length > 1) {
-        // Optional: you could print candidates to the terminal, but for now we just 
+        // Optional: you could print candidates to the terminal, but for now we just
         // autocomplete up to the common prefix or do nothing.
         // A simple common prefix logic:
         const commonPrefix = candidates.reduce((a, b) => {
@@ -74,7 +75,7 @@ export default function TerminalInput() {
       }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      // ArrowUp history logic here - naive implementation: 
+      // ArrowUp history logic here - naive implementation:
       // just extract the previous commands from history array
       const cmdHistory = state.history.filter((b) => b.type === "command");
       if (cmdHistory.length > 0) {
@@ -83,7 +84,8 @@ export default function TerminalInput() {
           setHistoryIndex(nextIndex);
           // Commands format is: "user@ctfrbt:cwd$ command"
           // We need to extract just the command.
-          const raw = cmdHistory[cmdHistory.length - 1 - nextIndex].content as string;
+          const raw = cmdHistory[cmdHistory.length - 1 - nextIndex]
+            .content as string;
           const extracted = raw.split("$ ").slice(1).join("$ ");
           setInput(extracted);
         }
@@ -94,7 +96,8 @@ export default function TerminalInput() {
         const cmdHistory = state.history.filter((b) => b.type === "command");
         const nextIndex = historyIndex - 1;
         setHistoryIndex(nextIndex);
-        const raw = cmdHistory[cmdHistory.length - 1 - nextIndex].content as string;
+        const raw = cmdHistory[cmdHistory.length - 1 - nextIndex]
+          .content as string;
         const extracted = raw.split("$ ").slice(1).join("$ ");
         setInput(extracted);
       } else if (historyIndex === 0) {
@@ -105,11 +108,24 @@ export default function TerminalInput() {
   };
 
   const isPassword = state.inputMode === "password";
-  const userPrefix = state.promptPrefix || `${session?.user?.alias || "guest"}@ctfrbt:${state.cwd}$ `;
+  const userPrefix =
+    state.promptPrefix ||
+    `${session?.user?.alias || "guest"}@ctfrbt:${state.cwd}$ `;
 
   return (
-    <div className="terminal-prompt-line" style={{ display: "flex", gap: "10px", marginTop: "10px", alignItems: "center" }}>
-      <span className="prompt-prefix" style={{ color: "var(--fg)", whiteSpace: "nowrap" }}>
+    <div
+      className="terminal-prompt-line"
+      style={{
+        display: "flex",
+        gap: "10px",
+        marginTop: "10px",
+        alignItems: "center",
+      }}
+    >
+      <span
+        className="prompt-prefix"
+        style={{ color: "var(--fg)", whiteSpace: "nowrap" }}
+      >
         {userPrefix}
       </span>
       <input

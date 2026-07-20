@@ -176,9 +176,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
-      >
+      <h1 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
         Admin Panel
       </h1>
 
@@ -189,10 +187,22 @@ export default function AdminDashboard() {
         </h2>
         <form
           onSubmit={updateGameConfig}
-          style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            alignItems: "end",
+          }}
         >
           <div>
-            <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+            <label
+              style={{
+                fontSize: "11px",
+                color: "var(--fg-dim)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
               START
             </label>
             <input
@@ -205,7 +215,14 @@ export default function AdminDashboard() {
             />
           </div>
           <div>
-            <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+            <label
+              style={{
+                fontSize: "11px",
+                color: "var(--fg-dim)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
               END (optional)
             </label>
             <input
@@ -255,14 +272,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Challenges */}
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
           Challenges ({challenges.length})
         </h2>
-        <button
-          className="btn"
-          onClick={() => setShowForm(!showForm)}
-        >
+        <button className="btn" onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "+ New Challenge"}
         </button>
       </div>
@@ -271,7 +292,14 @@ export default function AdminDashboard() {
       {showForm && (
         <div className="card" style={{ marginBottom: "16px" }}>
           <form onSubmit={createChallenge}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+                marginBottom: "10px",
+              }}
+            >
               <input
                 type="text"
                 className="form-input"
@@ -292,18 +320,29 @@ export default function AdminDashboard() {
             <textarea
               className="form-input"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               placeholder="Description"
               required
               rows={4}
               style={{ marginBottom: "10px", resize: "vertical" }}
             />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                gap: "10px",
+                marginBottom: "10px",
+              }}
+            >
               <input
                 type="number"
                 className="form-input"
                 value={form.points}
-                onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+                onChange={(e) =>
+                  setForm({ ...form, points: Number(e.target.value) })
+                }
                 placeholder="Points"
                 required
                 min={1}
@@ -323,7 +362,9 @@ export default function AdminDashboard() {
               <select
                 className="form-input"
                 value={form.difficulty}
-                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, difficulty: e.target.value })
+                }
               >
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
@@ -338,7 +379,11 @@ export default function AdminDashboard() {
                 placeholder="Link (optional)"
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={creating}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={creating}
+            >
               {creating ? "Creating..." : "Create Challenge"}
             </button>
           </form>

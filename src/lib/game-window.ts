@@ -18,8 +18,10 @@ export type GameWindowStatus =
  * - `active`         → CTF is live, all systems go.
  */
 export async function getGameWindowStatus(): Promise<GameWindowStatus> {
-  const config = await getOrSet(CACHE_KEYS.GAME_CONFIG, GAME_CONFIG_TTL_MS, () =>
-    prisma.gameConfig.findFirst({ orderBy: { createdAt: "desc" } })
+  const config = await getOrSet(
+    CACHE_KEYS.GAME_CONFIG,
+    GAME_CONFIG_TTL_MS,
+    () => prisma.gameConfig.findFirst({ orderBy: { createdAt: "desc" } }),
   );
 
   if (!config || !config.isActive) {
