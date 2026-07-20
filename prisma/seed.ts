@@ -7,7 +7,7 @@ if (
   process.env.ALLOW_PROD_SEED !== "true"
 ) {
   console.error(
-    "❌ Refusing to seed in production. Set ALLOW_PROD_SEED=true to override."
+    "❌ Refusing to seed in production. Set ALLOW_PROD_SEED=true to override.",
   );
   process.exit(1);
 }
@@ -52,13 +52,19 @@ async function main() {
     create: { alias: "charlie", name: "Charlie", password: userPassword },
   });
 
-  const user4 = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { alias: "Stevenjoelrs" },
     update: {},
-    create: { alias: "Stevenjoelrs", name: "Steven Ramos", password: userPassword },
+    create: {
+      alias: "Stevenjoelrs",
+      name: "Steven Ramos",
+      password: userPassword,
+    },
   });
 
-  console.log(`  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`);
+  console.log(
+    `  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`,
+  );
 
   // ── Teams ───────────────────────────────────────────────
   const teamAlpha = await prisma.team.upsert({
@@ -156,8 +162,7 @@ async function main() {
     create: {
       id: "seed-crypto-01",
       title: "Caesar's Secret",
-      description:
-        "Decrypt this message:\n\nsync{fdhvdu_flskhu_lv_hdvb}",
+      description: "Decrypt this message:\n\nsync{fdhvdu_flskhu_lv_hdvb}",
       points: 50,
       flag: "flag{caesar_cipher_is_easy}",
       category: "crypto",
@@ -172,8 +177,7 @@ async function main() {
     create: {
       id: "seed-crypto-02",
       title: "Base Jumping",
-      description:
-        "Decode this:\n\nZmxhZ3tiYXNlNjRfaXNfbm90X2VuY3J5cHRpb259",
+      description: "Decode this:\n\nZmxhZ3tiYXNlNjRfaXNfbm90X2VuY3J5cHRpb259",
       points: 50,
       flag: "flag{base64_is_not_encryption}",
       category: "crypto",
@@ -312,7 +316,9 @@ async function main() {
     });
   }
 
-  console.log("  ✓ Challenges: 10 (web×3, crypto×3, forensics×1, reverse×1, pwn×1, misc×1)");
+  console.log(
+    "  ✓ Challenges: 10 (web×3, crypto×3, forensics×1, reverse×1, pwn×1, misc×1)",
+  );
   console.log("  ✓ Hints: 2 (for 'Hidden in Plain Sight')");
 
   // ── Unlock condition: pwn requires web-03 solved ────────
@@ -330,7 +336,9 @@ async function main() {
     });
   }
 
-  console.log("  ✓ Unlock condition: pwn/Buffer Overflow requires web/SQL or Nothing");
+  console.log(
+    "  ✓ Unlock condition: pwn/Buffer Overflow requires web/SQL or Nothing",
+  );
 
   // ── Game config ─────────────────────────────────────────
   const now = new Date();
@@ -396,7 +404,7 @@ async function main() {
   console.log("  User logins:  alice / password");
   console.log("                bob / password");
   console.log("                charlie / password");
-  console.log("                Stevenjoelrs / password")
+  console.log("                Stevenjoelrs / password");
   console.log("  Team codes:   ALPHA001, BRAVO001\n");
 }
 

@@ -1,0 +1,17 @@
+# Dependencies & build output
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Generated code
+prisma/generated/
+pnpm-lock.yaml
+next-env.d.ts
+
+# Assets
+public/
+
+# Local tooling
+.claude/

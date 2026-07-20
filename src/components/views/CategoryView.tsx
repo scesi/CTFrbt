@@ -13,7 +13,7 @@ export function CategoryView({ category }: { category: string }) {
 
   const loadChallenges = useCallback(async () => {
     try {
-      const data = await fetchCached("/api/challenges") as {
+      const data = (await fetchCached("/api/challenges")) as {
         challengesByCategory?: Record<string, ChallengeData[]>;
       };
       const byCategory = data.challengesByCategory || {};
@@ -31,7 +31,9 @@ export function CategoryView({ category }: { category: string }) {
 
   if (loading) {
     return (
-      <div style={{ color: "var(--fg-dim)", fontSize: "14px", padding: "10px 0" }}>
+      <div
+        style={{ color: "var(--fg-dim)", fontSize: "14px", padding: "10px 0" }}
+      >
         Loading {category} challenges...
       </div>
     );
@@ -39,7 +41,9 @@ export function CategoryView({ category }: { category: string }) {
 
   if (challenges.length === 0) {
     return (
-      <div style={{ color: "var(--fg-dim)", fontSize: "14px", padding: "10px 0" }}>
+      <div
+        style={{ color: "var(--fg-dim)", fontSize: "14px", padding: "10px 0" }}
+      >
         No challenges available in {category}.
       </div>
     );
@@ -90,7 +94,9 @@ export function CategoryView({ category }: { category: string }) {
             className={`card ${challenge.isSolved ? "solved" : ""} ${challenge.isLocked ? "locked" : ""}`}
             onClick={() => {
               if (!challenge.isLocked) {
-                executeCommand(`cat ~/challenges/${category}/${challenge.id}.txt`);
+                executeCommand(
+                  `cat ~/challenges/${category}/${challenge.id}.txt`,
+                );
               }
             }}
             style={{
@@ -132,9 +138,12 @@ export function CategoryView({ category }: { category: string }) {
                 color: "var(--fg-dim)",
               }}
             >
-              <span style={{ color: "var(--neon-amber)" }}>{challenge.difficulty}</span>
+              <span style={{ color: "var(--neon-amber)" }}>
+                {challenge.difficulty}
+              </span>
               <span>
-                {challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}
+                {challenge.solveCount} solve
+                {challenge.solveCount !== 1 ? "s" : ""}
               </span>
             </div>
           </div>

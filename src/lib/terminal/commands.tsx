@@ -8,11 +8,10 @@ import { TeamView } from "@/components/views/TeamView";
 import { CategoryView } from "@/components/views/CategoryView";
 import { fetchCached, invalidateCache, apiCache } from "./cache";
 
-
 function resolvePath(cwd: string, target: string): string {
   if (!target) return cwd;
   if (target === "~" || target === "/") return "~";
-  
+
   const basePath = target.startsWith("~/") ? "~" : cwd;
   const parts = basePath.split("/").filter(Boolean);
   const targetParts = target.replace(/^~\/?/, "").split("/").filter(Boolean);
@@ -31,20 +30,31 @@ function resolvePath(cwd: string, target: string): string {
 export type CommandContext = {
   state: TerminalState;
   dispatch: React.Dispatch<TerminalAction>;
-  appendOutput: (content: React.ReactNode | string, type?: OutputBlock["type"]) => void;
+  appendOutput: (
+    content: React.ReactNode | string,
+    type?: OutputBlock["type"],
+  ) => void;
   clearHistory: () => void;
   session: Session | null;
 };
 
-export type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
+export type CommandHandler = (
+  args: string[],
+  ctx: CommandContext,
+) => Promise<void> | void;
 
-export async function getAutocompleteCandidates(input: string, cwd: string): Promise<string[]> {
+export async function getAutocompleteCandidates(
+  input: string,
+  cwd: string,
+): Promise<string[]> {
   const parts = input.split(" ");
   const lastPart = parts[parts.length - 1] || "";
-  
+
   if (parts.length === 1) {
     // Autocomplete command
-    return Object.keys(COMMAND_REGISTRY).filter(cmd => cmd.startsWith(lastPart));
+    return Object.keys(COMMAND_REGISTRY).filter((cmd) =>
+      cmd.startsWith(lastPart),
+    );
   }
 
   const cmd = parts[0];
@@ -58,50 +68,89 @@ export async function getAutocompleteCandidates(input: string, cwd: string): Pro
   if (cwd === "~") {
     options = ["challenges", "teams", "rules.txt", "announcements.txt"];
   } else if (cwd === "~/challenges") {
-    const data = apiCache["/api/challenges"] as { categories?: string[] } | undefined;
+    const data = apiCache["/api/challenges"] as
+      { categories?: string[] } | undefined;
     if (data?.categories) {
       options = data.categories;
     }
   } else if (cwd.startsWith("~/challenges/")) {
     const category = cwd.split("/")[2];
-    const data = apiCache["/api/challenges"] as { challengesByCategory?: Record<string, { id: string }[]> } | undefined;
+    const data = apiCache["/api/challenges"] as
+      { challengesByCategory?: Record<string, { id: string }[]> } | undefined;
     if (data?.challengesByCategory?.[category]) {
       // For cat/ls we might want .txt, for submit/hint we just want the ID
       if (cmd === "submit" || cmd === "hint") {
-        options = data.challengesByCategory[category].map(c => c.id);
+        options = data.challengesByCategory[category].map((c) => c.id);
       } else {
-        options = data.challengesByCategory[category].map(c => c.id + ".txt");
+        options = data.challengesByCategory[category].map((c) => c.id + ".txt");
       }
     }
   } else if (cwd === "~/teams") {
-    const data = apiCache["/api/leaderboard"] as { teams?: { name: string }[] } | undefined;
+    const data = apiCache["/api/leaderboard"] as
+      { teams?: { name: string }[] } | undefined;
     if (data?.teams) {
-      options = data.teams.map(t => t.name.replace(/\s+/g, '_') + ".txt");
+      options = data.teams.map((t) => t.name.replace(/\s+/g, "_") + ".txt");
     }
   }
 
-  return options.filter(opt => opt.startsWith(lastPart));
+  return options.filter((opt) => opt.startsWith(lastPart));
 }
 
 export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   help: (args, { appendOutput }) => {
-      appendOutput(
-        <div style={{ lineHeight: "1.6" }}>
-          <div>Available Commands:</div>
-          <ul style={{ listStyle: "none", paddingLeft: "15px", margin: "10px 0", color: "var(--fg-muted)" }}>
-            <li><span style={{ color: "var(--fg)" }}>help</span> - Show this message</li>
-            <li><span style={{ color: "var(--fg)" }}>clear</span> - Clear terminal screen</li>
-            <li><span style={{ color: "var(--fg)" }}>challenges</span> - View available CTF challenges</li>
-            <li><span style={{ color: "var(--fg)" }}>logout</span> - End current session</li>
-            <li><span style={{ color: "var(--fg)" }}>whoami</span> - Display current user info</li>
-            <li><span style={{ color: "var(--fg)" }}>pwd</span> - Print working directory</li>
-            <li><span style={{ color: "var(--fg)" }}>ls</span> - List files and directories</li>
-            <li><span style={{ color: "var(--fg)" }}>cd &lt;dir&gt;</span> - Change directory</li>
-            <li><span style={{ color: "var(--fg)" }}>cat &lt;file&gt;</span> - View file contents</li>
-            <li><span style={{ color: "var(--fg)" }}>scoreboard</span> - View live leaderboard</li>
-          </ul>
-        </div>
-      );
+    appendOutput(
+      <div style={{ lineHeight: "1.6" }}>
+        <div>Available Commands:</div>
+        <ul
+          style={{
+            listStyle: "none",
+            paddingLeft: "15px",
+            margin: "10px 0",
+            color: "var(--fg-muted)",
+          }}
+        >
+          <li>
+            <span style={{ color: "var(--fg)" }}>help</span> - Show this message
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>clear</span> - Clear terminal
+            screen
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>challenges</span> - View
+            available CTF challenges
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>logout</span> - End current
+            session
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>whoami</span> - Display current
+            user info
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>pwd</span> - Print working
+            directory
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>ls</span> - List files and
+            directories
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>cd &lt;dir&gt;</span> - Change
+            directory
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>cat &lt;file&gt;</span> - View
+            file contents
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>scoreboard</span> - View live
+            leaderboard
+          </li>
+        </ul>
+      </div>,
+    );
   },
 
   clear: (args, { clearHistory }) => {
@@ -118,7 +167,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
         User: <strong>{session.user.alias}</strong>
         <br />
         Team ID: {session.user.teamId || "None"}
-      </div>
+      </div>,
     );
   },
 
@@ -131,25 +180,35 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~") {
       appendOutput(
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "10px",
+          }}
+        >
           <span style={{ color: "var(--neon-blue)" }}>challenges/</span>
           <span style={{ color: "var(--neon-blue)" }}>teams/</span>
           <span>rules.txt</span>
           <span>announcements.txt</span>
-        </div>
+        </div>,
       );
       return;
     }
-    
+
     if (targetPath === "~/challenges") {
       try {
-        const data = await fetchCached("/api/challenges") as { categories: string[] };
+        const data = (await fetchCached("/api/challenges")) as {
+          categories: string[];
+        };
         appendOutput(
           <div style={{ display: "flex", gap: "15px" }}>
-            {data.categories.map(c => (
-              <span key={c} style={{ color: "var(--neon-blue)" }}>{c}/</span>
+            {data.categories.map((c) => (
+              <span key={c} style={{ color: "var(--neon-blue)" }}>
+                {c}/
+              </span>
             ))}
-          </div>
+          </div>,
         );
       } catch {
         appendOutput("Error listing challenges", "error");
@@ -168,18 +227,27 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/teams") {
       try {
-        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const data = (await fetchCached("/api/leaderboard")) as {
+          teams: { id: string; name: string; score: number }[];
+        };
         const teams = data.teams;
         if (!teams || teams.length === 0) {
           appendOutput("No files found.");
           return;
         }
         appendOutput(
-          <div style={{ display: "flex", flexDirection: "column", gap: "5px", color: "var(--neon-cyan)" }}>
-            {teams.map(t => (
-              <span key={t.id}>{t.name.replace(/\s+/g, '_')}.txt</span>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              color: "var(--neon-cyan)",
+            }}
+          >
+            {teams.map((t) => (
+              <span key={t.id}>{t.name.replace(/\s+/g, "_")}.txt</span>
             ))}
-          </div>
+          </div>,
         );
       } catch {
         appendOutput("Error listing teams", "error");
@@ -187,7 +255,10 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       return;
     }
 
-    appendOutput(`ls: ${args[0] || targetPath}: No such file or directory`, "error");
+    appendOutput(
+      `ls: ${args[0] || targetPath}: No such file or directory`,
+      "error",
+    );
   },
 
   cd: (args, { state, dispatch, appendOutput }) => {
@@ -195,7 +266,12 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const newPath = resolvePath(state.cwd, target);
 
     // Naive directory validation
-    if (newPath === "~" || newPath === "~/challenges" || newPath === "~/teams" || newPath.startsWith("~/challenges/")) {
+    if (
+      newPath === "~" ||
+      newPath === "~/challenges" ||
+      newPath === "~/teams" ||
+      newPath.startsWith("~/challenges/")
+    ) {
       dispatch({ type: "SET_CWD", payload: newPath });
       return;
     }
@@ -213,16 +289,24 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const targetPath = resolvePath(state.cwd, target);
 
     // If it's a directory
-    if (targetPath === "~" || targetPath === "~/challenges" || targetPath === "~/teams" ||
-       (targetPath.startsWith("~/challenges/") && !targetPath.endsWith(".txt") && targetPath.split("/").length === 3)) {
+    if (
+      targetPath === "~" ||
+      targetPath === "~/challenges" ||
+      targetPath === "~/teams" ||
+      (targetPath.startsWith("~/challenges/") &&
+        !targetPath.endsWith(".txt") &&
+        targetPath.split("/").length === 3)
+    ) {
       appendOutput(`cat: ${target}: Is a directory`, "error");
       return;
     }
 
     if (targetPath === "~/rules.txt") {
       try {
-        const rules = await fetchCached("/api/rules") as { value: string };
-        appendOutput(<div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>);
+        const rules = (await fetchCached("/api/rules")) as { value: string };
+        appendOutput(
+          <div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>,
+        );
       } catch {
         appendOutput("Error reading rules.txt", "error");
       }
@@ -239,7 +323,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = parts[parts.length - 1];
       const challengeId = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/challenges") as {
+        const data = (await fetchCached("/api/challenges")) as {
           challengesByCategory: Record<string, ChallengeData[]>;
         };
         const allChallenges = Object.values(data.challengesByCategory).flat();
@@ -259,7 +343,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
                 invalidateCache("/api/leaderboard");
               }}
             />
-          </div>
+          </div>,
         );
       } catch {
         appendOutput("Error reading challenge", "error");
@@ -271,18 +355,30 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const filename = targetPath.split("/").pop() || "";
       const teamName = filename.replace(".txt", "");
       try {
-        const data = await fetchCached("/api/leaderboard") as { teams: { id: string, name: string, score: number }[] };
+        const data = (await fetchCached("/api/leaderboard")) as {
+          teams: { id: string; name: string; score: number }[];
+        };
         const teams = data.teams;
-        const team = teams.find(t => t.name.replace(/\s+/g, '_') === teamName);
+        const team = teams.find(
+          (t) => t.name.replace(/\s+/g, "_") === teamName,
+        );
         if (!team) {
           appendOutput(`cat: ${target}: No such file or directory`, "error");
           return;
         }
         appendOutput(
-          <div style={{ border: "1px dashed var(--neon-cyan)", padding: "10px", margin: "10px 0" }}>
+          <div
+            style={{
+              border: "1px dashed var(--neon-cyan)",
+              padding: "10px",
+              margin: "10px 0",
+            }}
+          >
             <h3 style={{ margin: "0 0 10px 0" }}>Team: {team.name}</h3>
-            <div style={{ color: "var(--neon-amber)" }}>Score: {team.score}</div>
-          </div>
+            <div style={{ color: "var(--neon-amber)" }}>
+              Score: {team.score}
+            </div>
+          </div>,
         );
       } catch {
         appendOutput("Error reading team info", "error");
@@ -315,11 +411,20 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
   challenges: async (args, { appendOutput }) => {
     try {
-      const data = await fetchCached("/api/challenges") as {
+      const data = (await fetchCached("/api/challenges")) as {
         categories: string[];
-        challengesByCategory: Record<string, { id: string, title: string, difficulty: string, points: number, isSolved: boolean }[]>;
+        challengesByCategory: Record<
+          string,
+          {
+            id: string;
+            title: string;
+            difficulty: string;
+            points: number;
+            isSolved: boolean;
+          }[]
+        >;
       };
-      
+
       if (!data.categories || data.categories.length === 0) {
         appendOutput("No challenges available yet.");
         return;
@@ -327,30 +432,71 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
       appendOutput(
         <div style={{ margin: "10px 0" }}>
-          <h2 style={{ color: "var(--neon-cyan)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "2px" }}>
+          <h2
+            style={{
+              color: "var(--neon-cyan)",
+              marginBottom: "16px",
+              textTransform: "uppercase",
+              letterSpacing: "2px",
+            }}
+          >
             CTF Challenges
           </h2>
           {data.categories.map((category) => (
             <div key={category} style={{ marginBottom: "20px" }}>
-              <h3 style={{ color: "var(--fg)", borderBottom: "1px solid var(--fg-muted)", paddingBottom: "4px", marginBottom: "8px" }}>
+              <h3
+                style={{
+                  color: "var(--fg)",
+                  borderBottom: "1px solid var(--fg-muted)",
+                  paddingBottom: "4px",
+                  marginBottom: "8px",
+                }}
+              >
                 /challenges/{category}
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "10px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                  gap: "10px",
+                }}
+              >
                 {data.challengesByCategory[category].map((c) => (
-                  <div key={c.id} style={{ 
-                    border: `1px solid ${c.isSolved ? "var(--fg-muted)" : "var(--gray-600)"}`, 
-                    padding: "10px", 
-                    display: "flex", 
-                    flexDirection: "column",
-                    background: "rgba(0,0,0,0.3)"
-                  }}>
-                    <strong style={{ color: c.isSolved ? "var(--fg-muted)" : "var(--gray-300)" }}>
+                  <div
+                    key={c.id}
+                    style={{
+                      border: `1px solid ${c.isSolved ? "var(--fg-muted)" : "var(--gray-600)"}`,
+                      padding: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      background: "rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <strong
+                      style={{
+                        color: c.isSolved
+                          ? "var(--fg-muted)"
+                          : "var(--gray-300)",
+                      }}
+                    >
                       {c.title} {c.isSolved && "✓"}
                     </strong>
-                    <div style={{ fontSize: "12px", color: "var(--neon-amber)", marginTop: "4px" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--neon-amber)",
+                        marginTop: "4px",
+                      }}
+                    >
                       {c.difficulty} | {c.points} pts
                     </div>
-                    <div style={{ fontSize: "12px", color: "var(--gray-400)", marginTop: "8px" }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--gray-400)",
+                        marginTop: "8px",
+                      }}
+                    >
                       Run: `cat challenges/{category}/{c.id}.txt`
                     </div>
                   </div>
@@ -358,7 +504,7 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
               </div>
             </div>
           ))}
-        </div>
+        </div>,
       );
     } catch {
       appendOutput("Error loading challenges", "error");
@@ -402,19 +548,23 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
-      
+
       if (data.correct) {
         ctx.appendOutput(
           <div style={{ color: "var(--success)" }}>
             Flag submitted successfully!
             <br />
             You earned {data.points} points.
-          </div>
+          </div>,
         );
         invalidateCache("/api/challenges");
         invalidateCache("/api/leaderboard");
       } else {
-        ctx.appendOutput(<div style={{ color: "var(--neon-amber)" }}>[FAILED] Incorrect flag.</div>);
+        ctx.appendOutput(
+          <div style={{ color: "var(--neon-amber)" }}>
+            [FAILED] Incorrect flag.
+          </div>,
+        );
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Unknown error";
@@ -427,11 +577,14 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   hint: async (args, ctx) => {
     const challengeId = args[0];
     if (!challengeId) {
-      ctx.appendOutput("Usage: hint <challenge_id> — or use 'cat challenges/<category>/<id>.txt' for the full interactive view.", "error");
+      ctx.appendOutput(
+        "Usage: hint <challenge_id> — or use 'cat challenges/<category>/<id>.txt' for the full interactive view.",
+        "error",
+      );
       return;
     }
     ctx.appendOutput(
       `Tip: run 'cat challenges/<category>/${challengeId}.txt' to view and purchase hints interactively.`,
     );
-  }
+  },
 };

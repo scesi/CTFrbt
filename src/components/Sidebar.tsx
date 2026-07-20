@@ -23,7 +23,11 @@ const FILE_TREE: TreeNode[] = [
       { label: "web", icon: "folder", command: "ls ~/challenges/web" },
       { label: "crypto", icon: "folder", command: "ls ~/challenges/crypto" },
       { label: "pwn", icon: "folder", command: "ls ~/challenges/pwn" },
-      { label: "forensics", icon: "folder", command: "ls ~/challenges/forensics" },
+      {
+        label: "forensics",
+        icon: "folder",
+        command: "ls ~/challenges/forensics",
+      },
       { label: "reverse", icon: "folder", command: "ls ~/challenges/reverse" },
       { label: "misc", icon: "folder", command: "ls ~/challenges/misc" },
     ],
@@ -45,7 +49,7 @@ function TreeItem({
   const [isOpen, setIsOpen] = useState(depth === 0);
   const hasChildren = node.children && node.children.length > 0;
   const isActive = node.href === pathname || false; // We don't really have active paths anymore for these
-  
+
   const { status } = useSession();
   const { executeCommand } = useTerminal();
   const router = useRouter();
@@ -93,7 +97,9 @@ function TreeItem({
       tabIndex={0}
       aria-expanded={hasChildren ? isOpen : undefined}
     >
-      <span className="tree-icon" style={{ fontSize: "15px" }}>{icon}</span>
+      <span className="tree-icon" style={{ fontSize: "15px" }}>
+        {icon}
+      </span>
       <span style={{ fontSize: "15px" }}>{node.label}</span>
     </div>
   );
