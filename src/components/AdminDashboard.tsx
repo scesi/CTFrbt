@@ -266,7 +266,7 @@ export default function AdminDashboard() {
             onChange={(e) => setAnnouncementTitle(e.target.value)}
             placeholder="Title"
             required
-	    maxLength={100}
+            maxLength={100}
             style={{ marginBottom: "8px" }}
           />
           <textarea
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
             placeholder="Content"
             required
             rows={3}
-	    maxLength={2000}
+            maxLength={2000}
             style={{ marginBottom: "8px", resize: "vertical" }}
           />
           <button type="submit" className="btn btn-primary">

@@ -64,9 +64,9 @@ export async function GET(request: Request) {
       content: true,
       teamHints: teamId
         ? {
-          where: { teamId },
-          select: { id: true },
-        }
+            where: { teamId },
+            select: { id: true },
+          }
         : false,
     },
   });

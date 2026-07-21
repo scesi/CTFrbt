@@ -691,8 +691,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
               </div>
             ) : (
               <div key={h.id} style={{ color: "var(--fg-muted)" }}>
-                [{i + 1}] locked — {h.cost > 0 ? `${h.cost} pts` : "free"}.
-                Run: `hint {challengeId} {i + 1}`
+                [{i + 1}] locked — {h.cost > 0 ? `${h.cost} pts` : "free"}. Run:
+                `hint {challengeId} {i + 1}`
               </div>
             ),
           )}
