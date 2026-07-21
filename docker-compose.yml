@@ -10,8 +10,6 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      # postgres:18+ images expect the volume at /var/lib/postgresql (data
-      # lives in a version-specific subdirectory to support pg_upgrade)
       - pgdata:/var/lib/postgresql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ctfrbt -d ctfrbt" ]
