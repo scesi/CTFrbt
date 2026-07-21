@@ -9,10 +9,14 @@ import type { UnlockCondition } from "../../../../prisma/generated/client";
 
 const CHALLENGES_TTL_MS = 15_000; // 15 seconds
 
-// GET /api/challenges — List all challenges grouped by category
+// GET /api/challenges — List all challenges grouped by category.
+// Auth required: challenge content is for registered players only.
 export async function GET() {
   const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.isAdmin === true;
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const isAdmin = session.user.isAdmin === true;
 
   // Game window enforcement — admins always see full content
   const gameStatus = await getGameWindowStatus();
@@ -25,28 +29,71 @@ export async function GET() {
   }
 
   // Cache the expensive challenge query (shared across all users)
-  const challenges = await getOrSet(
+  const { challenges, solveCounts } = await getOrSet(
     CACHE_KEYS.CHALLENGES,
     CHALLENGES_TTL_MS,
     async () => {
-      return prisma.challenge.findMany({
-        where: { isActive: true },
-        include: {
-          files: {
-            select: { id: true, name: true, size: true },
+      const [challenges, correctSubs] = await Promise.all([
+        prisma.challenge.findMany({
+          where: { isActive: true },
+          include: {
+            files: {
+              select: { id: true, name: true, size: true },
+            },
+            hints: {
+              select: { id: true, cost: true },
+            },
+            flags: {
+              select: { id: true, points: true },
+            },
           },
-          hints: {
-            select: { id: true, cost: true },
-          },
-          flags: {
-            select: { id: true, points: true },
-          },
-          _count: {
-            select: { submissions: { where: { isCorrect: true } } },
-          },
-        },
-        orderBy: [{ category: "asc" }, { points: "asc" }],
-      });
+          orderBy: [{ category: "asc" }, { points: "asc" }],
+        }),
+        prisma.submission.findMany({
+          where: { isCorrect: true },
+          select: { challengeId: true, teamId: true, flagId: true },
+        }),
+      ]);
+
+      // Solve count = teams that fully solved the challenge. Counting raw
+      // correct submissions would inflate multi-flag challenges (one per flag).
+      const capturedFlags = new Map<string, Map<string, Set<string>>>();
+      for (const sub of correctSubs) {
+        let teams = capturedFlags.get(sub.challengeId);
+        if (!teams) {
+          teams = new Map();
+          capturedFlags.set(sub.challengeId, teams);
+        }
+        let flags = teams.get(sub.teamId);
+        if (!flags) {
+          flags = new Set();
+          teams.set(sub.teamId, flags);
+        }
+        if (sub.flagId) flags.add(sub.flagId);
+      }
+
+      const solveCounts: Record<string, number> = {};
+      for (const challenge of challenges) {
+        const teams = capturedFlags.get(challenge.id);
+        if (!teams) {
+          solveCounts[challenge.id] = 0;
+        } else if (challenge.multipleFlags) {
+          let solved = 0;
+          for (const flags of teams.values()) {
+            if (
+              challenge.flags.length > 0 &&
+              flags.size >= challenge.flags.length
+            ) {
+              solved++;
+            }
+          }
+          solveCounts[challenge.id] = solved;
+        } else {
+          solveCounts[challenge.id] = teams.size;
+        }
+      }
+
+      return { challenges, solveCounts };
     },
   );
 
@@ -107,7 +154,7 @@ export async function GET() {
       difficulty: challenge.difficulty,
       isLocked,
       isSolved: solvedIdSet.has(challenge.id),
-      solveCount: challenge._count.submissions,
+      solveCount: solveCounts[challenge.id] ?? 0,
       multipleFlags: challenge.multipleFlags,
       link: isLocked ? null : challenge.link,
       files: isLocked ? [] : challenge.files,

@@ -5,6 +5,15 @@ import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import crypto from "crypto";
 import { withBcryptSlot } from "./bcrypt-limit";
+import { envInt } from "./env";
+
+// Shared-IP aware: many players sit behind one public IP (campus NAT, carrier
+// CGNAT), so the per-IP lockout is a high backstop; the per-alias backoff
+// below is the primary brute-force defense.
+const LOGIN_LOCKOUT_IP_MAX = envInt("LOGIN_LOCKOUT_IP_MAX", 60);
+
+// Must cover the whole event or players get logged out mid-competition.
+const SESSION_MAX_AGE_S = envInt("SESSION_MAX_AGE_HOURS", 72) * 60 * 60;
 
 async function getClientIp(): Promise<string> {
   const headersList = await headers();
@@ -58,7 +67,7 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (failedAttemptsByIp >= 5) {
+        if (failedAttemptsByIp >= LOGIN_LOCKOUT_IP_MAX) {
           throw new Error(
             "Invalid credentials or too many attempts. Try again shortly.",
           );
@@ -167,7 +176,7 @@ export const authOptions: NextAuthOptions = {
           data: {
             userId: user.id,
             sessionToken,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            expiresAt: new Date(Date.now() + SESSION_MAX_AGE_S * 1000),
           },
         });
 
@@ -242,6 +251,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60,
+    maxAge: SESSION_MAX_AGE_S,
   },
 };

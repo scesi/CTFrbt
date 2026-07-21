@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
+import { envInt } from "@/lib/env";
 
 // --------------- IP Rate Limiter ---------------
 
+// Per-IP limits are a coarse anti-flood backstop only: at a live event many
+// players share one public IP (campus NAT, carrier CGNAT on mobile data), so
+// these must stay high enough for ~100 players behind a single IP. Per-user
+// limits (alias backoff, submission cooldown, join lockout) carry the real
+// anti-abuse weight.
 const WINDOW_MS = 10_000;
-const MAX_REQUESTS = 30;
+const MAX_REQUESTS = envInt("RATE_LIMIT_IP_MAX", 600);
 const MAX_BUCKETS = 10_000;
 
 const AUTH_WINDOW_MS = 60_000;
-const AUTH_MAX_REQUESTS = 10;
+const AUTH_MAX_REQUESTS = envInt("RATE_LIMIT_AUTH_MAX", 120);
 
 interface Bucket {
   count: number;

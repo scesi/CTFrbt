@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FiFolder, FiFolderMinus, FiFile, FiLock } from "react-icons/fi";
 import { useSession } from "next-auth/react";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
+import { fetchCached } from "@/lib/terminal/cache";
 
 interface TreeNode {
   label: string;
@@ -15,26 +16,15 @@ interface TreeNode {
   solved?: boolean;
 }
 
-const FILE_TREE: TreeNode[] = [
-  {
-    label: "challenges",
-    icon: "folder",
-    children: [
-      { label: "web", icon: "folder", command: "ls ~/challenges/web" },
-      { label: "crypto", icon: "folder", command: "ls ~/challenges/crypto" },
-      { label: "pwn", icon: "folder", command: "ls ~/challenges/pwn" },
-      {
-        label: "forensics",
-        icon: "folder",
-        command: "ls ~/challenges/forensics",
-      },
-      { label: "reverse", icon: "folder", command: "ls ~/challenges/reverse" },
-      { label: "misc", icon: "folder", command: "ls ~/challenges/misc" },
-    ],
-  },
-  { label: "scoreboard", icon: "file", command: "scoreboard" },
-  { label: "rules", icon: "file", command: "rules" },
-  { label: "team", icon: "file", command: "team" },
+// Shown while unauthenticated or before the real categories load; the API is
+// the source of truth once the user is signed in.
+const DEFAULT_CATEGORIES = [
+  "web",
+  "crypto",
+  "pwn",
+  "forensics",
+  "reverse",
+  "misc",
 ];
 
 function TreeItem({
@@ -126,6 +116,42 @@ function TreeItem({
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { status } = useSession();
+  const [categories, setCategories] = useState<string[] | null>(null);
+
+  // Real categories come from the (client-cached) challenge listing, so a
+  // custom category created by the admin shows up without touching this file.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    fetchCached("/api/challenges")
+      .then((data) => {
+        const cats = (data as { categories?: string[] }).categories;
+        if (!cancelled && cats && cats.length > 0) setCategories(cats);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
+  const fileTree = useMemo<TreeNode[]>(
+    () => [
+      {
+        label: "challenges",
+        icon: "folder",
+        children: (categories ?? DEFAULT_CATEGORIES).map((category) => ({
+          label: category,
+          icon: "folder" as const,
+          command: `ls ~/challenges/${category}`,
+        })),
+      },
+      { label: "scoreboard", icon: "file", command: "scoreboard" },
+      { label: "rules", icon: "file", command: "rules" },
+      { label: "team", icon: "file", command: "team" },
+    ],
+    [categories],
+  );
 
   return (
     <>
@@ -142,7 +168,7 @@ export default function Sidebar() {
         </div>
         <nav className="sidebar-content">
           <ul className="file-tree">
-            {FILE_TREE.map((node) => (
+            {fileTree.map((node) => (
               <TreeItem key={node.label} node={node} pathname={pathname} />
             ))}
           </ul>

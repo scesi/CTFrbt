@@ -52,16 +52,6 @@ async function main() {
     create: { alias: "charlie", name: "Charlie", password: userPassword },
   });
 
-  await prisma.user.upsert({
-    where: { alias: "Stevenjoelrs" },
-    update: {},
-    create: {
-      alias: "Stevenjoelrs",
-      name: "Steven Ramos",
-      password: userPassword,
-    },
-  });
-
   console.log(
     `  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`,
   );
