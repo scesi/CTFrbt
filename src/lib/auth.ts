@@ -34,7 +34,9 @@ const MAX_PASSWORD_LENGTH = 128;
 let dummyHash: string | null = null;
 async function getDummyHash(): Promise<string> {
   if (!dummyHash) {
-    dummyHash = await withBcryptSlot(() => bcrypt.hash(crypto.randomUUID(), 12));
+    dummyHash = await withBcryptSlot(() =>
+      bcrypt.hash(crypto.randomUUID(), 12),
+    );
   }
   return dummyHash;
 }
