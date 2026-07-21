@@ -43,6 +43,20 @@ export default function AdminDashboard() {
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
 
+  // Suggestions for the category input: the usual set plus anything already
+  // in use, so custom categories are reusable without editing code.
+  const categoryOptions = Array.from(
+    new Set([
+      "web",
+      "crypto",
+      "pwn",
+      "forensics",
+      "reverse",
+      "misc",
+      ...challenges.map((c) => c.category),
+    ]),
+  );
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin");
     if (status === "authenticated" && !session?.user?.isAdmin) router.push("/");
@@ -347,18 +361,20 @@ export default function AdminDashboard() {
                 required
                 min={1}
               />
-              <select
+              <input
+                type="text"
                 className="form-input"
+                list="admin-category-options"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-              >
-                <option value="web">Web</option>
-                <option value="crypto">Crypto</option>
-                <option value="pwn">Pwn</option>
-                <option value="forensics">Forensics</option>
-                <option value="reverse">Reverse</option>
-                <option value="misc">Misc</option>
-              </select>
+                placeholder="Category"
+                required
+              />
+              <datalist id="admin-category-options">
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
               <select
                 className="form-input"
                 value={form.difficulty}
