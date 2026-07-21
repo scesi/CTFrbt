@@ -148,6 +148,26 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
             <span style={{ color: "var(--fg)" }}>scoreboard</span> - View live
             leaderboard
           </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>rules</span> - View competition
+            rules
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>team</span> - View or manage
+            your team
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>
+              submit &lt;challenge_id&gt; &lt;flag&gt;
+            </span>{" "}
+            - Submit a flag
+          </li>
+          <li>
+            <span style={{ color: "var(--fg)" }}>
+              hint &lt;challenge_id&gt; [n]
+            </span>{" "}
+            - List or purchase hints
+          </li>
         </ul>
       </div>,
     );
@@ -303,9 +323,11 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     if (targetPath === "~/rules.txt") {
       try {
-        const rules = (await fetchCached("/api/rules")) as { value: string };
+        const data = (await fetchCached("/api/rules")) as { rules?: string };
         appendOutput(
-          <div style={{ whiteSpace: "pre-wrap" }}>{rules.value}</div>,
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            {data.rules || "No rules have been configured yet."}
+          </div>,
         );
       } catch {
         appendOutput("Error reading rules.txt", "error");
@@ -575,16 +597,110 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   hint: async (args, ctx) => {
+    if (!ctx.session?.user) {
+      ctx.appendOutput("You must be logged in to view hints.", "error");
+      return;
+    }
+
     const challengeId = args[0];
     if (!challengeId) {
       ctx.appendOutput(
-        "Usage: hint <challenge_id> — or use 'cat challenges/<category>/<id>.txt' for the full interactive view.",
+        "Usage: hint <challenge_id> — list hints, hint <challenge_id> <n> — purchase hint #n",
         "error",
       );
       return;
     }
-    ctx.appendOutput(
-      `Tip: run 'cat challenges/<category>/${challengeId}.txt' to view and purchase hints interactively.`,
-    );
+
+    try {
+      const res = await fetch(
+        `/api/hints?challengeId=${encodeURIComponent(challengeId)}`,
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load hints");
+
+      const hints = (data.hints || []) as {
+        id: string;
+        cost: number;
+        purchased: boolean;
+        content: string | null;
+      }[];
+
+      if (hints.length === 0) {
+        ctx.appendOutput("No hints available for this challenge.");
+        return;
+      }
+
+      // hint <id> <n> — purchase (or re-show) hint #n
+      if (args[1] !== undefined) {
+        const index = Number.parseInt(args[1], 10);
+        const target = Number.isInteger(index) ? hints[index - 1] : undefined;
+        if (!target) {
+          ctx.appendOutput(
+            `No hint #${args[1]} — this challenge has ${hints.length} hint${hints.length !== 1 ? "s" : ""}.`,
+            "error",
+          );
+          return;
+        }
+
+        if (target.purchased) {
+          ctx.appendOutput(
+            <div style={{ whiteSpace: "pre-wrap" }}>
+              <span style={{ color: "var(--fg-dim)" }}>
+                Hint {index} (already purchased):{" "}
+              </span>
+              {target.content}
+            </div>,
+          );
+          return;
+        }
+
+        const buyRes = await fetch("/api/hints", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hintId: target.id }),
+        });
+        const buyData = await buyRes.json();
+        if (!buyRes.ok) throw new Error(buyData.error || "Purchase failed");
+
+        // Team score changed — drop caches that display it
+        invalidateCache("/api/leaderboard");
+        invalidateCache("/api/teams");
+
+        ctx.appendOutput(
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            <span style={{ color: "var(--neon-amber)" }}>
+              Hint {index} unlocked
+              {buyData.cost > 0 ? ` (-${buyData.cost} pts)` : " (free)"}:{" "}
+            </span>
+            {buyData.content}
+          </div>,
+        );
+        return;
+      }
+
+      // hint <id> — list hints with purchase state
+      ctx.appendOutput(
+        <div style={{ lineHeight: 1.7 }}>
+          {hints.map((h, i) =>
+            h.purchased ? (
+              <div key={h.id} style={{ whiteSpace: "pre-wrap" }}>
+                <span style={{ color: "var(--success)" }}>
+                  [{i + 1}] purchased:{" "}
+                </span>
+                {h.content}
+              </div>
+            ) : (
+              <div key={h.id} style={{ color: "var(--fg-muted)" }}>
+                [{i + 1}] locked — {h.cost > 0 ? `${h.cost} pts` : "free"}. Run:
+                `hint {challengeId} {i + 1}`
+              </div>
+            ),
+          )}
+        </div>,
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      ctx.appendOutput(`Error: ${msg}`, "error");
+    }
   },
 };
