@@ -19,7 +19,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "db:setup": "prisma migrate dev && prisma db seed",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
@@ -42,14 +46,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^15.2.5",
     "prettier": "^3.9.5",
     "prisma": "^6.7.0",
     "tsx": "^4.19.0",
-    "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
