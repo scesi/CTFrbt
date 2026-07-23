@@ -19,6 +19,7 @@ interface Challenge {
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<string>("challenges");
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -182,231 +183,327 @@ export default function AdminDashboard() {
         Admin Panel
       </h1>
 
-      {/* Game Config */}
-      <div className="card" style={{ marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-          Game Configuration
-        </h2>
-        <form
-          onSubmit={updateGameConfig}
-          style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
-        >
-          <div>
-            <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-              START
-            </label>
-            <input
-              type="datetime-local"
-              className="form-input"
-              value={gameStart}
-              onChange={(e) => setGameStart(e.target.value)}
-              required
-              style={{ width: "200px" }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-              END (optional)
-            </label>
-            <input
-              type="datetime-local"
-              className="form-input"
-              value={gameEnd}
-              onChange={(e) => setGameEnd(e.target.value)}
-              style={{ width: "200px" }}
-            />
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Save
-          </button>
-        </form>
-      </div>
-
-      {/* Announcements */}
-      <div className="card" style={{ marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-          New Announcement
-        </h2>
-        <form onSubmit={createAnnouncement}>
-          <input
-            type="text"
-            className="form-input"
-            value={announcementTitle}
-            onChange={(e) => setAnnouncementTitle(e.target.value)}
-            placeholder="Title"
-            required
-            style={{ marginBottom: "8px" }}
-          />
-          <textarea
-            className="form-input"
-            value={announcementContent}
-            onChange={(e) => setAnnouncementContent(e.target.value)}
-            placeholder="Content"
-            required
-            rows={3}
-            style={{ marginBottom: "8px", resize: "vertical" }}
-          />
-          <button type="submit" className="btn btn-primary">
-            Publish
-          </button>
-        </form>
-      </div>
-
-      {/* Challenges */}
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
-          Challenges ({challenges.length})
-        </h2>
+      {/* Tab Navigation */}
+      <div
+        style={{
+          display: "flex",
+          gap: "4px",
+          marginBottom: "20px",
+          paddingBottom: "8px",
+          borderBottom: "1px solid var(--border)",
+          flexWrap: "wrap",
+        }}
+      >
         <button
-          className="btn"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => setActiveTab("challenges")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "challenges" ? "var(--accent)" : "transparent",
+            color: activeTab === "challenges" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
         >
-          {showForm ? "Cancel" : "+ New Challenge"}
+          Challenges
+        </button>
+        <button
+          onClick={() => setActiveTab("users")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "users" ? "var(--accent)" : "transparent",
+            color: activeTab === "users" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Users
+        </button>
+        <button
+          onClick={() => setActiveTab("announcements")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "announcements" ? "var(--accent)" : "transparent",
+            color: activeTab === "announcements" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Announcements
+        </button>
+        <button
+          onClick={() => setActiveTab("configuration")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "configuration" ? "var(--accent)" : "transparent",
+            color: activeTab === "configuration" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Game Configuration
         </button>
       </div>
 
-      {/* New challenge form */}
-      {showForm && (
-        <div className="card" style={{ marginBottom: "16px" }}>
-          <form onSubmit={createChallenge}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
-              <input
-                type="text"
-                className="form-input"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Title"
-                required
-              />
-              <input
-                type="text"
-                className="form-input"
-                value={form.flag}
-                onChange={(e) => setForm({ ...form, flag: e.target.value })}
-                placeholder="flag{...}"
-                required
-              />
+      {/* Tab Content */}
+
+      {/* Challenges Tab */}
+      {activeTab === "challenges" && (
+        <>
+          {/* Challenges header */}
+          <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
+              Challenges ({challenges.length})
+            </h2>
+            <button
+              className="btn"
+              onClick={() => setShowForm(!showForm)}
+            >
+              {showForm ? "Cancel" : "+ New Challenge"}
+            </button>
+          </div>
+
+          {/* New challenge form */}
+          {showForm && (
+            <div className="card" style={{ marginBottom: "16px" }}>
+              <form onSubmit={createChallenge}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="Title"
+                    required
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={form.flag}
+                    onChange={(e) => setForm({ ...form, flag: e.target.value })}
+                    placeholder="flag{...}"
+                    required
+                  />
+                </div>
+                <textarea
+                  className="form-input"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Description"
+                  required
+                  rows={4}
+                  style={{ marginBottom: "10px", resize: "vertical" }}
+                />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={form.points}
+                    onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+                    placeholder="Points"
+                    required
+                    min={1}
+                  />
+                  <select
+                    className="form-input"
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  >
+                    <option value="web">Web</option>
+                    <option value="crypto">Crypto</option>
+                    <option value="pwn">Pwn</option>
+                    <option value="forensics">Forensics</option>
+                    <option value="reverse">Reverse</option>
+                    <option value="misc">Misc</option>
+                  </select>
+                  <select
+                    className="form-input"
+                    value={form.difficulty}
+                    onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="insane">Insane</option>
+                  </select>
+                  <input
+                    type="url"
+                    className="form-input"
+                    value={form.link}
+                    onChange={(e) => setForm({ ...form, link: e.target.value })}
+                    placeholder="Link (optional)"
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={creating}>
+                  {creating ? "Creating..." : "Create Challenge"}
+                </button>
+              </form>
             </div>
+          )}
+
+          {/* Challenges table */}
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th style={{ textAlign: "right" }}>Pts</th>
+                <th>Diff</th>
+                <th style={{ textAlign: "right" }}>Solves</th>
+                <th>Status</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {challenges.map((c) => (
+                <tr key={c.id}>
+                  <td style={{ fontWeight: 500 }}>{c.title}</td>
+                  <td>{c.category}</td>
+                  <td style={{ textAlign: "right" }}>{c.points}</td>
+                  <td>{c.difficulty}</td>
+                  <td style={{ textAlign: "right" }}>{c._count.submissions}</td>
+                  <td>
+                    <span
+                      style={{
+                        color: c.isActive ? "var(--success)" : "var(--danger)",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {c.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <button
+                      onClick={() => toggleChallenge(c.id, c.isActive)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--fg-muted)",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontFamily: "var(--font-mono)",
+                        marginRight: "8px",
+                      }}
+                    >
+                      {c.isActive ? "disable" : "enable"}
+                    </button>
+                    <button
+                      onClick={() => deleteChallenge(c.id, c.title)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--danger)",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    >
+                      delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Users Tab */}
+      {activeTab === "users" && (
+        <div className="card">
+          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            Users Management
+          </h2>
+          <p style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
+            Users view coming soon...
+          </p>
+        </div>
+      )}
+
+      {/* Announcements Tab */}
+      {activeTab === "announcements" && (
+        <div className="card" style={{ marginBottom: "20px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            New Announcement
+          </h2>
+          <form onSubmit={createAnnouncement}>
+            <input
+              type="text"
+              className="form-input"
+              value={announcementTitle}
+              onChange={(e) => setAnnouncementTitle(e.target.value)}
+              placeholder="Title"
+              required
+              style={{ marginBottom: "8px" }}
+            />
             <textarea
               className="form-input"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Description"
+              value={announcementContent}
+              onChange={(e) => setAnnouncementContent(e.target.value)}
+              placeholder="Content"
               required
-              rows={4}
-              style={{ marginBottom: "10px", resize: "vertical" }}
+              rows={3}
+              style={{ marginBottom: "8px", resize: "vertical" }}
             />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "10px" }}>
-              <input
-                type="number"
-                className="form-input"
-                value={form.points}
-                onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
-                placeholder="Points"
-                required
-                min={1}
-              />
-              <select
-                className="form-input"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              >
-                <option value="web">Web</option>
-                <option value="crypto">Crypto</option>
-                <option value="pwn">Pwn</option>
-                <option value="forensics">Forensics</option>
-                <option value="reverse">Reverse</option>
-                <option value="misc">Misc</option>
-              </select>
-              <select
-                className="form-input"
-                value={form.difficulty}
-                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-                <option value="insane">Insane</option>
-              </select>
-              <input
-                type="url"
-                className="form-input"
-                value={form.link}
-                onChange={(e) => setForm({ ...form, link: e.target.value })}
-                placeholder="Link (optional)"
-              />
-            </div>
-            <button type="submit" className="btn btn-primary" disabled={creating}>
-              {creating ? "Creating..." : "Create Challenge"}
+            <button type="submit" className="btn btn-primary">
+              Publish
             </button>
           </form>
         </div>
       )}
 
-      {/* Challenges table */}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th style={{ textAlign: "right" }}>Pts</th>
-            <th>Diff</th>
-            <th style={{ textAlign: "right" }}>Solves</th>
-            <th>Status</th>
-            <th style={{ textAlign: "right" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {challenges.map((c) => (
-            <tr key={c.id}>
-              <td style={{ fontWeight: 500 }}>{c.title}</td>
-              <td>{c.category}</td>
-              <td style={{ textAlign: "right" }}>{c.points}</td>
-              <td>{c.difficulty}</td>
-              <td style={{ textAlign: "right" }}>{c._count.submissions}</td>
-              <td>
-                <span
-                  style={{
-                    color: c.isActive ? "var(--success)" : "var(--danger)",
-                    fontSize: "12px",
-                  }}
-                >
-                  {c.isActive ? "Active" : "Inactive"}
-                </span>
-              </td>
-              <td style={{ textAlign: "right" }}>
-                <button
-                  onClick={() => toggleChallenge(c.id, c.isActive)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--fg-muted)",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-mono)",
-                    marginRight: "8px",
-                  }}
-                >
-                  {c.isActive ? "disable" : "enable"}
-                </button>
-                <button
-                  onClick={() => deleteChallenge(c.id, c.title)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--danger)",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Game Configuration Tab */}
+      {activeTab === "configuration" && (
+        <div className="card" style={{ marginBottom: "20px" }}>
+          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            Game Configuration
+          </h2>
+          <form
+            onSubmit={updateGameConfig}
+            style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
+          >
+            <div>
+              <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                START
+              </label>
+              <input
+                type="datetime-local"
+                className="form-input"
+                value={gameStart}
+                onChange={(e) => setGameStart(e.target.value)}
+                required
+                style={{ width: "200px" }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                END (optional)
+              </label>
+              <input
+                type="datetime-local"
+                className="form-input"
+                value={gameEnd}
+                onChange={(e) => setGameEnd(e.target.value)}
+                style={{ width: "200px" }}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary">
+              Save
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
