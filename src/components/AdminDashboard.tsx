@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import UsersView from "./UsersView";
+import TeamsView from "./TeamsView";
 
 interface Challenge {
   id: string;
@@ -226,6 +227,21 @@ export default function AdminDashboard() {
           Users
         </button>
         <button
+          onClick={() => setActiveTab("teams")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "teams" ? "var(--accent)" : "transparent",
+            color: activeTab === "teams" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Teams
+        </button>
+        <button
           onClick={() => setActiveTab("announcements")}
           style={{
             padding: "8px 16px",
@@ -423,6 +439,11 @@ export default function AdminDashboard() {
       {/* Users Tab */}
       {activeTab === "users" && (
         <UsersView currentUserId={session?.user?.id} />
+      )}
+
+      {/* Teams Tab */}
+      {activeTab === "teams" && (
+        <TeamsView />
       )}
 
       {/* Announcements Tab */}
