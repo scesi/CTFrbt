@@ -58,32 +58,23 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
 
   const loadTeams = useCallback(async () => {
     try {
-      const res = await fetch("/api/teams");
+      const res = await fetch("/api/admin/teams");
       if (res.ok) {
         const data = await res.json();
-        if (data.team?.members) {
-          // Extract unique teams from user data since /api/teams only returns current user's team
-          const allTeams = users
-            .filter(u => u.team)
-            .map(u => u.team!)
-            .filter((t, idx, arr) => arr.findIndex(x => x.id === t.id) === idx);
-          setTeams(allTeams);
-        }
+        setTeams(data.teams || []);
       }
     } catch {
       // Teams are optional, don't show error
     }
-  }, [users]);
+  }, []);
 
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
 
   useEffect(() => {
-    if (users.length > 0) {
-      loadTeams();
-    }
-  }, [users, loadTeams]);
+    loadTeams();
+  }, [loadTeams]);
 
   const startEdit = (user: User) => {
     if (user.id === currentUserId) {
