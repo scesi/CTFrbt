@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FiFolder, FiFolderMinus, FiFile, FiLock } from "react-icons/fi";
 import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 
 interface TreeNode {
@@ -31,16 +32,19 @@ const FILE_TREE: TreeNode[] = [
   { label: "scoreboard", icon: "file", command: "scoreboard" },
   { label: "rules", icon: "file", command: "rules" },
   { label: "team", icon: "file", command: "team" },
+  { label: "admin", icon: "file", href: "/admin" },
 ];
 
 function TreeItem({
   node,
   depth = 0,
   pathname,
+  isAdmin,
 }: {
   node: TreeNode;
   depth?: number;
   pathname: string;
+  isAdmin: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
   const hasChildren = node.children && node.children.length > 0;
@@ -65,6 +69,12 @@ function TreeItem({
   const handleClick = (e: React.MouseEvent) => {
     if (hasChildren) {
       setIsOpen(!isOpen);
+      return;
+    }
+
+    if (node.href) {
+      e.preventDefault();
+      router.push(node.href);
       return;
     }
 
@@ -109,6 +119,7 @@ function TreeItem({
               node={child}
               depth={depth + 1}
               pathname={pathname}
+              isAdmin={isAdmin}
             />
           ))}
         </ul>
@@ -117,9 +128,19 @@ function TreeItem({
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ session }: { session: Session | null }) {
   const pathname = usePathname();
+  const { data: clientSession } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const isAdmin = !!(session?.user?.isAdmin || clientSession?.user?.isAdmin);
+
+  const visibleTree = FILE_TREE.filter((node) => {
+    if (node.label === "admin") {
+      return isAdmin;
+    }
+
+    return true;
+  });
 
   return (
     <>
@@ -136,8 +157,13 @@ export default function Sidebar() {
         </div>
         <nav className="sidebar-content">
           <ul className="file-tree">
-            {FILE_TREE.map((node) => (
-              <TreeItem key={node.label} node={node} pathname={pathname} />
+            {visibleTree.map((node) => (
+              <TreeItem
+                key={node.label}
+                node={node}
+                pathname={pathname}
+                isAdmin={isAdmin}
+              />
             ))}
           </ul>
         </nav>

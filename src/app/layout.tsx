@@ -36,7 +36,7 @@ export default async function RootLayout({
       <body className={`${robotoMono.variable} ${inter.variable}`}>
         <Providers session={session}>
           <Background3D />
-          <TerminalWindow>{children}</TerminalWindow>
+          <TerminalWindow session={session}>{children}</TerminalWindow>
           <Toaster
             position="top-center"
             toastOptions={{

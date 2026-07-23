@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import type { Session } from "next-auth";
 import Sidebar from "./Sidebar";
 import StatusBar from "./StatusBar";
 import CRTSettings from "./CRTSettings";
 
 export default function TerminalWindow({
   children,
+  session,
 }: {
   children: React.ReactNode;
+  session: Session | null;
 }) {
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -43,7 +46,7 @@ export default function TerminalWindow({
         {!isMinimized && (
           <>
             <div className="window-body">
-              <Sidebar />
+              <Sidebar session={session} />
               <div className="main-panel">
                 <div className="main-content">{children}</div>
               </div>
