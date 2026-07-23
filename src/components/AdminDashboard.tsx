@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import UsersView from "./UsersView";
 
 interface Challenge {
   id: string;
@@ -421,14 +422,7 @@ export default function AdminDashboard() {
 
       {/* Users Tab */}
       {activeTab === "users" && (
-        <div className="card">
-          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-            Users Management
-          </h2>
-          <p style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
-            Users view coming soon...
-          </p>
-        </div>
+        <UsersView />
       )}
 
       {/* Announcements Tab */}
