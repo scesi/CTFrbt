@@ -422,7 +422,7 @@ export default function AdminDashboard() {
 
       {/* Users Tab */}
       {activeTab === "users" && (
-        <UsersView />
+        <UsersView currentUserId={session?.user?.id} />
       )}
 
       {/* Announcements Tab */}

@@ -22,18 +22,26 @@ interface User {
   };
 }
 
+interface Team {
+  id: string;
+  name: string;
+}
+
 interface UsersViewProps {
+  currentUserId?: string;
   onUserUpdated?: () => void;
 }
 
-export default function UsersView({ onUserUpdated }: UsersViewProps) {
+export default function UsersView({ currentUserId, onUserUpdated }: UsersViewProps) {
   const [users, setUsers] = useState<User[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",
     isAdmin: false,
     isTeamLeader: false,
+    teamId: "",
   });
 
   const loadUsers = useCallback(async () => {
@@ -48,16 +56,46 @@ export default function UsersView({ onUserUpdated }: UsersViewProps) {
     }
   }, []);
 
+  const loadTeams = useCallback(async () => {
+    try {
+      const res = await fetch("/api/teams");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.team?.members) {
+          // Extract unique teams from user data since /api/teams only returns current user's team
+          const allTeams = users
+            .filter(u => u.team)
+            .map(u => u.team!)
+            .filter((t, idx, arr) => arr.findIndex(x => x.id === t.id) === idx);
+          setTeams(allTeams);
+        }
+      }
+    } catch {
+      // Teams are optional, don't show error
+    }
+  }, [users]);
+
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
 
+  useEffect(() => {
+    if (users.length > 0) {
+      loadTeams();
+    }
+  }, [users, loadTeams]);
+
   const startEdit = (user: User) => {
+    if (user.id === currentUserId) {
+      toast.error("Cannot edit your own account");
+      return;
+    }
     setEditingId(user.id);
     setEditForm({
       name: user.name,
       isAdmin: user.isAdmin,
       isTeamLeader: user.isTeamLeader,
+      teamId: user.teamId || "",
     });
   };
 
@@ -67,6 +105,7 @@ export default function UsersView({ onUserUpdated }: UsersViewProps) {
       name: "",
       isAdmin: false,
       isTeamLeader: false,
+      teamId: "",
     });
   };
 
@@ -98,6 +137,10 @@ export default function UsersView({ onUserUpdated }: UsersViewProps) {
   };
 
   const deleteUser = async (id: string, alias: string) => {
+    if (id === currentUserId) {
+      toast.error("Cannot delete your own account");
+      return;
+    }
     if (!confirm(`Delete user "${alias}"? This cannot be undone.`)) return;
 
     try {
@@ -117,6 +160,12 @@ export default function UsersView({ onUserUpdated }: UsersViewProps) {
     } catch {
       toast.error("Failed to delete user");
     }
+  };
+
+  const checkboxStyle = {
+    width: "18px",
+    height: "18px",
+    cursor: "pointer",
   };
 
   if (loading) {
@@ -149,122 +198,147 @@ export default function UsersView({ onUserUpdated }: UsersViewProps) {
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td style={{ fontWeight: 500 }}>{user.alias}</td>
-              <td>
-                {editingId === user.id ? (
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    style={{ width: "150px", fontSize: "13px" }}
-                  />
-                ) : (
-                  user.name
-                )}
-              </td>
-              <td>
-                {editingId === user.id ? (
-                  <input
-                    type="checkbox"
-                    checked={editForm.isAdmin}
-                    onChange={(e) => setEditForm({ ...editForm, isAdmin: e.target.checked })}
-                  />
-                ) : (
-                  <span style={{ color: user.isAdmin ? "var(--success)" : "var(--fg-dim)" }}>
-                    {user.isAdmin ? "Yes" : "No"}
-                  </span>
-                )}
-              </td>
-              <td>
-                {editingId === user.id ? (
-                  <input
-                    type="checkbox"
-                    checked={editForm.isTeamLeader}
-                    onChange={(e) => setEditForm({ ...editForm, isTeamLeader: e.target.checked })}
-                  />
-                ) : (
-                  <span style={{ color: user.isTeamLeader ? "var(--success)" : "var(--fg-dim)" }}>
-                    {user.isTeamLeader ? "Yes" : "No"}
-                  </span>
-                )}
-              </td>
-              <td>
-                {user.team ? (
-                  <span style={{ color: "var(--accent)" }}>{user.team.name}</span>
-                ) : (
-                  <span style={{ color: "var(--fg-dim)" }}>—</span>
-                )}
-              </td>
-              <td style={{ textAlign: "right" }}>{user._count.submissions}</td>
-              <td style={{ textAlign: "right" }}>{user._count.scores}</td>
-              <td style={{ textAlign: "right" }}>
-                {editingId === user.id ? (
-                  <>
-                    <button
-                      onClick={saveEdit}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--success)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                        marginRight: "8px",
-                      }}
+          {users.map((user) => {
+            const isSelf = user.id === currentUserId;
+            return (
+              <tr key={user.id}>
+                <td style={{ fontWeight: 500 }}>{user.alias}</td>
+                <td>
+                  {editingId === user.id ? (
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      style={{ width: "150px", fontSize: "13px" }}
+                    />
+                  ) : (
+                    user.name
+                  )}
+                </td>
+                <td>
+                  {editingId === user.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editForm.isAdmin}
+                      onChange={(e) => setEditForm({ ...editForm, isAdmin: e.target.checked })}
+                      style={checkboxStyle}
+                    />
+                  ) : (
+                    <span style={{ color: user.isAdmin ? "var(--success)" : "var(--fg-dim)" }}>
+                      {user.isAdmin ? "Yes" : "No"}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {editingId === user.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editForm.isTeamLeader}
+                      onChange={(e) => setEditForm({ ...editForm, isTeamLeader: e.target.checked })}
+                      style={checkboxStyle}
+                    />
+                  ) : (
+                    <span style={{ color: user.isTeamLeader ? "var(--success)" : "var(--fg-dim)" }}>
+                      {user.isTeamLeader ? "Yes" : "No"}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {editingId === user.id ? (
+                    <select
+                      className="form-input"
+                      value={editForm.teamId}
+                      onChange={(e) => setEditForm({ ...editForm, teamId: e.target.value })}
+                      style={{ width: "150px", fontSize: "13px" }}
                     >
-                      save
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--fg-muted)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => startEdit(user)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--fg-muted)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                        marginRight: "8px",
-                      }}
-                    >
-                      edit
-                    </button>
-                    <button
-                      onClick={() => deleteUser(user.id, user.alias)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--danger)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      delete
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
+                      <option value="">No team</option>
+                      {teams.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    user.team ? (
+                      <span style={{ color: "var(--accent)" }}>{user.team.name}</span>
+                    ) : (
+                      <span style={{ color: "var(--fg-dim)" }}>—</span>
+                    )
+                  )}
+                </td>
+                <td style={{ textAlign: "right" }}>{user._count.submissions}</td>
+                <td style={{ textAlign: "right" }}>{user._count.scores}</td>
+                <td style={{ textAlign: "right" }}>
+                  {editingId === user.id ? (
+                    <>
+                      <button
+                        onClick={saveEdit}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--success)",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          fontFamily: "var(--font-mono)",
+                          marginRight: "8px",
+                        }}
+                      >
+                        save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--fg-muted)",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => startEdit(user)}
+                        disabled={isSelf}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: isSelf ? "var(--fg-dim)" : "var(--fg-muted)",
+                          cursor: isSelf ? "not-allowed" : "pointer",
+                          fontSize: "12px",
+                          fontFamily: "var(--font-mono)",
+                          marginRight: "8px",
+                          opacity: isSelf ? 0.5 : 1,
+                        }}
+                      >
+                        edit
+                      </button>
+                      <button
+                        onClick={() => deleteUser(user.id, user.alias)}
+                        disabled={isSelf}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: isSelf ? "var(--fg-dim)" : "var(--danger)",
+                          cursor: isSelf ? "not-allowed" : "pointer",
+                          fontSize: "12px",
+                          fontFamily: "var(--font-mono)",
+                          opacity: isSelf ? 0.5 : 1,
+                        }}
+                      >
+                        delete
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
