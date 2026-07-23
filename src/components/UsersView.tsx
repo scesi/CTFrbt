@@ -77,10 +77,6 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
   }, [loadTeams]);
 
   const startEdit = (user: User) => {
-    if (user.id === currentUserId) {
-      toast.error("Cannot edit your own account");
-      return;
-    }
     setEditingId(user.id);
     setEditForm({
       name: user.name,
@@ -295,16 +291,14 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                     <>
                       <button
                         onClick={() => startEdit(user)}
-                        disabled={isSelf}
                         style={{
                           background: "transparent",
                           border: "none",
-                          color: isSelf ? "var(--fg-dim)" : "var(--fg-muted)",
-                          cursor: isSelf ? "not-allowed" : "pointer",
+                          color: "var(--fg-muted)",
+                          cursor: "pointer",
                           fontSize: "12px",
                           fontFamily: "var(--font-mono)",
                           marginRight: "8px",
-                          opacity: isSelf ? 0.5 : 1,
                         }}
                       >
                         edit
