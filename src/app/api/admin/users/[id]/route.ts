@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 // Admin-only endpoint to modify user information
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -15,7 +15,7 @@ export async function PATCH(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, isAdmin, isTeamLeader } = body;
 
@@ -71,7 +71,7 @@ export async function PATCH(
 // WARNING: This will cascade delete related data (submissions, scores, sessions)
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -79,7 +79,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Prevent admin from deleting themselves
     if (id === session.user.id) {
