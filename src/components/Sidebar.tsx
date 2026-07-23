@@ -130,9 +130,8 @@ function TreeItem({
 
 export default function Sidebar({ session }: { session: Session | null }) {
   const pathname = usePathname();
-  const { data: clientSession } = useSession();
   const [collapsed, setCollapsed] = useState(false);
-  const isAdmin = !!(session?.user?.isAdmin || clientSession?.user?.isAdmin);
+  const isAdmin = !!session?.user?.isAdmin;
 
   const visibleTree = FILE_TREE.filter((node) => {
     if (node.label === "admin") {
