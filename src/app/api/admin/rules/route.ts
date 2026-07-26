@@ -12,7 +12,7 @@ export async function GET() {
 
   try {
     const rulesConfig = await prisma.siteConfig.findUnique({
-      where: { key: "rules_text" },
+      where: { key: "rules" },
     });
 
     return NextResponse.json({
@@ -47,9 +47,9 @@ export async function POST(request: Request) {
 
     // Upsert the rules in SiteConfig
     const config = await prisma.siteConfig.upsert({
-      where: { key: "rules_text" },
+      where: { key: "rules" },
       update: { value: rules },
-      create: { key: "rules_text", value: rules },
+      create: { key: "rules", value: rules },
     });
 
     return NextResponse.json({ rules: config.value });
