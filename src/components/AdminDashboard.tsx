@@ -9,6 +9,7 @@ import TeamsView from "./TeamsView";
 import RulesView from "./RulesView";
 import SubmissionsView from "./SubmissionsView";
 import LogsView from "./LogsView";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface Challenge {
   id: string;
@@ -320,9 +321,7 @@ export default function AdminDashboard() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div style={{ padding: "32px", color: "var(--fg-dim)" }}>Loading...</div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!session?.user?.isAdmin) return null;
@@ -695,9 +694,7 @@ export default function AdminDashboard() {
               Published Announcements
             </h2>
             {announcementsLoading ? (
-              <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-                Loading announcements...
-              </div>
+              <LoadingSpinner />
             ) : announcements.length === 0 ? (
               <p style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
                 No announcements yet

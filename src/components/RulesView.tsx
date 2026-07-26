@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 export default function RulesView() {
   const [rules, setRules] = useState("");
@@ -52,11 +53,7 @@ export default function RulesView() {
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-        Loading rules...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
