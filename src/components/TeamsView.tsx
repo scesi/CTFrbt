@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface Team {
   id: string;
@@ -109,11 +110,7 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-        Loading teams...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

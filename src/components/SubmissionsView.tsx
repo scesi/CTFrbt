@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface Submission {
   id: string;
@@ -49,11 +50,7 @@ export default function SubmissionsView() {
   }, [loadSubmissions]);
 
   if (loading) {
-    return (
-      <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-        Loading submissions...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

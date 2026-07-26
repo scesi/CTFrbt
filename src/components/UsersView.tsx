@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface User {
   id: string;
@@ -156,11 +157,7 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-        Loading users...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

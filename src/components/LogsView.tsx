@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface ActivityLog {
   id: string;
@@ -42,11 +43,7 @@ export default function LogsView() {
   }, []);
 
   if (loading) {
-    return (
-      <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
-        Loading logs...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
