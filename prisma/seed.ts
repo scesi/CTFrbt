@@ -391,6 +391,40 @@ async function main() {
 
   console.log("  ✓ Announcement: welcome message");
 
+  // ── Submissions ──────────────────────────────────────────
+  const existingSubmission = await prisma.submission.findFirst();
+  if (!existingSubmission) {
+    // Sample submissions
+    const challenge1 = await prisma.challenge.findUnique({ where: { id: "seed-web-01" } });
+    const challenge2 = await prisma.challenge.findUnique({ where: { id: "seed-crypto-01" } });
+
+    if (challenge1 && user1 && teamAlpha) {
+      await prisma.submission.create({
+        data: {
+          flag: "flag{web_101}",
+          isCorrect: true,
+          userId: user1.id,
+          challengeId: challenge1.id,
+          teamId: teamAlpha.id,
+        },
+      });
+    }
+
+    if (challenge2 && user2 && teamAlpha) {
+      await prisma.submission.create({
+        data: {
+          flag: "flag{wrong_flag}",
+          isCorrect: false,
+          userId: user2.id,
+          challengeId: challenge2.id,
+          teamId: teamAlpha.id,
+        },
+      });
+    }
+  }
+
+  console.log("  ✓ Submissions: sample data");
+
   console.log("\n✅ Seed complete!\n");
   console.log("  Admin login:  admin / admin123");
   console.log("  User logins:  alice / password");

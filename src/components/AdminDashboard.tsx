@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import UsersView from "./UsersView";
 import TeamsView from "./TeamsView";
 import RulesView from "./RulesView";
+import SubmissionsView from "./SubmissionsView";
 
 interface Challenge {
   id: string;
@@ -411,6 +412,21 @@ export default function AdminDashboard() {
           Teams
         </button>
         <button
+          onClick={() => setActiveTab("submissions")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "submissions" ? "var(--accent)" : "transparent",
+            color: activeTab === "submissions" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Submissions
+        </button>
+        <button
           onClick={() => setActiveTab("announcements")}
           style={{
             padding: "8px 16px",
@@ -613,6 +629,11 @@ export default function AdminDashboard() {
       {/* Teams Tab */}
       {activeTab === "teams" && (
         <TeamsView />
+      )}
+
+      {/* Submissions Tab */}
+      {activeTab === "submissions" && (
+        <SubmissionsView />
       )}
 
       {/* Announcements Tab */}
