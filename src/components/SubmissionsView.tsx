@@ -55,7 +55,14 @@ export default function SubmissionsView() {
 
   return (
     <div>
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
           Submissions ({submissions.length})
         </h2>
@@ -83,7 +90,13 @@ export default function SubmissionsView() {
               </td>
               <td style={{ fontSize: "12px" }}>{sub.user.alias}</td>
               <td style={{ fontSize: "12px" }}>{sub.challenge.title}</td>
-              <td style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--fg-muted)" }}>
+              <td
+                style={{
+                  fontSize: "11px",
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--fg-muted)",
+                }}
+              >
                 {sub.flag}
               </td>
               <td>

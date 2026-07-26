@@ -210,10 +210,13 @@ export default function AdminDashboard() {
         return;
       }
       // Save to localStorage for future reference
-      localStorage.setItem("gameConfig", JSON.stringify({
-        startTime: gameStart,
-        endTime: gameEnd || null,
-      }));
+      localStorage.setItem(
+        "gameConfig",
+        JSON.stringify({
+          startTime: gameStart,
+          endTime: gameEnd || null,
+        }),
+      );
       toast.success("Game config updated");
     } catch {
       toast.error("Network error");
@@ -262,7 +265,8 @@ export default function AdminDashboard() {
   }, []);
 
   const deleteAnnouncement = async (id: string, title: string) => {
-    if (!confirm(`Delete announcement "${title}"? This cannot be undone.`)) return;
+    if (!confirm(`Delete announcement "${title}"? This cannot be undone.`))
+      return;
     try {
       const res = await fetch(`/api/admin/announcements/${id}`, {
         method: "DELETE",
@@ -290,7 +294,9 @@ export default function AdminDashboard() {
         return;
       }
       const data = await res.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -342,7 +348,14 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
+        }}
+      >
         <h1 style={{ fontSize: "24px", fontWeight: 700 }}>Admin Panel</h1>
         <div style={{ display: "flex", gap: "8px" }}>
           <input
@@ -552,7 +565,8 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "announcements" ? "#8a2be2" : "transparent",
+            background:
+              activeTab === "announcements" ? "#8a2be2" : "transparent",
             color: activeTab === "announcements" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -567,7 +581,8 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "configuration" ? "#8a2be2" : "transparent",
+            background:
+              activeTab === "configuration" ? "#8a2be2" : "transparent",
             color: activeTab === "configuration" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -584,14 +599,18 @@ export default function AdminDashboard() {
       {activeTab === "challenges" && (
         <>
           {/* Challenges header */}
-          <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            style={{
+              marginBottom: "16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
               Challenges ({challenges.length})
             </h2>
-            <button
-              className="btn"
-              onClick={() => setShowForm(!showForm)}
-            >
+            <button className="btn" onClick={() => setShowForm(!showForm)}>
               {showForm ? "Cancel" : "+ New Challenge"}
             </button>
           </div>
@@ -612,7 +631,9 @@ export default function AdminDashboard() {
                     type="text"
                     className="form-input"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                     placeholder="Title"
                     required
                   />
@@ -660,7 +681,9 @@ export default function AdminDashboard() {
                     className="form-input"
                     list="admin-category-options"
                     value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
                     placeholder="Category"
                     required
                   />
@@ -768,30 +791,28 @@ export default function AdminDashboard() {
       )}
 
       {/* Users Tab */}
-      {activeTab === "users" && (
-        <UsersView currentUserId={session?.user?.id} />
-      )}
+      {activeTab === "users" && <UsersView currentUserId={session?.user?.id} />}
 
       {/* Teams Tab */}
-      {activeTab === "teams" && (
-        <TeamsView />
-      )}
+      {activeTab === "teams" && <TeamsView />}
 
       {/* Submissions Tab */}
-      {activeTab === "submissions" && (
-        <SubmissionsView />
-      )}
+      {activeTab === "submissions" && <SubmissionsView />}
 
       {/* Logs Tab */}
-      {activeTab === "logs" && (
-        <LogsView />
-      )}
+      {activeTab === "logs" && <LogsView />}
 
       {/* Announcements Tab */}
       {activeTab === "announcements" && (
         <>
           <div className="card" style={{ marginBottom: "20px" }}>
-            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            <h2
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
               New Announcement
             </h2>
             <form onSubmit={createAnnouncement}>
@@ -821,7 +842,13 @@ export default function AdminDashboard() {
 
           {/* Announcements List */}
           <div className="card">
-            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            <h2
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
               Published Announcements
             </h2>
             {announcementsLoading ? (
@@ -831,7 +858,13 @@ export default function AdminDashboard() {
                 No announcements yet
               </p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
                 {announcements.map((announcement) => (
                   <div
                     key={announcement.id}
@@ -841,20 +874,46 @@ export default function AdminDashboard() {
                       background: "rgba(255,255,255,0.02)",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: "12px",
+                      }}
+                    >
                       <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: "14px", fontWeight: 500, marginBottom: "4px" }}>
+                        <h3
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            marginBottom: "4px",
+                          }}
+                        >
                           {announcement.title}
                         </h3>
-                        <p style={{ fontSize: "12px", color: "var(--fg-muted)", lineHeight: 1.5, marginBottom: "6px" }}>
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--fg-muted)",
+                            lineHeight: 1.5,
+                            marginBottom: "6px",
+                          }}
+                        >
                           {announcement.content}
                         </p>
                         <p style={{ fontSize: "11px", color: "var(--fg-dim)" }}>
-                          Created: {new Date(announcement.createdAt).toLocaleString()}
+                          Created:{" "}
+                          {new Date(announcement.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <button
-                        onClick={() => deleteAnnouncement(announcement.id, announcement.title)}
+                        onClick={() =>
+                          deleteAnnouncement(
+                            announcement.id,
+                            announcement.title,
+                          )
+                        }
                         style={{
                           background: "transparent",
                           border: "1px solid var(--border)",
@@ -881,15 +940,33 @@ export default function AdminDashboard() {
       {activeTab === "configuration" && (
         <>
           <div className="card" style={{ marginBottom: "20px" }}>
-            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            <h2
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
               Game Configuration
             </h2>
             <form
               onSubmit={updateGameConfig}
-              style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
+              style={{
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+                alignItems: "end",
+              }}
             >
               <div>
-                <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                <label
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--fg-dim)",
+                    display: "block",
+                    marginBottom: "4px",
+                  }}
+                >
                   START
                 </label>
                 <input
@@ -902,7 +979,14 @@ export default function AdminDashboard() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                <label
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--fg-dim)",
+                    display: "block",
+                    marginBottom: "4px",
+                  }}
+                >
                   END (optional)
                 </label>
                 <input
@@ -919,19 +1003,43 @@ export default function AdminDashboard() {
             </form>
 
             {/* Game Rules Info */}
-            <div style={{ marginTop: "12px", padding: "8px", border: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
-              <p style={{ fontSize: "11px", color: "var(--fg-dim)", lineHeight: 1.6 }}>
-                • Antes del inicio: Los retos estan ocultos y los envios estan bloqueados<br />
-                • Durante el juego: Los retos son visibles y los envios son permitidos<br />
-                • Despues del fin: Los retos permanecen visibles pero los envios estan bloqueados<br />
-                • Sin hora de fin: La competencia continua indefinidamente
+            <div
+              style={{
+                marginTop: "12px",
+                padding: "8px",
+                border: "1px solid var(--border)",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "11px",
+                  color: "var(--fg-dim)",
+                  lineHeight: 1.6,
+                }}
+              >
+                • Antes del inicio: Los retos estan ocultos y los envios estan
+                bloqueados
+                <br />
+                • Durante el juego: Los retos son visibles y los envios son
+                permitidos
+                <br />
+                • Despues del fin: Los retos permanecen visibles pero los envios
+                estan bloqueados
+                <br />• Sin hora de fin: La competencia continua indefinidamente
               </p>
             </div>
           </div>
 
           {/* Rules Section */}
           <div className="card">
-            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+            <h2
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
               Rules
             </h2>
             <RulesView />

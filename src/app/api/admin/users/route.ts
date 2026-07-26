@@ -43,7 +43,7 @@ export async function GET() {
     console.error("Error listing users:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,14 +63,14 @@ export async function POST(request: Request) {
     if (!alias || !name || !password) {
       return NextResponse.json(
         { error: "alias, name, and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (alias.length > 32 || name.length > 48) {
       return NextResponse.json(
         { error: "alias (max 32) and name (max 48) constraints violated" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Alias already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     console.error("Error creating user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

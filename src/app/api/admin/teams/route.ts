@@ -33,7 +33,7 @@ export async function GET() {
     console.error("Error listing teams:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

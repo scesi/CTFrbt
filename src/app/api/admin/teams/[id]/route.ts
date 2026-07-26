@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // PATCH /api/admin/teams/[id] - Update team name
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -31,7 +31,7 @@ export async function PATCH(
     if (name && name.length > 32) {
       return NextResponse.json(
         { error: "name must be max 32 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,7 +58,7 @@ export async function PATCH(
     console.error("Error updating team:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -66,7 +66,7 @@ export async function PATCH(
 // DELETE /api/admin/teams/[id] - Delete a team (removes teamId from members, doesn't delete users)
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -101,7 +101,7 @@ export async function DELETE(
     console.error("Error deleting team:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

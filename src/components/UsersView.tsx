@@ -33,7 +33,10 @@ interface UsersViewProps {
   onUserUpdated?: () => void;
 }
 
-export default function UsersView({ currentUserId, onUserUpdated }: UsersViewProps) {
+export default function UsersView({
+  currentUserId,
+  onUserUpdated,
+}: UsersViewProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,9 +117,9 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
       }
 
       toast.success(`User "${data.user.alias}" updated`);
-      setUsers(users.map(u =>
-        u.id === editingId ? { ...u, ...data.user } : u
-      ));
+      setUsers(
+        users.map((u) => (u.id === editingId ? { ...u, ...data.user } : u)),
+      );
       cancelEdit();
       onUserUpdated?.();
     } catch {
@@ -143,7 +146,7 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
       }
 
       toast.success(`User "${alias}" deleted`);
-      setUsers(users.filter(u => u.id !== id));
+      setUsers(users.filter((u) => u.id !== id));
       onUserUpdated?.();
     } catch {
       toast.error("Failed to delete user");
@@ -162,7 +165,14 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
 
   return (
     <div>
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
           Users ({users.length})
         </h2>
@@ -193,7 +203,9 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                       type="text"
                       className="form-input"
                       value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, name: e.target.value })
+                      }
                       style={{ width: "150px", fontSize: "13px" }}
                     />
                   ) : (
@@ -205,11 +217,19 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                     <input
                       type="checkbox"
                       checked={editForm.isAdmin}
-                      onChange={(e) => setEditForm({ ...editForm, isAdmin: e.target.checked })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, isAdmin: e.target.checked })
+                      }
                       style={checkboxStyle}
                     />
                   ) : (
-                    <span style={{ color: user.isAdmin ? "var(--success)" : "var(--fg-dim)" }}>
+                    <span
+                      style={{
+                        color: user.isAdmin
+                          ? "var(--success)"
+                          : "var(--fg-dim)",
+                      }}
+                    >
                       {user.isAdmin ? "Yes" : "No"}
                     </span>
                   )}
@@ -219,11 +239,22 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                     <input
                       type="checkbox"
                       checked={editForm.isTeamLeader}
-                      onChange={(e) => setEditForm({ ...editForm, isTeamLeader: e.target.checked })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          isTeamLeader: e.target.checked,
+                        })
+                      }
                       style={checkboxStyle}
                     />
                   ) : (
-                    <span style={{ color: user.isTeamLeader ? "var(--success)" : "var(--fg-dim)" }}>
+                    <span
+                      style={{
+                        color: user.isTeamLeader
+                          ? "var(--success)"
+                          : "var(--fg-dim)",
+                      }}
+                    >
                       {user.isTeamLeader ? "Yes" : "No"}
                     </span>
                   )}
@@ -233,7 +264,9 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                     <select
                       className="form-input"
                       value={editForm.teamId}
-                      onChange={(e) => setEditForm({ ...editForm, teamId: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, teamId: e.target.value })
+                      }
                       style={{ width: "150px", fontSize: "13px" }}
                     >
                       <option value="">No team</option>
@@ -243,15 +276,17 @@ export default function UsersView({ currentUserId, onUserUpdated }: UsersViewPro
                         </option>
                       ))}
                     </select>
+                  ) : user.team ? (
+                    <span style={{ color: "var(--accent)" }}>
+                      {user.team.name}
+                    </span>
                   ) : (
-                    user.team ? (
-                      <span style={{ color: "var(--accent)" }}>{user.team.name}</span>
-                    ) : (
-                      <span style={{ color: "var(--fg-dim)" }}>—</span>
-                    )
+                    <span style={{ color: "var(--fg-dim)" }}>—</span>
                   )}
                 </td>
-                <td style={{ textAlign: "right" }}>{user._count.submissions}</td>
+                <td style={{ textAlign: "right" }}>
+                  {user._count.submissions}
+                </td>
                 <td style={{ textAlign: "right" }}>{user._count.scores}</td>
                 <td style={{ textAlign: "right" }}>
                   {editingId === user.id ? (

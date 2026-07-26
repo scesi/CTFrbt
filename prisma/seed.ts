@@ -393,8 +393,12 @@ async function main() {
   const existingSubmission = await prisma.submission.findFirst();
   if (!existingSubmission) {
     // Sample submissions
-    const challenge1 = await prisma.challenge.findUnique({ where: { id: "seed-web-01" } });
-    const challenge2 = await prisma.challenge.findUnique({ where: { id: "seed-crypto-01" } });
+    const challenge1 = await prisma.challenge.findUnique({
+      where: { id: "seed-web-01" },
+    });
+    const challenge2 = await prisma.challenge.findUnique({
+      where: { id: "seed-crypto-01" },
+    });
 
     if (challenge1 && user1 && teamAlpha) {
       await prisma.submission.create({

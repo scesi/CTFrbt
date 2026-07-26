@@ -58,10 +58,15 @@ export default function RulesView() {
 
   return (
     <div>
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
-          Competition Rules
-        </h2>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h2 style={{ fontSize: "16px", fontWeight: 600 }}>Competition Rules</h2>
         <button
           onClick={saveRules}
           className="btn btn-primary"

@@ -77,9 +77,9 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
       }
 
       toast.success(`Team "${data.team.name}" updated`);
-      setTeams(teams.map(t =>
-        t.id === editingId ? { ...t, ...data.team } : t
-      ));
+      setTeams(
+        teams.map((t) => (t.id === editingId ? { ...t, ...data.team } : t)),
+      );
       cancelEdit();
       onTeamUpdated?.();
     } catch {
@@ -88,7 +88,12 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
   };
 
   const deleteTeam = async (id: string, name: string) => {
-    if (!confirm(`Delete team "${name}"? Members will be removed from the team. This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Delete team "${name}"? Members will be removed from the team. This cannot be undone.`,
+      )
+    )
+      return;
 
     try {
       const res = await fetch(`/api/admin/teams/${id}`, {
@@ -102,7 +107,7 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
       }
 
       toast.success(`Team "${name}" deleted`);
-      setTeams(teams.filter(t => t.id !== id));
+      setTeams(teams.filter((t) => t.id !== id));
       onTeamUpdated?.();
     } catch {
       toast.error("Failed to delete team");
@@ -115,7 +120,14 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
 
   return (
     <div>
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
           Teams ({teams.length})
         </h2>
@@ -141,7 +153,9 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
                     type="text"
                     className="form-input"
                     value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
                     style={{ width: "150px", fontSize: "13px" }}
                   />
                 ) : (
@@ -149,7 +163,9 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
                 )}
               </td>
               <td>
-                <code style={{ fontSize: "12px", color: "var(--fg-dim)" }}>{team.code}</code>
+                <code style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
+                  {team.code}
+                </code>
               </td>
               <td style={{ textAlign: "right" }}>{team.score}</td>
               <td style={{ textAlign: "right" }}>{team._count.members}</td>

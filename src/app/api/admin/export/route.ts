@@ -11,60 +11,61 @@ export async function GET() {
   }
 
   try {
-    const [challenges, users, teams, announcements, gameConfig] = await Promise.all([
-      prisma.challenge.findMany({
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          points: true,
-          category: true,
-          difficulty: true,
-          isActive: true,
-          isLocked: true,
-          link: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.user.findMany({
-        select: {
-          id: true,
-          alias: true,
-          name: true,
-          isAdmin: true,
-          isTeamLeader: true,
-          teamId: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.team.findMany({
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          score: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.announcement.findMany({
-        select: {
-          id: true,
-          title: true,
-          content: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.gameConfig.findFirst({
-        select: {
-          startTime: true,
-          endTime: true,
-        },
-      }),
-    ]);
+    const [challenges, users, teams, announcements, gameConfig] =
+      await Promise.all([
+        prisma.challenge.findMany({
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            points: true,
+            category: true,
+            difficulty: true,
+            isActive: true,
+            isLocked: true,
+            link: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        prisma.user.findMany({
+          select: {
+            id: true,
+            alias: true,
+            name: true,
+            isAdmin: true,
+            isTeamLeader: true,
+            teamId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        prisma.team.findMany({
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            score: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        prisma.announcement.findMany({
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        prisma.gameConfig.findFirst({
+          select: {
+            startTime: true,
+            endTime: true,
+          },
+        }),
+      ]);
 
     return NextResponse.json({
       challenges,
@@ -77,7 +78,7 @@ export async function GET() {
     console.error("Error exporting data:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     if (!challenges && !users && !teams && !announcements && !gameConfig) {
       return NextResponse.json(
         { error: "No data provided for import" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -116,8 +117,8 @@ export async function POST(request: Request) {
                 code: team.code as string,
                 score: (team.score as number) || 0,
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -130,13 +131,13 @@ export async function POST(request: Request) {
               data: {
                 alias: user.alias as string,
                 name: user.name as string,
-                password: user.password as string || "",
+                password: (user.password as string) || "",
                 isAdmin: (user.isAdmin as boolean) || false,
                 isTeamLeader: (user.isTeamLeader as boolean) || false,
                 teamId: (user.teamId as string) || null,
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -156,8 +157,8 @@ export async function POST(request: Request) {
                 isLocked: (challenge.isLocked as boolean) || false,
                 link: (challenge.link as string) || "",
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -171,8 +172,8 @@ export async function POST(request: Request) {
                 title: announcement.title as string,
                 content: announcement.content as string,
               },
-            })
-          )
+            }),
+          ),
         );
       }
 
@@ -182,7 +183,9 @@ export async function POST(request: Request) {
         imported.gameConfig = await tx.gameConfig.create({
           data: {
             startTime: new Date(gameConfig.startTime as string),
-            endTime: gameConfig.endTime ? new Date(gameConfig.endTime as string) : null,
+            endTime: gameConfig.endTime
+              ? new Date(gameConfig.endTime as string)
+              : null,
           },
         });
       }
@@ -195,7 +198,7 @@ export async function POST(request: Request) {
     console.error("Error importing data:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

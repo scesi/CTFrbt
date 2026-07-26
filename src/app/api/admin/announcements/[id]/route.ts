@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // DELETE /api/admin/announcements/[id] - Delete announcement
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -21,7 +21,10 @@ export async function DELETE(
     });
 
     if (!announcement) {
-      return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Announcement not found" },
+        { status: 404 },
+      );
     }
 
     await prisma.announcement.delete({
@@ -33,7 +36,7 @@ export async function DELETE(
     console.error("Error deleting announcement:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

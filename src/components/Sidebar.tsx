@@ -161,7 +161,9 @@ export default function Sidebar({ session }: { session: Session | null }) {
       { label: "scoreboard", icon: "file", command: "scoreboard" },
       { label: "rules", icon: "file", command: "rules" },
       { label: "team", icon: "file", command: "team" },
-      ...(isAdmin ? [{ label: "admin", icon: "file" as const, href: "/admin" }] : []),
+      ...(isAdmin
+        ? [{ label: "admin", icon: "file" as const, href: "/admin" }]
+        : []),
     ],
     [categories, isAdmin],
   );

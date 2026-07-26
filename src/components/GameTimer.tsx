@@ -55,20 +55,20 @@ export default function GameTimer() {
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
     return (
-      <div style={{
-        padding: "8px 12px",
-        border: "1px solid var(--border)",
-        marginBottom: "12px",
-        fontSize: "12px",
-        fontFamily: "var(--font-mono)",
-        color: "var(--fg-dim)",
-        background: "rgba(255,255,255,0.02)",
-      }}>
+      <div
+        style={{
+          padding: "8px 12px",
+          border: "1px solid var(--border)",
+          marginBottom: "12px",
+          fontSize: "12px",
+          fontFamily: "var(--font-mono)",
+          color: "var(--fg-dim)",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
         <span style={{ color: "var(--accent)" }}>CTF starts in:</span>{" "}
-        {days > 0 && `${days}d `}{" "}
-        {String(hours).padStart(2, "0")}h{" "}
-        {String(minutes).padStart(2, "0")}m{" "}
-        {String(seconds).padStart(2, "0")}s
+        {days > 0 && `${days}d `} {String(hours).padStart(2, "0")}h{" "}
+        {String(minutes).padStart(2, "0")}m {String(seconds).padStart(2, "0")}s
       </div>
     );
   }
@@ -76,15 +76,17 @@ export default function GameTimer() {
   // After end (with endTime)
   if (endTime && now > endTime) {
     return (
-      <div style={{
-        padding: "8px 12px",
-        border: "1px solid var(--border)",
-        marginBottom: "12px",
-        fontSize: "12px",
-        fontFamily: "var(--font-mono)",
-        color: "var(--danger)",
-        background: "rgba(255,255,255,0.02)",
-      }}>
+      <div
+        style={{
+          padding: "8px 12px",
+          border: "1px solid var(--border)",
+          marginBottom: "12px",
+          fontSize: "12px",
+          fontFamily: "var(--font-mono)",
+          color: "var(--danger)",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
         <span>CTF finalizado</span>
       </div>
     );
@@ -99,19 +101,19 @@ export default function GameTimer() {
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
     return (
-      <div style={{
-        padding: "8px 12px",
-        border: "1px solid var(--border)",
-        marginBottom: "12px",
-        fontSize: "12px",
-        fontFamily: "var(--font-mono)",
-        color: "var(--success)",
-        background: "rgba(255,255,255,0.02)",
-      }}>
-        <span>CTF en vivo - termina en:</span>{" "}
-        {days > 0 && `${days}d `}{" "}
-        {String(hours).padStart(2, "0")}h{" "}
-        {String(minutes).padStart(2, "0")}m{" "}
+      <div
+        style={{
+          padding: "8px 12px",
+          border: "1px solid var(--border)",
+          marginBottom: "12px",
+          fontSize: "12px",
+          fontFamily: "var(--font-mono)",
+          color: "var(--success)",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
+        <span>CTF en vivo - termina en:</span> {days > 0 && `${days}d `}{" "}
+        {String(hours).padStart(2, "0")}h {String(minutes).padStart(2, "0")}m{" "}
         {String(seconds).padStart(2, "0")}s
       </div>
     );
@@ -119,15 +121,17 @@ export default function GameTimer() {
 
   // Infinite mode (no endTime)
   return (
-    <div style={{
-      padding: "8px 12px",
-      border: "1px solid var(--border)",
-      marginBottom: "12px",
-      fontSize: "12px",
-      fontFamily: "var(--font-mono)",
-      color: "var(--success)",
-      background: "rgba(255,255,255,0.02)",
-    }}>
+    <div
+      style={{
+        padding: "8px 12px",
+        border: "1px solid var(--border)",
+        marginBottom: "12px",
+        fontSize: "12px",
+        fontFamily: "var(--font-mono)",
+        color: "var(--success)",
+        background: "rgba(255,255,255,0.02)",
+      }}
+    >
       <span>CTF en vivo - modo infinito</span>
     </div>
   );

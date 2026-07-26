@@ -22,7 +22,7 @@ export async function GET() {
     console.error("Error fetching rules:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (typeof rules !== "string") {
       return NextResponse.json(
         { error: "Invalid format - rules must be a string" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     console.error("Error updating rules:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 // Admin-only endpoint to modify user information
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -32,7 +32,7 @@ export async function PATCH(
     if (name && name.length > 48) {
       return NextResponse.json(
         { error: "name must be max 48 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function PATCH(
     console.error("Error updating user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -71,7 +71,7 @@ export async function PATCH(
 // WARNING: This will cascade delete related data (submissions, scores, sessions)
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -85,7 +85,7 @@ export async function DELETE(
     if (id === session.user.id) {
       return NextResponse.json(
         { error: "Cannot delete your own account" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -108,7 +108,7 @@ export async function DELETE(
     console.error("Error deleting user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

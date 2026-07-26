@@ -78,8 +78,18 @@ export async function POST(request: Request) {
     const code = crypto.randomBytes(6).toString("hex").toUpperCase();
 
     // Generate a random cyberpunk color
-    const cyberpunkColors = ["#8a2be2", "#00bfff", "#ff69b4", "#39ff14", "#ff1493", "#00ffff", "#ff6347", "#9370db"];
-    const color = cyberpunkColors[Math.floor(Math.random() * cyberpunkColors.length)];
+    const cyberpunkColors = [
+      "#8a2be2",
+      "#00bfff",
+      "#ff69b4",
+      "#39ff14",
+      "#ff1493",
+      "#00ffff",
+      "#ff6347",
+      "#9370db",
+    ];
+    const color =
+      cyberpunkColors[Math.floor(Math.random() * cyberpunkColors.length)];
 
     let team: { id: string; name: string; code: string };
     try {

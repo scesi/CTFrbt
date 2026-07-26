@@ -48,7 +48,14 @@ export default function LogsView() {
 
   return (
     <div>
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
           Activity Logs ({logs.length})
         </h2>
@@ -67,10 +74,14 @@ export default function LogsView() {
           {logs.map((log) => (
             <tr key={log.id}>
               <td style={{ fontSize: "12px" }}>{log.type}</td>
-              <td style={{ fontSize: "12px", color: "var(--fg-muted)" }}>{log.description}</td>
+              <td style={{ fontSize: "12px", color: "var(--fg-muted)" }}>
+                {log.description}
+              </td>
               <td>
                 {log.team ? (
-                  <span style={{ color: log.team.color || "#8a2be2" }}>{log.team.name}</span>
+                  <span style={{ color: log.team.color || "#8a2be2" }}>
+                    {log.team.name}
+                  </span>
                 ) : (
                   <span style={{ color: "var(--fg-dim)" }}>—</span>
                 )}

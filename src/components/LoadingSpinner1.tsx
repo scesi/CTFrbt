@@ -26,8 +26,8 @@ export default function LoadingSpinner1() {
       const radius = 20 + Math.random() * 10;
       newParticles.push({
         id: i,
-        x: 50 + Math.cos(angle) * radius / 2,
-        y: 50 + Math.sin(angle) * radius / 2,
+        x: 50 + (Math.cos(angle) * radius) / 2,
+        y: 50 + (Math.sin(angle) * radius) / 2,
         char: TERMINAL_CHARS[Math.floor(Math.random() * TERMINAL_CHARS.length)],
         speedX: (Math.random() - 0.5) * 1.5,
         speedY: (Math.random() - 0.5) * 1.5,
@@ -43,13 +43,17 @@ export default function LoadingSpinner1() {
 
     // Particle animation - slow drift
     const particleInterval = setInterval(() => {
-      setParticles(prev => prev.map(p => ({
-        ...p,
-        x: p.x + p.speedX * 1,
-        y: p.y + p.speedY * 1,
-        char: TERMINAL_CHARS[Math.floor(Math.random() * TERMINAL_CHARS.length)],
-        opacity: Math.random() * 0.5 + 0.2,
-      })));
+      setParticles((prev) =>
+        prev.map((p) => ({
+          ...p,
+          x: p.x + p.speedX * 1,
+          y: p.y + p.speedY * 1,
+          char: TERMINAL_CHARS[
+            Math.floor(Math.random() * TERMINAL_CHARS.length)
+          ],
+          opacity: Math.random() * 0.5 + 0.2,
+        })),
+      );
     }, 200);
 
     return () => {
@@ -59,15 +63,17 @@ export default function LoadingSpinner1() {
   }, []);
 
   return (
-    <div style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      minHeight: "240px",
-      position: "relative",
-      color: "var(--fg-dim)",
-      fontSize: "14px",
-    }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "240px",
+        position: "relative",
+        color: "var(--fg-dim)",
+        fontSize: "14px",
+      }}
+    >
       {/* Terminal-style particles - very close to the logo */}
       {particles.map((p) => (
         <div
@@ -89,12 +95,14 @@ export default function LoadingSpinner1() {
       ))}
 
       {/* Logo with rapid shake - Watch Dogs 2 distortion */}
-      <div style={{
-        transform: `translateX(${shake}px) translateY(${shake * 0.3}px) rotate(${shake * 0.8}deg)`,
-        transition: "transform 0.03s ease-out",
-        textAlign: "center",
-        opacity: 0.8,
-      }}>
+      <div
+        style={{
+          transform: `translateX(${shake}px) translateY(${shake * 0.3}px) rotate(${shake * 0.8}deg)`,
+          transition: "transform 0.03s ease-out",
+          textAlign: "center",
+          opacity: 0.8,
+        }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/imagen-invertida.png"
