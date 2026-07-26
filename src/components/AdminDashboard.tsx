@@ -19,6 +19,14 @@ interface Challenge {
   _count: { submissions: number };
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -47,6 +55,8 @@ export default function AdminDashboard() {
   // Announcement
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin");
@@ -166,10 +176,49 @@ export default function AdminDashboard() {
       toast.success("Announcement published");
       setAnnouncementTitle("");
       setAnnouncementContent("");
+      loadAnnouncements();
     } catch {
       toast.error("Network error");
     }
   };
+
+  const loadAnnouncements = useCallback(async () => {
+    setAnnouncementsLoading(true);
+    try {
+      const res = await fetch("/api/admin/announcements");
+      if (!res.ok) {
+        toast.error("Failed to load announcements");
+        return;
+      }
+      const data = await res.json();
+      setAnnouncements(data.announcements || []);
+    } catch {
+      toast.error("Failed to load announcements");
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  }, []);
+
+  const deleteAnnouncement = async (id: string, title: string) => {
+    if (!confirm(`Delete announcement "${title}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        toast.error("Failed to delete announcement");
+        return;
+      }
+      toast.success("Announcement deleted");
+      loadAnnouncements();
+    } catch {
+      toast.error("Failed to delete announcement");
+    }
+  };
+
+  useEffect(() => {
+    if (session?.user?.isAdmin) loadAnnouncements();
+  }, [session, loadAnnouncements]);
 
   const handleExport = async () => {
     try {
@@ -315,21 +364,6 @@ export default function AdminDashboard() {
           }}
         >
           Teams
-        </button>
-        <button
-          onClick={() => setActiveTab("rules")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "rules" ? "var(--accent)" : "transparent",
-            color: activeTab === "rules" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Rules
         </button>
         <button
           onClick={() => setActiveTab("announcements")}
@@ -536,83 +570,148 @@ export default function AdminDashboard() {
         <TeamsView />
       )}
 
-      {/* Rules Tab */}
-      {activeTab === "rules" && (
-        <RulesView />
-      )}
-
       {/* Announcements Tab */}
       {activeTab === "announcements" && (
-        <div className="card" style={{ marginBottom: "20px" }}>
-          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-            New Announcement
-          </h2>
-          <form onSubmit={createAnnouncement}>
-            <input
-              type="text"
-              className="form-input"
-              value={announcementTitle}
-              onChange={(e) => setAnnouncementTitle(e.target.value)}
-              placeholder="Title"
-              required
-              style={{ marginBottom: "8px" }}
-            />
-            <textarea
-              className="form-input"
-              value={announcementContent}
-              onChange={(e) => setAnnouncementContent(e.target.value)}
-              placeholder="Content"
-              required
-              rows={3}
-              style={{ marginBottom: "8px", resize: "vertical" }}
-            />
-            <button type="submit" className="btn btn-primary">
-              Publish
-            </button>
-          </form>
-        </div>
+        <>
+          <div className="card" style={{ marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+              New Announcement
+            </h2>
+            <form onSubmit={createAnnouncement}>
+              <input
+                type="text"
+                className="form-input"
+                value={announcementTitle}
+                onChange={(e) => setAnnouncementTitle(e.target.value)}
+                placeholder="Title"
+                required
+                style={{ marginBottom: "8px" }}
+              />
+              <textarea
+                className="form-input"
+                value={announcementContent}
+                onChange={(e) => setAnnouncementContent(e.target.value)}
+                placeholder="Content"
+                required
+                rows={3}
+                style={{ marginBottom: "8px", resize: "vertical" }}
+              />
+              <button type="submit" className="btn btn-primary">
+                Publish
+              </button>
+            </form>
+          </div>
+
+          {/* Announcements List */}
+          <div className="card">
+            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+              Published Announcements
+            </h2>
+            {announcementsLoading ? (
+              <div style={{ padding: "16px", color: "var(--fg-dim)" }}>
+                Loading announcements...
+              </div>
+            ) : announcements.length === 0 ? (
+              <p style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
+                No announcements yet
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {announcements.map((announcement) => (
+                  <div
+                    key={announcement.id}
+                    style={{
+                      border: "1px solid var(--border)",
+                      padding: "12px",
+                      background: "rgba(255,255,255,0.02)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ fontSize: "14px", fontWeight: 500, marginBottom: "4px" }}>
+                          {announcement.title}
+                        </h3>
+                        <p style={{ fontSize: "12px", color: "var(--fg-muted)", lineHeight: 1.5, marginBottom: "6px" }}>
+                          {announcement.content}
+                        </p>
+                        <p style={{ fontSize: "11px", color: "var(--fg-dim)" }}>
+                          Created: {new Date(announcement.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deleteAnnouncement(announcement.id, announcement.title)}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid var(--border)",
+                          color: "var(--danger)",
+                          cursor: "pointer",
+                          fontSize: "11px",
+                          fontFamily: "var(--font-mono)",
+                          padding: "4px 8px",
+                          borderRadius: "0",
+                        }}
+                      >
+                        delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Game Configuration Tab */}
       {activeTab === "configuration" && (
-        <div className="card" style={{ marginBottom: "20px" }}>
-          <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
-            Game Configuration
-          </h2>
-          <form
-            onSubmit={updateGameConfig}
-            style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
-          >
-            <div>
-              <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-                START
-              </label>
-              <input
-                type="datetime-local"
-                className="form-input"
-                value={gameStart}
-                onChange={(e) => setGameStart(e.target.value)}
-                required
-                style={{ width: "200px" }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-                END (optional)
-              </label>
-              <input
-                type="datetime-local"
-                className="form-input"
-                value={gameEnd}
-                onChange={(e) => setGameEnd(e.target.value)}
-                style={{ width: "200px" }}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Save
-            </button>
-          </form>
-        </div>
+        <>
+          <div className="card" style={{ marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+              Game Configuration
+            </h2>
+            <form
+              onSubmit={updateGameConfig}
+              style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "end" }}
+            >
+              <div>
+                <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                  START
+                </label>
+                <input
+                  type="datetime-local"
+                  className="form-input"
+                  value={gameStart}
+                  onChange={(e) => setGameStart(e.target.value)}
+                  required
+                  style={{ width: "200px" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
+                  END (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  className="form-input"
+                  value={gameEnd}
+                  onChange={(e) => setGameEnd(e.target.value)}
+                  style={{ width: "200px" }}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary">
+                Save
+              </button>
+            </form>
+          </div>
+
+          {/* Rules Section */}
+          <div className="card">
+            <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+              Rules
+            </h2>
+            <RulesView />
+          </div>
+        </>
       )}
     </div>
   );
