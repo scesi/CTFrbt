@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import UsersView from "./UsersView";
 import TeamsView from "./TeamsView";
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("challenges");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -169,6 +170,58 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const res = await fetch("/api/admin/export");
+      if (!res.ok) {
+        toast.error("Failed to export data");
+        return;
+      }
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ctfrbt-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Data exported successfully");
+    } catch {
+      toast.error("Failed to export data");
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      const res = await fetch("/api/admin/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Failed to import data");
+        return;
+      }
+
+      toast.success("Data imported successfully");
+      loadChallenges();
+    } catch {
+      toast.error("Failed to import data - invalid file format");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <div style={{ padding: "32px", color: "var(--fg-dim)" }}>Loading...</div>
@@ -179,11 +232,32 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <h1
-        style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}
-      >
-        Admin Panel
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 700 }}>Admin Panel</h1>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            style={{ display: "none" }}
+            ref={fileInputRef}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn"
+            style={{ fontSize: "12px", padding: "6px 12px" }}
+          >
+            Import
+          </button>
+          <button
+            onClick={handleExport}
+            className="btn btn-primary"
+            style={{ fontSize: "12px", padding: "6px 12px" }}
+          >
+            Export All
+          </button>
+        </div>
+      </div>
 
       {/* Tab Navigation */}
       <div
