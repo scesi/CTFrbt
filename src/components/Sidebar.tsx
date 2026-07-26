@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FiFolder, FiFolderMinus, FiFile, FiLock } from "react-icons/fi";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
+import { fetchCached } from "@/lib/terminal/cache";
 
 interface TreeNode {
   label: string;
@@ -16,23 +17,15 @@ interface TreeNode {
   solved?: boolean;
 }
 
-const FILE_TREE: TreeNode[] = [
-  {
-    label: "challenges",
-    icon: "folder",
-    children: [
-      { label: "web", icon: "folder", command: "ls ~/challenges/web" },
-      { label: "crypto", icon: "folder", command: "ls ~/challenges/crypto" },
-      { label: "pwn", icon: "folder", command: "ls ~/challenges/pwn" },
-      { label: "forensics", icon: "folder", command: "ls ~/challenges/forensics" },
-      { label: "reverse", icon: "folder", command: "ls ~/challenges/reverse" },
-      { label: "misc", icon: "folder", command: "ls ~/challenges/misc" },
-    ],
-  },
-  { label: "scoreboard", icon: "file", command: "scoreboard" },
-  { label: "rules", icon: "file", command: "rules" },
-  { label: "team", icon: "file", command: "team" },
-  { label: "admin", icon: "file", href: "/admin" },
+// Shown while unauthenticated or before the real categories load; the API is
+// the source of truth once the user is signed in.
+const DEFAULT_CATEGORIES = [
+  "web",
+  "crypto",
+  "pwn",
+  "forensics",
+  "reverse",
+  "misc",
 ];
 
 function TreeItem({
@@ -48,8 +41,8 @@ function TreeItem({
 }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
   const hasChildren = node.children && node.children.length > 0;
-  const isActive = node.href === pathname || false; // We don't really have active paths anymore for these
-  
+  const isActive = node.href === pathname || false;
+
   const { status } = useSession();
   const { executeCommand } = useTerminal();
   const router = useRouter();
@@ -103,7 +96,9 @@ function TreeItem({
       tabIndex={0}
       aria-expanded={hasChildren ? isOpen : undefined}
     >
-      <span className="tree-icon" style={{ fontSize: "15px" }}>{icon}</span>
+      <span className="tree-icon" style={{ fontSize: "15px" }}>
+        {icon}
+      </span>
       <span style={{ fontSize: "15px" }}>{node.label}</span>
     </div>
   );
@@ -133,13 +128,43 @@ export default function Sidebar({ session }: { session: Session | null }) {
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = !!session?.user?.isAdmin;
 
-  const visibleTree = FILE_TREE.filter((node) => {
-    if (node.label === "admin") {
-      return isAdmin;
-    }
+  const { status } = useSession();
+  const [categories, setCategories] = useState<string[] | null>(null);
 
-    return true;
-  });
+  // Real categories come from the (client-cached) challenge listing, so a
+  // custom category created by the admin shows up without touching this file.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    fetchCached("/api/challenges")
+      .then((data) => {
+        const cats = (data as { categories?: string[] }).categories;
+        if (!cancelled && cats && cats.length > 0) setCategories(cats);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
+  const fileTree = useMemo<TreeNode[]>(
+    () => [
+      {
+        label: "challenges",
+        icon: "folder",
+        children: (categories ?? DEFAULT_CATEGORIES).map((category) => ({
+          label: category,
+          icon: "folder" as const,
+          command: `ls ~/challenges/${category}`,
+        })),
+      },
+      { label: "scoreboard", icon: "file", command: "scoreboard" },
+      { label: "rules", icon: "file", command: "rules" },
+      { label: "team", icon: "file", command: "team" },
+      ...(isAdmin ? [{ label: "admin", icon: "file" as const, href: "/admin" }] : []),
+    ],
+    [categories, isAdmin],
+  );
 
   return (
     <>
@@ -156,7 +181,7 @@ export default function Sidebar({ session }: { session: Session | null }) {
         </div>
         <nav className="sidebar-content">
           <ul className="file-tree">
-            {visibleTree.map((node) => (
+            {fileTree.map((node) => (
               <TreeItem
                 key={node.label}
                 node={node}

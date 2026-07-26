@@ -14,19 +14,57 @@ export async function GET() {
     CACHE_KEYS.LEADERBOARD,
     LEADERBOARD_TTL_MS,
     async () => {
-      const teams = await prisma.team.findMany({
-        orderBy: { score: "desc" },
-        include: {
-          members: {
-            select: { id: true, alias: true, name: true },
+      const [teams, correctSubs, multiFlagChallenges] = await Promise.all([
+        prisma.team.findMany({
+          orderBy: { score: "desc" },
+          include: {
+            _count: { select: { members: true } },
           },
-          _count: {
-            select: {
-              submissions: { where: { isCorrect: true } },
-            },
-          },
-        },
-      });
+        }),
+        prisma.submission.findMany({
+          where: { isCorrect: true },
+          select: { teamId: true, challengeId: true, flagId: true },
+        }),
+        prisma.challenge.findMany({
+          where: { multipleFlags: true },
+          select: { id: true, _count: { select: { flags: true } } },
+        }),
+      ]);
+
+      // Solve count = challenges fully solved (all flags for multi-flag),
+      // not raw correct submissions.
+      const requiredFlags = new Map(
+        multiFlagChallenges.map((c) => [c.id, c._count.flags]),
+      );
+
+      const capturedByTeam = new Map<string, Map<string, Set<string>>>();
+      for (const sub of correctSubs) {
+        let challenges = capturedByTeam.get(sub.teamId);
+        if (!challenges) {
+          challenges = new Map();
+          capturedByTeam.set(sub.teamId, challenges);
+        }
+        let flags = challenges.get(sub.challengeId);
+        if (!flags) {
+          flags = new Set();
+          challenges.set(sub.challengeId, flags);
+        }
+        if (sub.flagId) flags.add(sub.flagId);
+      }
+
+      const solveCountByTeam = new Map<string, number>();
+      for (const [teamId, challenges] of capturedByTeam) {
+        let solved = 0;
+        for (const [challengeId, flags] of challenges) {
+          const required = requiredFlags.get(challengeId);
+          if (required === undefined) {
+            solved++; // single-flag: any correct submission solves it
+          } else if (required > 0 && flags.size >= required) {
+            solved++;
+          }
+        }
+        solveCountByTeam.set(teamId, solved);
+      }
 
       return teams.map((team, index) => ({
         rank: index + 1,
@@ -35,15 +73,16 @@ export async function GET() {
         score: team.score,
         icon: team.icon,
         color: team.color,
-        memberCount: team.members.length,
-        solveCount: team._count.submissions,
+        memberCount: team._count.members,
+        solveCount: solveCountByTeam.get(team.id) ?? 0,
       }));
     },
   );
 
   let currentUserTeam = null;
   if (session?.user?.teamId) {
-    currentUserTeam = rankedTeams.find((t) => t.id === session.user.teamId) || null;
+    currentUserTeam =
+      rankedTeams.find((t) => t.id === session.user.teamId) || null;
   }
 
   return NextResponse.json({ teams: rankedTeams, currentUserTeam });

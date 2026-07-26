@@ -131,8 +131,10 @@ export default function ChallengeView({
       // Update hint in state
       setHints((prev) =>
         prev.map((h) =>
-          h.id === hintId ? { ...h, purchased: true, content: data.content } : h
-        )
+          h.id === hintId
+            ? { ...h, purchased: true, content: data.content }
+            : h,
+        ),
       );
 
       if (data.cost > 0) {
@@ -173,7 +175,6 @@ export default function ChallengeView({
 
   return (
     <div style={{ padding: "8px 0" }}>
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -200,10 +201,11 @@ export default function ChallengeView({
         <span>{challenge.points} pts</span>
         <span>{challenge.difficulty}</span>
         <span>{challenge.category}</span>
-        <span>{challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}</span>
+        <span>
+          {challenge.solveCount} solve{challenge.solveCount !== 1 ? "s" : ""}
+        </span>
       </div>
 
-      {/* Description */}
       <div
         style={{
           marginBottom: "24px",
@@ -216,7 +218,6 @@ export default function ChallengeView({
         {challenge.description}
       </div>
 
-      {/* External link */}
       {challenge.link && (
         <div style={{ marginBottom: "20px" }}>
           <a
@@ -234,7 +235,6 @@ export default function ChallengeView({
         </div>
       )}
 
-      {/* Files */}
       {challenge.files.length > 0 && (
         <div style={{ marginBottom: "24px" }}>
           <h3
@@ -392,11 +392,11 @@ export default function ChallengeView({
                       marginBottom: hint.purchased ? "8px" : "0",
                     }}
                   >
-                    <span style={{ color: "var(--fg-dim)" }}>
-                      Hint {i + 1}
-                    </span>
+                    <span style={{ color: "var(--fg-dim)" }}>Hint {i + 1}</span>
                     {hint.purchased ? (
-                      <span style={{ color: "var(--success)", fontSize: "11px" }}>
+                      <span
+                        style={{ color: "var(--success)", fontSize: "11px" }}
+                      >
                         Purchased
                       </span>
                     ) : (

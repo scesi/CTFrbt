@@ -4,15 +4,41 @@ import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import crypto from "crypto";
+import { withBcryptSlot } from "./bcrypt-limit";
+import { envInt } from "./env";
+
+// Shared-IP aware: many players sit behind one public IP (campus NAT, carrier
+// CGNAT), so the per-IP lockout is a high backstop; the per-alias backoff
+// below is the primary brute-force defense.
+const LOGIN_LOCKOUT_IP_MAX = envInt("LOGIN_LOCKOUT_IP_MAX", 60);
+
+// Must cover the whole event or players get logged out mid-competition.
+const SESSION_MAX_AGE_S = envInt("SESSION_MAX_AGE_HOURS", 72) * 60 * 60;
 
 async function getClientIp(): Promise<string> {
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
-  if (!forwarded) {
-    console.error("X-Forwarded-For header missing — check Nginx config");
-    return `unknown-${crypto.randomUUID()}`;
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
   }
-  return forwarded.split(",")[0].trim();
+  const realIp = headersList.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+  console.error("X-Forwarded-For header missing — check Nginx config");
+  return `unknown-${crypto.randomUUID()}`;
+}
+
+const MAX_PASSWORD_LENGTH = 128;
+
+let dummyHash: string | null = null;
+async function getDummyHash(): Promise<string> {
+  if (!dummyHash) {
+    dummyHash = await withBcryptSlot(() =>
+      bcrypt.hash(crypto.randomUUID(), 12),
+    );
+  }
+  return dummyHash;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -28,10 +54,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (credentials.password.length > MAX_PASSWORD_LENGTH) {
+          return null;
+        }
+
         const ip = await getClientIp();
         const minutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
-        // 1. IP Hard Lockout check
         const failedAttemptsByIp = await prisma.loginAttempt.count({
           where: {
             ip,
@@ -40,18 +69,16 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (failedAttemptsByIp >= 5) {
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+        if (failedAttemptsByIp >= LOGIN_LOCKOUT_IP_MAX) {
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
-        // 2. Alias Backoff check
-        // Find last successful login for the alias
         const lastSuccess = await prisma.loginAttempt.findFirst({
           where: { alias: credentials.alias, success: true },
           orderBy: { createdAt: "desc" },
         });
-
-        // Count failed attempts since the last success (or last 15 mins)
         const sinceDate =
           lastSuccess && lastSuccess.createdAt > minutesAgo
             ? lastSuccess.createdAt
@@ -65,7 +92,6 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        // If backoff is active, check time since last failure
         if (failedAttemptsByAlias >= 3) {
           const lastFailed = await prisma.loginAttempt.findFirst({
             where: { alias: credentials.alias, success: false },
@@ -81,20 +107,18 @@ export const authOptions: NextAuthOptions = {
             else if (failedAttemptsByAlias >= 5) requiredDelay = 120;
 
             if (secondsPassed < requiredDelay) {
-              throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+              throw new Error(
+                "Invalid credentials or too many attempts. Try again shortly.",
+              );
             }
           }
         }
 
-        // 3. User verification
         const user = await prisma.user.findUnique({
           where: { alias: credentials.alias },
         });
-
-        // Helper to run pruning probabilistically (2% chance)
         const runProbabilisticPruning = () => {
           if (Math.random() < 0.02) {
-            // Delete old login attempts
             prisma.loginAttempt
               .deleteMany({
                 where: {
@@ -105,28 +129,34 @@ export const authOptions: NextAuthOptions = {
               })
               .catch((err) => console.error("Pruning attempts failed:", err));
 
-            // Delete expired sessions
             prisma.userSession
               .deleteMany({
                 where: {
                   expiresAt: { lt: new Date() },
                 },
               })
-              .catch((err) => console.error("Pruning expired sessions failed:", err));
+              .catch((err) =>
+                console.error("Pruning expired sessions failed:", err),
+              );
           }
         };
 
         if (!user) {
+          const dummyHashRef = await getDummyHash();
+          await withBcryptSlot(() =>
+            bcrypt.compare(credentials.password, dummyHashRef),
+          );
           await prisma.loginAttempt.create({
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
+        const isValid = await withBcryptSlot(() =>
+          bcrypt.compare(credentials.password, user.password),
         );
 
         if (!isValid) {
@@ -134,22 +164,21 @@ export const authOptions: NextAuthOptions = {
             data: { ip, alias: credentials.alias, success: false },
           });
           runProbabilisticPruning();
-          throw new Error("Invalid credentials or too many attempts. Try again shortly.");
+          throw new Error(
+            "Invalid credentials or too many attempts. Try again shortly.",
+          );
         }
 
-        // Log successful login
         await prisma.loginAttempt.create({
           data: { ip, alias: credentials.alias, success: true },
         });
         runProbabilisticPruning();
-
-        // 4. Create database session
         const sessionToken = crypto.randomBytes(32).toString("hex");
         await prisma.userSession.create({
           data: {
             userId: user.id,
             sessionToken,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            expiresAt: new Date(Date.now() + SESSION_MAX_AGE_S * 1000),
           },
         });
 
@@ -190,11 +219,9 @@ export const authOptions: NextAuthOptions = {
           dbSession.userId !== token.id ||
           dbSession.expiresAt < new Date()
         ) {
-          // Invalidate session
           return null as unknown as typeof session;
         }
 
-        // Rehydrate session from database fresh to prevent privilege escalation via client JWT tampering
         session.user.id = dbSession.user.id;
         session.user.alias = dbSession.user.alias;
         session.user.name = dbSession.user.name;
@@ -214,7 +241,9 @@ export const authOptions: NextAuthOptions = {
           .delete({
             where: { sessionToken: token.sessionToken as string },
           })
-          .catch((err) => console.error("Error deleting session on signout:", err));
+          .catch((err) =>
+            console.error("Error deleting session on signout:", err),
+          );
       }
     },
   },
@@ -224,6 +253,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours — typical CTF duration
+    maxAge: SESSION_MAX_AGE_S,
   },
 };

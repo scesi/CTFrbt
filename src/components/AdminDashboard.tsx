@@ -101,6 +101,20 @@ export default function AdminDashboard() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(false);
 
+  // Suggestions for the category input: the usual set plus anything already
+  // in use, so custom categories are reusable without editing code.
+  const categoryOptions = Array.from(
+    new Set([
+      "web",
+      "crypto",
+      "pwn",
+      "forensics",
+      "reverse",
+      "misc",
+      ...challenges.map((c) => c.category),
+    ]),
+  );
+
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/signin");
     if (status === "authenticated" && !session?.user?.isAdmin) router.push("/");
@@ -355,6 +369,97 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Game Config */}
+      <div className="card" style={{ marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+          Game Configuration
+        </h2>
+        <form
+          onSubmit={updateGameConfig}
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                fontSize: "11px",
+                color: "var(--fg-dim)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              START
+            </label>
+            <input
+              type="datetime-local"
+              className="form-input"
+              value={gameStart}
+              onChange={(e) => setGameStart(e.target.value)}
+              required
+              style={{ width: "200px" }}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: "11px",
+                color: "var(--fg-dim)",
+                display: "block",
+                marginBottom: "4px",
+              }}
+            >
+              END (optional)
+            </label>
+            <input
+              type="datetime-local"
+              className="form-input"
+              value={gameEnd}
+              onChange={(e) => setGameEnd(e.target.value)}
+              style={{ width: "200px" }}
+            />
+          </div>
+          <button type="submit" className="btn btn-primary">
+            Save
+          </button>
+        </form>
+      </div>
+
+      {/* Announcements */}
+      <div className="card" style={{ marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>
+          New Announcement
+        </h2>
+        <form onSubmit={createAnnouncement}>
+          <input
+            type="text"
+            className="form-input"
+            value={announcementTitle}
+            onChange={(e) => setAnnouncementTitle(e.target.value)}
+            placeholder="Title"
+            required
+            maxLength={100}
+            style={{ marginBottom: "8px" }}
+          />
+          <textarea
+            className="form-input"
+            value={announcementContent}
+            onChange={(e) => setAnnouncementContent(e.target.value)}
+            placeholder="Content"
+            required
+            rows={3}
+            maxLength={2000}
+            style={{ marginBottom: "8px", resize: "vertical" }}
+          />
+          <button type="submit" className="btn btn-primary">
+            Publish
+          </button>
+        </form>
+      </div>
+
       {/* Tab Navigation */}
       <div
         style={{
@@ -495,7 +600,14 @@ export default function AdminDashboard() {
           {showForm && (
             <div className="card" style={{ marginBottom: "16px" }}>
               <form onSubmit={createChallenge}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "10px",
+                  }}
+                >
                   <input
                     type="text"
                     className="form-input"
@@ -516,38 +628,53 @@ export default function AdminDashboard() {
                 <textarea
                   className="form-input"
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   placeholder="Description"
                   required
                   rows={4}
                   style={{ marginBottom: "10px", resize: "vertical" }}
                 />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "10px",
+                  }}
+                >
                   <input
                     type="number"
                     className="form-input"
                     value={form.points}
-                    onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({ ...form, points: Number(e.target.value) })
+                    }
                     placeholder="Points"
                     required
                     min={1}
                   />
-                  <select
+                  <input
+                    type="text"
                     className="form-input"
+                    list="admin-category-options"
                     value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="web">Web</option>
-                    <option value="crypto">Crypto</option>
-                    <option value="pwn">Pwn</option>
-                    <option value="forensics">Forensics</option>
-                    <option value="reverse">Reverse</option>
-                    <option value="misc">Misc</option>
-                  </select>
+                    placeholder="Category"
+                    required
+                  />
+                  <datalist id="admin-category-options">
+                    {categoryOptions.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
                   <select
                     className="form-input"
                     value={form.difficulty}
-                    onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, difficulty: e.target.value })
+                    }
                   >
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
@@ -562,7 +689,11 @@ export default function AdminDashboard() {
                     placeholder="Link (optional)"
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={creating}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={creating}
+                >
                   {creating ? "Creating..." : "Create Challenge"}
                 </button>
               </form>
@@ -772,7 +903,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-                  END (opcional)
+                  END (optional)
                 </label>
                 <input
                   type="datetime-local"

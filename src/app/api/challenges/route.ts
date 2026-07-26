@@ -4,13 +4,19 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, CACHE_KEYS } from "@/lib/cache";
 import { getGameWindowStatus } from "@/lib/game-window";
+import { areConditionsMet } from "@/lib/unlock";
+import type { UnlockCondition } from "../../../../prisma/generated/client";
 
 const CHALLENGES_TTL_MS = 15_000; // 15 seconds
 
-// GET /api/challenges — List all challenges grouped by category
+// GET /api/challenges — List all challenges grouped by category.
+// Auth required: challenge content is for registered players only.
 export async function GET() {
   const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.isAdmin === true;
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const isAdmin = session.user.isAdmin === true;
 
   // Game window enforcement — admins always see full content
   const gameStatus = await getGameWindowStatus();
@@ -23,28 +29,71 @@ export async function GET() {
   }
 
   // Cache the expensive challenge query (shared across all users)
-  const challenges = await getOrSet(
+  const { challenges, solveCounts } = await getOrSet(
     CACHE_KEYS.CHALLENGES,
     CHALLENGES_TTL_MS,
     async () => {
-      return prisma.challenge.findMany({
-        where: { isActive: true },
-        include: {
-          files: {
-            select: { id: true, name: true, size: true },
+      const [challenges, correctSubs] = await Promise.all([
+        prisma.challenge.findMany({
+          where: { isActive: true },
+          include: {
+            files: {
+              select: { id: true, name: true, size: true },
+            },
+            hints: {
+              select: { id: true, cost: true },
+            },
+            flags: {
+              select: { id: true, points: true },
+            },
           },
-          hints: {
-            select: { id: true, cost: true },
-          },
-          flags: {
-            select: { id: true, points: true },
-          },
-          _count: {
-            select: { submissions: { where: { isCorrect: true } } },
-          },
-        },
-        orderBy: [{ category: "asc" }, { points: "asc" }],
-      });
+          orderBy: [{ category: "asc" }, { points: "asc" }],
+        }),
+        prisma.submission.findMany({
+          where: { isCorrect: true },
+          select: { challengeId: true, teamId: true, flagId: true },
+        }),
+      ]);
+
+      // Solve count = teams that fully solved the challenge. Counting raw
+      // correct submissions would inflate multi-flag challenges (one per flag).
+      const capturedFlags = new Map<string, Map<string, Set<string>>>();
+      for (const sub of correctSubs) {
+        let teams = capturedFlags.get(sub.challengeId);
+        if (!teams) {
+          teams = new Map();
+          capturedFlags.set(sub.challengeId, teams);
+        }
+        let flags = teams.get(sub.teamId);
+        if (!flags) {
+          flags = new Set();
+          teams.set(sub.teamId, flags);
+        }
+        if (sub.flagId) flags.add(sub.flagId);
+      }
+
+      const solveCounts: Record<string, number> = {};
+      for (const challenge of challenges) {
+        const teams = capturedFlags.get(challenge.id);
+        if (!teams) {
+          solveCounts[challenge.id] = 0;
+        } else if (challenge.multipleFlags) {
+          let solved = 0;
+          for (const flags of teams.values()) {
+            if (
+              challenge.flags.length > 0 &&
+              flags.size >= challenge.flags.length
+            ) {
+              solved++;
+            }
+          }
+          solveCounts[challenge.id] = solved;
+        } else {
+          solveCounts[challenge.id] = teams.size;
+        }
+      }
+
+      return { challenges, solveCounts };
     },
   );
 
@@ -68,53 +117,57 @@ export async function GET() {
       .map((s) => s.flagId!);
   }
 
-  // Check unlock conditions for locked challenges
-  const enrichedChallenges = await Promise.all(
-    challenges.map(async (challenge) => {
-      let isLocked = challenge.isLocked;
+  // Check unlock conditions for locked challenges.
+  // One batched query for all locked challenges instead of one per challenge.
+  const lockedIds = challenges.filter((c) => c.isLocked).map((c) => c.id);
+  const conditionsByChallenge = new Map<string, UnlockCondition[]>();
 
-      if (isLocked && session?.user?.teamId) {
-        const conditions = await prisma.unlockCondition.findMany({
-          where: { challengeId: challenge.id },
-        });
+  if (lockedIds.length > 0 && session?.user?.teamId) {
+    const allConditions = await prisma.unlockCondition.findMany({
+      where: { challengeId: { in: lockedIds } },
+    });
+    for (const condition of allConditions) {
+      const list = conditionsByChallenge.get(condition.challengeId) ?? [];
+      list.push(condition);
+      conditionsByChallenge.set(condition.challengeId, list);
+    }
+  }
 
-        // Check if all conditions are met
-        const allMet = conditions.every((condition) => {
-          if (condition.type === "CHALLENGE_SOLVED" && condition.requiredChallengeId) {
-            return solvedChallengeIds.includes(condition.requiredChallengeId);
-          }
-          return false;
-        });
+  const solvedIdSet = new Set(solvedChallengeIds);
 
-        if (allMet && conditions.length > 0) {
-          isLocked = false;
-        }
+  const enrichedChallenges = challenges.map((challenge) => {
+    let isLocked = challenge.isLocked;
+
+    if (isLocked && session?.user?.teamId) {
+      const conditions = conditionsByChallenge.get(challenge.id) ?? [];
+      if (areConditionsMet(conditions, solvedIdSet)) {
+        isLocked = false;
       }
+    }
 
-      return {
-        id: challenge.id,
-        title: challenge.title,
-        description: isLocked ? "" : challenge.description,
-        points: challenge.points,
-        category: challenge.category,
-        difficulty: challenge.difficulty,
-        isLocked,
-        isSolved: solvedChallengeIds.includes(challenge.id),
-        solveCount: challenge._count.submissions,
-        multipleFlags: challenge.multipleFlags,
-        link: isLocked ? null : challenge.link,
-        files: isLocked ? [] : challenge.files,
-        hintCount: challenge.hints.length,
-        flags: challenge.multipleFlags
-          ? challenge.flags.map((f) => ({
-              id: f.id,
-              points: f.points,
-              isSolved: solvedFlagIds.includes(f.id),
-            }))
-          : [],
-      };
-    })
-  );
+    return {
+      id: challenge.id,
+      title: challenge.title,
+      description: isLocked ? "" : challenge.description,
+      points: challenge.points,
+      category: challenge.category,
+      difficulty: challenge.difficulty,
+      isLocked,
+      isSolved: solvedIdSet.has(challenge.id),
+      solveCount: solveCounts[challenge.id] ?? 0,
+      multipleFlags: challenge.multipleFlags,
+      link: isLocked ? null : challenge.link,
+      files: isLocked ? [] : challenge.files,
+      hintCount: challenge.hints.length,
+      flags: challenge.multipleFlags
+        ? challenge.flags.map((f) => ({
+            id: f.id,
+            points: f.points,
+            isSolved: solvedFlagIds.includes(f.id),
+          }))
+        : [],
+    };
+  });
 
   // Group by category
   const categories: Record<string, typeof enrichedChallenges> = {};

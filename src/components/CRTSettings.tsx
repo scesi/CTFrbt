@@ -39,14 +39,14 @@ export default function CRTSettings() {
   useEffect(() => {
     document.body.classList.toggle(
       "crt-scanlines-disabled",
-      !effects.scanlines
+      !effects.scanlines,
     );
     document.body.classList.toggle("crt-flicker-disabled", !effects.flicker);
     document.body.classList.toggle("crt-phosphor-disabled", !effects.phosphor);
     document.body.classList.toggle("crt-glow-disabled", !effects.glow);
     document.body.classList.toggle(
       "crt-rolling-scan-disabled",
-      !effects.rollingScan
+      !effects.rollingScan,
     );
     localStorage.setItem("crtEffects", JSON.stringify(effects));
   }, [effects]);
