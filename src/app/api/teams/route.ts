@@ -87,10 +87,15 @@ export async function POST(request: Request) {
     // Generate a cryptographically secure invite code (48 bits → 12 hex chars)
     const code = crypto.randomBytes(6).toString("hex").toUpperCase();
 
+    // Generate a random cyberpunk color
+    const cyberpunkColors = ["#8a2be2", "#00bfff", "#ff69b4", "#39ff14", "#ff1493", "#00ffff", "#ff6347", "#9370db"];
+    const color = cyberpunkColors[Math.floor(Math.random() * cyberpunkColors.length)];
+
     const team = await prisma.team.create({
       data: {
         name: teamName,
         code,
+        color,
         members: {
           connect: { id: session.user.id },
         },

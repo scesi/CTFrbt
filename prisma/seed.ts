@@ -425,6 +425,34 @@ async function main() {
 
   console.log("  ✓ Submissions: sample data");
 
+  // ── Activity Logs ────────────────────────────────────────
+  const existingLog = await prisma.activityLog.findFirst();
+  if (!existingLog) {
+    await prisma.activityLog.create({
+      data: {
+        type: "CHALLENGE_SOLVE",
+        description: "Team Alpha solved 'Hidden in Plain Sight' (web)",
+        teamId: teamAlpha.id,
+      },
+    });
+    await prisma.activityLog.create({
+      data: {
+        type: "HINT_PURCHASE",
+        description: "Team Alpha purchased a hint for 'Buffer Overflow'",
+        teamId: teamAlpha.id,
+      },
+    });
+    await prisma.activityLog.create({
+      data: {
+        type: "CHALLENGE_SOLVE",
+        description: "Team Bravo solved 'SQL Injection 101' (web)",
+        teamId: teamBravo.id,
+      },
+    });
+  }
+
+  console.log("  ✓ Activity Logs: sample data");
+
   console.log("\n✅ Seed complete!\n");
   console.log("  Admin login:  admin / admin123");
   console.log("  User logins:  alice / password");

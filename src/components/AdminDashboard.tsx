@@ -8,6 +8,7 @@ import UsersView from "./UsersView";
 import TeamsView from "./TeamsView";
 import RulesView from "./RulesView";
 import SubmissionsView from "./SubmissionsView";
+import LogsView from "./LogsView";
 
 interface Challenge {
   id: string;
@@ -372,7 +373,7 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "challenges" ? "var(--accent)" : "transparent",
+            background: activeTab === "challenges" ? "#8a2be2" : "transparent",
             color: activeTab === "challenges" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -387,7 +388,7 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "users" ? "var(--accent)" : "transparent",
+            background: activeTab === "users" ? "#8a2be2" : "transparent",
             color: activeTab === "users" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -402,7 +403,7 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "teams" ? "var(--accent)" : "transparent",
+            background: activeTab === "teams" ? "#8a2be2" : "transparent",
             color: activeTab === "teams" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -417,7 +418,7 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "submissions" ? "var(--accent)" : "transparent",
+            background: activeTab === "submissions" ? "#8a2be2" : "transparent",
             color: activeTab === "submissions" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -427,12 +428,27 @@ export default function AdminDashboard() {
           Submissions
         </button>
         <button
+          onClick={() => setActiveTab("logs")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "logs" ? "#8a2be2" : "transparent",
+            color: activeTab === "logs" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Logs
+        </button>
+        <button
           onClick={() => setActiveTab("announcements")}
           style={{
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "announcements" ? "var(--accent)" : "transparent",
+            background: activeTab === "announcements" ? "#8a2be2" : "transparent",
             color: activeTab === "announcements" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -447,7 +463,7 @@ export default function AdminDashboard() {
             padding: "8px 16px",
             fontSize: "13px",
             fontFamily: "var(--font-mono)",
-            background: activeTab === "configuration" ? "var(--accent)" : "transparent",
+            background: activeTab === "configuration" ? "#8a2be2" : "transparent",
             color: activeTab === "configuration" ? "#000000" : "var(--fg)",
             border: "1px solid var(--border)",
             cursor: "pointer",
@@ -634,6 +650,11 @@ export default function AdminDashboard() {
       {/* Submissions Tab */}
       {activeTab === "submissions" && (
         <SubmissionsView />
+      )}
+
+      {/* Logs Tab */}
+      {activeTab === "logs" && (
+        <LogsView />
       )}
 
       {/* Announcements Tab */}
