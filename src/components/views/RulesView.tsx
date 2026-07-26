@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { fetchCached } from "@/lib/terminal/cache";
 
 export function RulesView() {
   const [rules, setRules] = useState("");
@@ -9,7 +8,11 @@ export function RulesView() {
 
   const loadRules = useCallback(async () => {
     try {
-      const data = await fetchCached("/api/rules") as { rules?: string };
+      const res = await fetch("/api/rules", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error("Failed to load rules");
+      }
+      const data = await res.json();
       setRules(data.rules || "");
     } catch (error) {
       console.error("Failed to load rules:", error);

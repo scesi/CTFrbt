@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const rulesConfig = await prisma.siteConfig.findUnique({
-      where: { key: "rules_text" },
+      where: { key: "rules" },
     });
 
     return NextResponse.json({
