@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import UsersView from "./UsersView";
 import TeamsView from "./TeamsView";
+import RulesView from "./RulesView";
 
 interface Challenge {
   id: string;
@@ -316,6 +317,21 @@ export default function AdminDashboard() {
           Teams
         </button>
         <button
+          onClick={() => setActiveTab("rules")}
+          style={{
+            padding: "8px 16px",
+            fontSize: "13px",
+            fontFamily: "var(--font-mono)",
+            background: activeTab === "rules" ? "var(--accent)" : "transparent",
+            color: activeTab === "rules" ? "#000000" : "var(--fg)",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+            borderRadius: "0",
+          }}
+        >
+          Rules
+        </button>
+        <button
           onClick={() => setActiveTab("announcements")}
           style={{
             padding: "8px 16px",
@@ -518,6 +534,11 @@ export default function AdminDashboard() {
       {/* Teams Tab */}
       {activeTab === "teams" && (
         <TeamsView />
+      )}
+
+      {/* Rules Tab */}
+      {activeTab === "rules" && (
+        <RulesView />
       )}
 
       {/* Announcements Tab */}
