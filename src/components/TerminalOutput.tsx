@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 import TerminalInput from "./TerminalInput";
+import GameTimer from "./GameTimer";
 
 export default function TerminalOutput() {
   const { state } = useTerminal();
@@ -15,6 +16,7 @@ export default function TerminalOutput() {
 
   return (
     <div style={{ padding: "20px", display: "flex", flexDirection: "column", flexGrow: 1, overflowY: "auto" }}>
+      <GameTimer />
       {state.history.map((block) => (
         <div
           key={block.id}

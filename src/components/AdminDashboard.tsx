@@ -49,8 +49,48 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false);
 
   // Game config
-  const [gameStart, setGameStart] = useState("");
-  const [gameEnd, setGameEnd] = useState("");
+  const getDefaultStart = () => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return d;
+  };
+  const getDefaultEnd = (start: Date) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + 1);
+    return d;
+  };
+  const [gameStart, setGameStart] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("gameConfig");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.startTime) return parsed.startTime;
+        } catch {}
+      }
+    }
+    return getDefaultStart().toISOString().slice(0, 16);
+  });
+  const [gameEnd, setGameEnd] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("gameConfig");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.endTime) return parsed.endTime;
+        } catch {}
+      }
+    }
+    return getDefaultEnd(getDefaultStart()).toISOString().slice(0, 16);
+  });
+
+  // Auto-update endTime when startTime changes (+24h)
+  useEffect(() => {
+    if (!gameStart) return;
+    const start = new Date(gameStart);
+    const end = getDefaultEnd(start);
+    setGameEnd(end.toISOString().slice(0, 16));
+  }, [gameStart]);
 
   // Announcement
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -152,6 +192,11 @@ export default function AdminDashboard() {
         toast.error("Failed to update game config");
         return;
       }
+      // Save to localStorage for future reference
+      localStorage.setItem("gameConfig", JSON.stringify({
+        startTime: gameStart,
+        endTime: gameEnd || null,
+      }));
       toast.success("Game config updated");
     } catch {
       toast.error("Network error");
@@ -688,7 +733,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <label style={{ fontSize: "11px", color: "var(--fg-dim)", display: "block", marginBottom: "4px" }}>
-                  END (optional)
+                  END (opcional)
                 </label>
                 <input
                   type="datetime-local"
@@ -702,6 +747,16 @@ export default function AdminDashboard() {
                 Save
               </button>
             </form>
+
+            {/* Game Rules Info */}
+            <div style={{ marginTop: "12px", padding: "8px", border: "1px solid var(--border)", background: "rgba(255,255,255,0.02)" }}>
+              <p style={{ fontSize: "11px", color: "var(--fg-dim)", lineHeight: 1.6 }}>
+                • Antes del inicio: Los retos estan ocultos y los envios estan bloqueados<br />
+                • Durante el juego: Los retos son visibles y los envios son permitidos<br />
+                • Despues del fin: Los retos permanecen visibles pero los envios estan bloqueados<br />
+                • Sin hora de fin: La competencia continua indefinidamente
+              </p>
+            </div>
           </div>
 
           {/* Rules Section */}
