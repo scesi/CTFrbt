@@ -3,7 +3,8 @@ vi.mock("next-auth", () => ({
 }));
 
 import { describe, expect, it, vi } from "vitest";
-import { POST, RATE_LIMIT_MS } from "@/app/api/submissions/route";
+import { POST } from "@/app/api/submissions/route";
+import { RATE_LIMIT_MS } from "@/lib/rate-limit";
 import { prisma } from "../helpers/db";
 import { getServerSession } from "next-auth";
 
