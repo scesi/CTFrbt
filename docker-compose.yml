@@ -1,4 +1,20 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ctfrbt-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://ctfrbt:ctfrbt@postgres:5432/ctfrbt
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-to-a-random-secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:18.4-alpine
     container_name: ctfrbt-db
