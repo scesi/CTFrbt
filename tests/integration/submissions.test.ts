@@ -132,7 +132,7 @@ describe("POST /api/submissions", () => {
     expect(firstBody.correct).toBe(true);
 
     // Wait for rate limit window
-    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_MS, + 100));
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_MS, +100));
 
     const secondResponse = await POST(createRequest());
 
@@ -241,200 +241,194 @@ describe("POST /api/submissions", () => {
     expect(updatedTeam?.score).toBe(75);
   }, 30000);
 
+  it("handles concurrent submissions without double scoring", async () => {
+    const { user, team } = await createUserWithTeam();
+    const challenge = await createChallenge();
 
-it("handles concurrent submissions without double scoring", async () => {
-  const { user, team } = await createUserWithTeam();
-  const challenge = await createChallenge();
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: {
+        id: user.id,
+        teamId: team.id,
+        isAdmin: false,
+      },
+    } as Awaited<ReturnType<typeof getServerSession>>);
 
-  vi.mocked(getServerSession).mockResolvedValue({
-    user: {
-      id: user.id,
-      teamId: team.id,
-      isAdmin: false,
-    },
-  } as Awaited<ReturnType<typeof getServerSession>>);
+    await setGameConfig(
+      new Date(Date.now() - 60 * 60 * 1000),
+      new Date(Date.now() + 60 * 60 * 1000),
+    );
 
-  await setGameConfig(
-    new Date(Date.now() - 60 * 60 * 1000),
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
+    const createRequest = () =>
+      new Request("http://localhost/api/submissions", {
+        method: "POST",
+        body: JSON.stringify({
+          challengeId: challenge.id,
+          flag: challenge.flag,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-  const createRequest = () =>
-    new Request("http://localhost/api/submissions", {
+    // Send both submissions at the same time
+    await Promise.all([POST(createRequest()), POST(createRequest())]);
+
+    // Only one score should exist
+    const scoreCount = await prisma.score.count({
+      where: {
+        teamId: team.id,
+        challengeId: challenge.id,
+      },
+    });
+
+    expect(scoreCount).toBe(1);
+
+    // Team score should only contain one reward
+    const updatedTeam = await prisma.team.findUnique({
+      where: {
+        id: team.id,
+      },
+    });
+
+    expect(updatedTeam?.score).toBe(challenge.points);
+  }, 15000);
+
+  it("multi-flag: concurrent submissions of the same sub-flag award points once", async () => {
+    const { user, team } = await createUserWithTeam();
+
+    const challenge = await createMultiFlagChallenge([
+      { flag: "flag{a}", points: 25 },
+      { flag: "flag{b}", points: 50 },
+    ]);
+
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: {
+        id: user.id,
+        teamId: team.id,
+        isAdmin: false,
+      },
+    } as Awaited<ReturnType<typeof getServerSession>>);
+
+    await setGameConfig(
+      new Date(Date.now() - 60 * 60 * 1000),
+      new Date(Date.now() + 60 * 60 * 1000),
+    );
+
+    const createRequest = () =>
+      new Request("http://localhost/api/submissions", {
+        method: "POST",
+        body: JSON.stringify({
+          challengeId: challenge.id,
+          flag: "flag{a}",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+    // Submit the same sub-flag at the same time
+    const [response1, response2] = await Promise.all([
+      POST(createRequest()),
+      POST(createRequest()),
+    ]);
+
+    const body1 = await response1.json();
+    const body2 = await response2.json();
+
+    // One request should succeed
+    expect(body1.correct || body2.correct).toBe(true);
+
+    // Only one score should be created
+    const scores = await prisma.score.findMany({
+      where: {
+        teamId: team.id,
+        challengeId: challenge.id,
+      },
+    });
+
+    expect(scores).toHaveLength(1);
+    expect(scores[0].points).toBe(25);
+
+    // Only one history entry should exist
+    const history = await prisma.teamPointHistory.findMany({
+      where: {
+        teamId: team.id,
+        reason: "CHALLENGE_SOLVE",
+      },
+    });
+
+    expect(history).toHaveLength(1);
+    expect(history[0].points).toBe(25);
+
+    // Team score should only increase once
+    const updatedTeam = await prisma.team.findUnique({
+      where: {
+        id: team.id,
+      },
+    });
+
+    expect(updatedTeam?.score).toBe(25);
+  });
+
+  it("Incorrect flag: creates failed submission without score", async () => {
+    const { user, team } = await createUserWithTeam();
+    const challenge = await createChallenge();
+
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: {
+        id: user.id,
+        teamId: team.id,
+        isAdmin: false,
+      },
+    } as Awaited<ReturnType<typeof getServerSession>>);
+
+    await setGameConfig(
+      new Date(Date.now() - 60 * 60 * 1000),
+      new Date(Date.now() + 60 * 60 * 1000),
+    );
+
+    const request = new Request("http://localhost/api/submissions", {
       method: "POST",
       body: JSON.stringify({
         challengeId: challenge.id,
-        flag: challenge.flag,
+        flag: "flag{wrong}",
       }),
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-  // Send both submissions at the same time
-	await Promise.all([
-		POST(createRequest()),
-		POST(createRequest()),
-  ]);
+    const response = await POST(request);
+    const body = await response.json();
 
+    expect(response.status).toBe(200);
+    expect(body.correct).toBe(false);
 
-  // Only one score should exist
-  const scoreCount = await prisma.score.count({
-    where: {
-      teamId: team.id,
-      challengeId: challenge.id,
-    },
-  });
-
-  expect(scoreCount).toBe(1);
-
-  // Team score should only contain one reward
-  const updatedTeam = await prisma.team.findUnique({
-    where: {
-      id: team.id,
-    },
-  });
-
-  expect(updatedTeam?.score).toBe(challenge.points);
-}, 15000);
-
-it("multi-flag: concurrent submissions of the same sub-flag award points once", async () => {
-  const { user, team } = await createUserWithTeam();
-
-  const challenge = await createMultiFlagChallenge([
-    { flag: "flag{a}", points: 25 },
-    { flag: "flag{b}", points: 50 },
-  ]);
-
-  vi.mocked(getServerSession).mockResolvedValue({
-    user: {
-      id: user.id,
-      teamId: team.id,
-      isAdmin: false,
-    },
-  } as Awaited<ReturnType<typeof getServerSession>>);
-
-  await setGameConfig(
-    new Date(Date.now() - 60 * 60 * 1000),
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-
-  const createRequest = () =>
-    new Request("http://localhost/api/submissions", {
-      method: "POST",
-      body: JSON.stringify({
+    const submission = await prisma.submission.findFirst({
+      where: {
+        teamId: team.id,
         challengeId: challenge.id,
-        flag: "flag{a}",
-      }),
-      headers: {
-        "Content-Type": "application/json",
       },
     });
 
-  // Submit the same sub-flag at the same time
-  const [response1, response2] = await Promise.all([
-    POST(createRequest()),
-    POST(createRequest()),
-  ]);
+    expect(submission).not.toBeNull();
+    expect(submission?.isCorrect).toBe(false);
 
-  const body1 = await response1.json();
-  const body2 = await response2.json();
+    const score = await prisma.score.findFirst({
+      where: {
+        teamId: team.id,
+        challengeId: challenge.id,
+      },
+    });
 
-  // One request should succeed
-  expect(body1.correct || body2.correct).toBe(true);
+    expect(score).toBeNull();
 
-  // Only one score should be created
-  const scores = await prisma.score.findMany({
-    where: {
-      teamId: team.id,
-      challengeId: challenge.id,
-    },
+    const updatedTeam = await prisma.team.findUnique({
+      where: {
+        id: team.id,
+      },
+    });
+
+    expect(updatedTeam?.score).toBe(0);
   });
-
-  expect(scores).toHaveLength(1);
-  expect(scores[0].points).toBe(25);
-
-  // Only one history entry should exist
-  const history = await prisma.teamPointHistory.findMany({
-    where: {
-      teamId: team.id,
-      reason: "CHALLENGE_SOLVE",
-    },
-  });
-
-  expect(history).toHaveLength(1);
-  expect(history[0].points).toBe(25);
-
-  // Team score should only increase once
-  const updatedTeam = await prisma.team.findUnique({
-    where: {
-      id: team.id,
-    },
-  });
-
-  expect(updatedTeam?.score).toBe(25);
-});
-
-it("Incorrect flag: creates failed submission without score", async () => {
-  const { user, team } = await createUserWithTeam();
-  const challenge = await createChallenge();
-
-  vi.mocked(getServerSession).mockResolvedValue({
-    user: {
-      id: user.id,
-      teamId: team.id,
-      isAdmin: false,
-    },
-  } as Awaited<ReturnType<typeof getServerSession>>);
-
-  await setGameConfig(
-    new Date(Date.now() - 60 * 60 * 1000),
-    new Date(Date.now() + 60 * 60 * 1000),
-  );
-
-  const request = new Request("http://localhost/api/submissions", {
-    method: "POST",
-    body: JSON.stringify({
-      challengeId: challenge.id,
-      flag: "flag{wrong}",
-    }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  const response = await POST(request);
-  const body = await response.json();
-
-  expect(response.status).toBe(200);
-  expect(body.correct).toBe(false);
-
-  const submission = await prisma.submission.findFirst({
-    where: {
-      teamId: team.id,
-      challengeId: challenge.id,
-    },
-  });
-
-  expect(submission).not.toBeNull();
-  expect(submission?.isCorrect).toBe(false);
-
-  const score = await prisma.score.findFirst({
-    where: {
-      teamId: team.id,
-      challengeId: challenge.id,
-    },
-  });
-
-  expect(score).toBeNull();
-
-  const updatedTeam = await prisma.team.findUnique({
-    where: {
-      id: team.id,
-    },
-  });
-
-  expect(updatedTeam?.score).toBe(0);
-  });
-
 });
