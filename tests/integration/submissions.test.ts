@@ -3,7 +3,7 @@ vi.mock("next-auth", () => ({
 }));
 
 import { describe, expect, it, vi } from "vitest";
-import { POST } from "@/app/api/submissions/route";
+import { POST, RATE_LIMIT_MS } from "@/app/api/submissions/route";
 import { prisma } from "../helpers/db";
 import { getServerSession } from "next-auth";
 
@@ -132,7 +132,7 @@ describe("POST /api/submissions", () => {
     expect(firstBody.correct).toBe(true);
 
     // Wait for rate limit window
-    await new Promise((resolve) => setTimeout(resolve, 10_100));
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_MS, + 100));
 
     const secondResponse = await POST(createRequest());
 
@@ -201,7 +201,7 @@ describe("POST /api/submissions", () => {
     expect(bodyA.correct).toBe(true);
     expect(bodyA.points).toBe(25);
 
-    await new Promise((resolve) => setTimeout(resolve, 10_100));
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_MS + 100));
 
     // Submit second flag
     const responseB = await POST(createRequest("flag{b}"));
@@ -212,7 +212,7 @@ describe("POST /api/submissions", () => {
     expect(bodyB.correct).toBe(true);
     expect(bodyB.points).toBe(50);
 
-    await new Promise((resolve) => setTimeout(resolve, 10_100));
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_MS + 100));
 
     // Submit first flag again
     const responseAgain = await POST(createRequest("flag{a}"));
@@ -240,7 +240,7 @@ describe("POST /api/submissions", () => {
 
     expect(updatedTeam?.score).toBe(75);
   }, 30000);
-});
+
 
 it("handles concurrent submissions without double scoring", async () => {
   const { user, team } = await createUserWithTeam();
@@ -272,13 +272,10 @@ it("handles concurrent submissions without double scoring", async () => {
     });
 
   // Send both submissions at the same time
-  const [response1, response2] = await Promise.all([
-    POST(createRequest()),
-    POST(createRequest()),
+	await Promise.all([
+		POST(createRequest()),
+		POST(createRequest()),
   ]);
-
-  const body1 = await response1.json();
-  const body2 = await response2.json();
 
 
   // Only one score should exist
@@ -378,7 +375,7 @@ it("multi-flag: concurrent submissions of the same sub-flag award points once", 
   expect(updatedTeam?.score).toBe(25);
 });
 
-it("flag incorrecta: creates failed submission without score", async () => {
+it("Incorrect flag: creates failed submission without score", async () => {
   const { user, team } = await createUserWithTeam();
   const challenge = await createChallenge();
 
@@ -438,4 +435,6 @@ it("flag incorrecta: creates failed submission without score", async () => {
   });
 
   expect(updatedTeam?.score).toBe(0);
+  });
+
 });

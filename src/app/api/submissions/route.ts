@@ -7,7 +7,7 @@ import { getGameWindowStatus } from "@/lib/game-window";
 import { isChallengeUnlockedForTeam } from "@/lib/unlock";
 import { createHash, timingSafeEqual } from "crypto";
 
-const RATE_LIMIT_MS = 10_000;
+export const RATE_LIMIT_MS = 10_000;
 const MAX_FLAG_LENGTH = 512;
 
 // Constant-time string comparison — hashing first normalizes lengths so
