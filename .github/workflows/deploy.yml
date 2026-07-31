@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       primary_tag: ${{ steps.tags.outputs.PRIMARY_TAG }}
-      
+
     steps:
       - name: Checkout del código
         uses: actions/checkout@v3
@@ -20,7 +20,7 @@ jobs:
         id: tags
         run: |
           SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-          
+
           # MAIN
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "DOCKER_TAGS=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:latest,${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${SHORT_SHA}" >> $GITHUB_ENV
@@ -100,9 +100,9 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             cd ${{ env.TARGET_DIR }}
-            
+
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${{ needs.build-and-push.outputs.primary_tag }}
-            
+
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
             export IMAGE_TAG="${{ needs.build-and-push.outputs.primary_tag }}"
             export APP_PORT=${{ env.APP_PORT }}
@@ -111,7 +111,7 @@ jobs:
             export POSTGRES_DB="${{ env.DB_NAME }}"
             export NEXTAUTH_URL="${{ env.NEXTAUTH_URL }}"
             export NEXTAUTH_SECRET="${{ env.NEXTAUTH_SECRET }}"
-            
+
             docker stack deploy -c compose.swarm.yml ${{ env.STACK_NAME }} --with-registry-auth
-            
+
             docker image prune -af
