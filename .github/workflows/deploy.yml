@@ -99,6 +99,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            set -e
             cd ${{ env.TARGET_DIR }}
 
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${{ needs.build-and-push.outputs.primary_tag }}
