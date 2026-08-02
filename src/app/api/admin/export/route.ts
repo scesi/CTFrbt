@@ -33,6 +33,7 @@ export async function GET() {
             id: true,
             alias: true,
             name: true,
+            password: true,
             isAdmin: true,
             isTeamLeader: true,
             teamId: true,
@@ -102,6 +103,19 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      Array.isArray(users) &&
+      users.some(
+        (u: Record<string, unknown>) =>
+          typeof u.password !== "string" || u.password.length === 0,
+      )
+    ) {
+      return NextResponse.json(
+        { error: "All users must include a password hash" },
+        { status: 400 },
+      );
+    }
+
     // Begin transaction for all-or-nothing import
     const result = await prisma.$transaction(async (tx) => {
       const imported: Record<string, unknown> = {};
@@ -131,7 +145,7 @@ export async function POST(request: Request) {
               data: {
                 alias: user.alias as string,
                 name: user.name as string,
-                password: (user.password as string) || "",
+                password: user.password as string,
                 isAdmin: (user.isAdmin as boolean) || false,
                 isTeamLeader: (user.isTeamLeader as boolean) || false,
                 teamId: (user.teamId as string) || null,
