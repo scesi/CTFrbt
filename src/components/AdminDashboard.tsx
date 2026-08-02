@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
 import UsersView from "./UsersView";
-import TeamsView from "./TeamsView";
+import TeamsView from "./admin/TeamsView";
 import RulesView from "./RulesView";
 import SubmissionsView from "./SubmissionsView";
 import LogsView from "./LogsView";

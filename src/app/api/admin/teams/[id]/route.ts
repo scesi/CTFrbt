@@ -16,9 +16,8 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name } = body;
+    const { name, icon, color, code } = body;
 
-    // Validate the team exists
     const team = await prisma.team.findUnique({
       where: { id },
     });
@@ -27,19 +26,54 @@ export async function PATCH(
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
     }
 
-    // Validate name length if provided
-    if (name && name.length > 32) {
+    // Validate field types and basic constraints when provided
+    if (name !== undefined && (typeof name !== "string" || name.length > 32)) {
       return NextResponse.json(
-        { error: "name must be max 32 characters" },
+        { error: "name must be a string of max 32 characters" },
+        { status: 400 },
+      );
+    }
+    if (icon !== undefined && typeof icon !== "string") {
+      return NextResponse.json(
+        { error: "icon must be a string" },
+        { status: 400 },
+      );
+    }
+    if (color !== undefined && typeof color !== "string") {
+      return NextResponse.json(
+        { error: "color must be a string" },
+        { status: 400 },
+      );
+    }
+    if (
+      code !== undefined &&
+      (typeof code !== "string" || code.length === 0 || code.length > 12)
+    ) {
+      return NextResponse.json(
+        { error: "code must be a string of 1-12 characters" },
         { status: 400 },
       );
     }
 
-    // Update only the fields provided
+    if (code !== undefined && code !== team.code) {
+      const existing = await prisma.team.findUnique({
+        where: { code },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: "Team code is already taken" },
+          { status: 409 },
+        );
+      }
+    }
+
     const updatedTeam = await prisma.team.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
+        ...(icon !== undefined && { icon }),
+        ...(color !== undefined && { color }),
+        ...(code !== undefined && { code }),
       },
       select: {
         id: true,
@@ -55,6 +89,13 @@ export async function PATCH(
 
     return NextResponse.json({ team: updatedTeam });
   } catch (error) {
+    const err = error as { code?: string };
+    if (err.code === "P2002") {
+      return NextResponse.json(
+        { error: "Team name or code is already taken" },
+        { status: 409 },
+      );
+    }
     console.error("Error updating team:", error);
     return NextResponse.json(
       { error: "Internal server error" },
