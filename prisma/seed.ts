@@ -1,4 +1,4 @@
-import { PrismaClient } from "./generated/client";
+import { prisma } from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
 
 // Guard: refuse to seed production unless explicitly overridden
@@ -11,8 +11,6 @@ if (
   );
   process.exit(1);
 }
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...\n");
