@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// PATCH /api/admin/users/[id] - Update user properties (admin, team leader status, name)
-// Admin-only endpoint to modify user information
+// PATCH /api/admin/users/[id] - Update user properties (admin, team leader, name)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -19,7 +18,6 @@ export async function PATCH(
     const body = await request.json();
     const { name, isAdmin, isTeamLeader } = body;
 
-    // Validate the user exists
     const user = await prisma.user.findUnique({
       where: { id },
     });
@@ -28,19 +26,25 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Validate name length if provided
-    if (name && name.length > 48) {
-      return NextResponse.json(
-        { error: "name must be max 48 characters" },
-        { status: 400 },
-      );
+    if (name !== undefined) {
+      if (typeof name !== "string") {
+        return NextResponse.json(
+          { error: "name must be a string" },
+          { status: 400 },
+        );
+      }
+      if (name.length > 48) {
+        return NextResponse.json(
+          { error: "name must be max 48 characters" },
+          { status: 400 },
+        );
+      }
     }
 
-    // Update only the fields provided
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
-        ...(name && { name }),
+        ...(name !== undefined && { name }),
         ...(typeof isAdmin === "boolean" && { isAdmin }),
         ...(typeof isTeamLeader === "boolean" && { isTeamLeader }),
       },
@@ -66,9 +70,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/users/[id] - Delete a user
-// Admin-only endpoint to remove users from the system
-// WARNING: This will cascade delete related data (submissions, scores, sessions)
+// DELETE /api/admin/users/[id] - Admin-only; cascades to related data
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -81,7 +83,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Prevent admin from deleting themselves
+    // Prevent self-deletion
     if (id === session.user.id) {
       return NextResponse.json(
         { error: "Cannot delete your own account" },
@@ -89,16 +91,14 @@ export async function DELETE(
       );
     }
 
-    // Check if user exists
-    const user = await prisma.user.findUnique({
+    const existing = await prisma.user.findUnique({
       where: { id },
     });
 
-    if (!user) {
+    if (!existing) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Delete user (cascade will handle related data per schema)
     await prisma.user.delete({
       where: { id },
     });

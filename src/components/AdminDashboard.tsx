@@ -171,11 +171,16 @@ export default function AdminDashboard() {
 
   const toggleChallenge = async (id: string, isActive: boolean) => {
     try {
-      await fetch(`/api/admin/challenges/${id}`, {
+      const res = await fetch(`/api/admin/challenges/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !isActive }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to update challenge");
+        return;
+      }
       loadChallenges();
       toast.success(`Challenge ${!isActive ? "enabled" : "disabled"}`);
     } catch {
@@ -186,7 +191,14 @@ export default function AdminDashboard() {
   const deleteChallenge = async (id: string, title: string) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     try {
-      await fetch(`/api/admin/challenges/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/challenges/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to delete challenge");
+        return;
+      }
       loadChallenges();
       toast.success("Challenge deleted");
     } catch {
@@ -314,6 +326,15 @@ export default function AdminDashboard() {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (
+      !confirm(
+        "Importing data will replace all existing challenges, users, teams, announcements, and game configuration. This cannot be undone. Are you sure?",
+      )
+    ) {
+      e.target.value = "";
+      return;
+    }
 
     try {
       const text = await file.text();

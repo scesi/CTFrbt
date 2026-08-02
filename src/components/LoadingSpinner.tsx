@@ -7,10 +7,9 @@ import LoadingSpinner3 from "./LoadingSpinner3";
 import LoadingSpinner4 from "./LoadingSpinner4";
 
 export default function LoadingSpinner() {
-  const [spinner, setSpinner] = useState(0);
+  const [spinner, setSpinner] = useState<number | null>(null);
 
   useEffect(() => {
-    // Randomly choose between the four spinners
     const rand = Math.random();
     if (rand < 0.25) setSpinner(0);
     else if (rand < 0.5) setSpinner(1);
@@ -18,6 +17,7 @@ export default function LoadingSpinner() {
     else setSpinner(3);
   }, []);
 
+  if (spinner === null) return null;
   if (spinner === 0) return <LoadingSpinner1 />;
   if (spinner === 1) return <LoadingSpinner2 />;
   if (spinner === 2) return <LoadingSpinner3 />;

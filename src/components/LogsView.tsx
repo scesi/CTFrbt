@@ -39,8 +39,7 @@ export default function LogsView() {
 
   useEffect(() => {
     loadLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadLogs]);
 
   if (loading) {
     return <LoadingSpinner />;
