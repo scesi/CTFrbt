@@ -16,7 +16,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, isAdmin, isTeamLeader } = body;
+    const { name, isAdmin, isTeamLeader, teamId } = body;
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -41,12 +41,36 @@ export async function PATCH(
       }
     }
 
+    let teamIdValue: string | null | undefined = undefined;
+    if (teamId !== undefined) {
+      if (teamId === "") {
+        teamIdValue = null;
+      } else if (typeof teamId === "string") {
+        const team = await prisma.team.findUnique({
+          where: { id: teamId },
+        });
+        if (!team) {
+          return NextResponse.json(
+            { error: "Team not found" },
+            { status: 404 },
+          );
+        }
+        teamIdValue = teamId;
+      } else {
+        return NextResponse.json(
+          { error: "teamId must be a string" },
+          { status: 400 },
+        );
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
         ...(typeof isAdmin === "boolean" && { isAdmin }),
         ...(typeof isTeamLeader === "boolean" && { isTeamLeader }),
+        ...(teamIdValue !== undefined && { teamId: teamIdValue }),
       },
       select: {
         id: true,
@@ -55,6 +79,12 @@ export async function PATCH(
         isAdmin: true,
         isTeamLeader: true,
         teamId: true,
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
       },

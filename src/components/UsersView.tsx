@@ -117,8 +117,10 @@ export default function UsersView({
       }
 
       toast.success(`User "${data.user.alias}" updated`);
-      setUsers(
-        users.map((u) => (u.id === editingId ? { ...u, ...data.user } : u)),
+      setUsers((currentUsers) =>
+        currentUsers.map((u) =>
+          u.id === editingId ? { ...u, ...data.user } : u,
+        ),
       );
       cancelEdit();
       onUserUpdated?.();
