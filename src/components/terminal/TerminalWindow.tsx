@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type { Session } from "next-auth";
-import Sidebar from "./Sidebar";
-import StatusBar from "./StatusBar";
+import Sidebar from "../Sidebar";
+import StatusBar from "../StatusBar";
 import CRTSettings from "./CRTSettings";
 
 export default function TerminalWindow({

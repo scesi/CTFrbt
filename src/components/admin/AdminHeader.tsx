@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type ChangeEvent } from "react";
+import styles from "./AdminHeader.module.css";
 
 interface AdminHeaderProps {
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -11,34 +12,25 @@ export default function AdminHeader({ onImport, onExport }: AdminHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "24px",
-      }}
-    >
-      <h1 style={{ fontSize: "24px", fontWeight: 700 }}>Admin Panel</h1>
-      <div style={{ display: "flex", gap: "8px" }}>
+    <div className={styles.header}>
+      <h1 className={styles.title}>Admin Panel</h1>
+      <div className={styles.actions}>
         <input
           type="file"
           accept=".json"
           onChange={onImport}
-          style={{ display: "none" }}
+          className={styles.fileInput}
           ref={fileInputRef}
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="btn"
-          style={{ fontSize: "12px", padding: "6px 12px" }}
+          className={`btn ${styles.actionButton}`}
         >
           Import
         </button>
         <button
           onClick={onExport}
-          className="btn btn-primary"
-          style={{ fontSize: "12px", padding: "6px 12px" }}
+          className={`btn btn-primary ${styles.actionButton}`}
         >
           Export All
         </button>

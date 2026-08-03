@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import LoadingSpinner from "./loading/LoadingSpinner";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 export interface Announcement {
   id: string;

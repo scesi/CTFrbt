@@ -4,22 +4,21 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import UsersView from "./admin/UsersView";
-import TeamsView from "./admin/TeamsView";
-import GameConfiguration from "./admin/GameConfiguration";
-import RulesView from "./admin/RulesView";
-import SubmissionsView from "./admin/SubmissionsView";
-import LogsView from "./admin/LogsView";
-import LoadingSpinner from "./admin/loading/LoadingSpinner";
-import AdminTabs from "./admin/AdminTabs";
-import AdminHeader from "./admin/AdminHeader";
-import AnnouncementsView, {
-  type Announcement,
-} from "./admin/AnnouncementsView";
+import styles from "./AdminDashboard.module.css";
+import UsersView from "./UsersView";
+import TeamsView from "./TeamsView";
+import GameConfiguration from "./GameConfiguration";
+import RulesView from "./RulesView";
+import SubmissionsView from "./SubmissionsView";
+import LogsView from "./LogsView";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import AdminTabs from "./AdminTabs";
+import AdminHeader from "./AdminHeader";
+import AnnouncementsView, { type Announcement } from "./AnnouncementsView";
 import ChallengesManagement, {
   type Challenge,
   type ChallengeForm,
-} from "./admin/ChallengesManagement";
+} from "./ChallengesManagement";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -200,8 +199,9 @@ export default function AdminDashboard() {
       const res = await fetch(`/api/admin/announcements/${id}`, {
         method: "DELETE",
       });
+      const data = await res.json();
       if (!res.ok) {
-        toast.error("Failed to delete announcement");
+        toast.error(data.error || "Failed to delete announcement");
         return;
       }
       toast.success("Announcement deleted");
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
   if (!session?.user?.isAdmin) return null;
 
   return (
-    <div style={{ paddingTop: "8px" }}>
+    <div className={styles.dashboard}>
       <AdminHeader onImport={handleImport} onExport={handleExport} />
 
       {/* Tab Navigation */}
@@ -343,16 +343,8 @@ export default function AdminDashboard() {
         <>
           <GameConfiguration />
 
-          <div className="card" style={{ marginTop: "20px" }}>
-            <h2
-              style={{
-                fontSize: "14px",
-                fontWeight: 600,
-                marginBottom: "12px",
-              }}
-            >
-              Rules
-            </h2>
+          <div className={`card ${styles.rulesCard}`}>
+            <h2 className={styles.rulesTitle}>Rules</h2>
             <RulesView />
           </div>
         </>

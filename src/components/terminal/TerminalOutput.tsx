@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 import TerminalInput from "./TerminalInput";
-import GameTimer from "./GameTimer";
+import GameTimer from "../admin/GameTimer";
 
 export default function TerminalOutput() {
   const { state } = useTerminal();

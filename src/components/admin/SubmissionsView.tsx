@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import LoadingSpinner from "./loading/LoadingSpinner";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 interface Submission {
   id: string;

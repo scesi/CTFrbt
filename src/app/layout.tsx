@@ -4,7 +4,7 @@ import "./globals.css";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Providers from "@/components/Providers";
-import TerminalWindow from "@/components/TerminalWindow";
+import TerminalWindow from "@/components/terminal/TerminalWindow";
 import Background3D from "@/components/Background3D";
 import { Toaster } from "react-hot-toast";
 import { FaCheck, FaTimes } from "react-icons/fa";
