@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
-import LoadingSpinner from "../LoadingSpinner";
+import LoadingSpinner from "./loading/LoadingSpinner";
 
 export default function RulesView() {
   const [rules, setRules] = useState("");

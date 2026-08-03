@@ -10,7 +10,7 @@ import GameConfiguration from "./admin/GameConfiguration";
 import RulesView from "./admin/RulesView";
 import SubmissionsView from "./admin/SubmissionsView";
 import LogsView from "./admin/LogsView";
-import LoadingSpinner from "./LoadingSpinner";
+import LoadingSpinner from "./admin/loading/LoadingSpinner";
 
 interface Challenge {
   id: string;
