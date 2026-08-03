@@ -11,6 +11,7 @@ import RulesView from "./admin/RulesView";
 import SubmissionsView from "./admin/SubmissionsView";
 import LogsView from "./admin/LogsView";
 import LoadingSpinner from "./admin/loading/LoadingSpinner";
+import AdminTabs from "./admin/AdminTabs";
 
 interface Challenge {
   id: string;
@@ -332,124 +333,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tab Navigation */}
-      <div
-        style={{
-          display: "flex",
-          gap: "4px",
-          marginBottom: "20px",
-          paddingBottom: "8px",
-          borderBottom: "1px solid var(--border)",
-          flexWrap: "wrap",
-        }}
-      >
-        <button
-          onClick={() => setActiveTab("challenges")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "challenges" ? "#8a2be2" : "transparent",
-            color: activeTab === "challenges" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Challenges
-        </button>
-        <button
-          onClick={() => setActiveTab("users")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "users" ? "#8a2be2" : "transparent",
-            color: activeTab === "users" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Users
-        </button>
-        <button
-          onClick={() => setActiveTab("teams")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "teams" ? "#8a2be2" : "transparent",
-            color: activeTab === "teams" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Teams
-        </button>
-        <button
-          onClick={() => setActiveTab("submissions")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "submissions" ? "#8a2be2" : "transparent",
-            color: activeTab === "submissions" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Submissions
-        </button>
-        <button
-          onClick={() => setActiveTab("logs")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background: activeTab === "logs" ? "#8a2be2" : "transparent",
-            color: activeTab === "logs" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Logs
-        </button>
-        <button
-          onClick={() => setActiveTab("announcements")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background:
-              activeTab === "announcements" ? "#8a2be2" : "transparent",
-            color: activeTab === "announcements" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Announcements
-        </button>
-        <button
-          onClick={() => setActiveTab("configuration")}
-          style={{
-            padding: "8px 16px",
-            fontSize: "13px",
-            fontFamily: "var(--font-mono)",
-            background:
-              activeTab === "configuration" ? "#8a2be2" : "transparent",
-            color: activeTab === "configuration" ? "#000000" : "var(--fg)",
-            border: "1px solid var(--border)",
-            cursor: "pointer",
-            borderRadius: "0",
-          }}
-        >
-          Game Configuration
-        </button>
-      </div>
+      <AdminTabs
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
+      />
 
       {/* Tab Content */}
 
