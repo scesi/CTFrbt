@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { vi } from "vitest";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import type {
   Challenge,
@@ -54,6 +56,39 @@ export async function createUserWithTeam(
     ...userOverrides,
   });
   return { user, team };
+}
+
+/** Creates an admin user (no team required). */
+export async function createAdminUser(
+  overrides: Partial<Omit<User, "id">> = {},
+): Promise<User> {
+  return createUser({ isAdmin: true, ...overrides });
+}
+
+/**
+ * Stubs getServerSession for the current test. Relies on the file-level
+ * `vi.mock("next-auth", () => ({ getServerSession: vi.fn() }))`.
+ */
+export function mockSession(user: {
+  id: string;
+  teamId?: string | null;
+  isAdmin?: boolean;
+}): void {
+  vi.mocked(getServerSession).mockResolvedValue({
+    user: {
+      id: user.id,
+      teamId: user.teamId ?? null,
+      isAdmin: user.isAdmin ?? false,
+    },
+  } as Awaited<ReturnType<typeof getServerSession>>);
+}
+
+/**
+ * Stub to request that no session exists at all. Kept explicit so tests
+ * reading "unauthenticated" are self-documenting.
+ */
+export function mockNoSession(): void {
+  vi.mocked(getServerSession).mockResolvedValue(null);
 }
 
 export async function createChallenge(
