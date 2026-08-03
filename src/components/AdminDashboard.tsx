@@ -4,12 +4,12 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
-import UsersView from "./UsersView";
+import UsersView from "./admin/UsersView";
 import TeamsView from "./admin/TeamsView";
 import GameConfiguration from "./admin/GameConfiguration";
-import RulesView from "./RulesView";
-import SubmissionsView from "./SubmissionsView";
-import LogsView from "./LogsView";
+import RulesView from "./admin/RulesView";
+import SubmissionsView from "./admin/SubmissionsView";
+import LogsView from "./admin/LogsView";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface Challenge {
