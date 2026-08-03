@@ -1,4 +1,20 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ctfrbt-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://ctfrbt:ctfrbt@postgres:5432/ctfrbt
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-to-a-random-secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:18.4-alpine
     container_name: ctfrbt-db
@@ -10,9 +26,27 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ctfrbt -d ctfrbt" ]
+      test: ["CMD-SHELL", "pg_isready -U ctfrbt -d ctfrbt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-test:
+    image: postgres:18.4-alpine
+    container_name: ctfrbt-db-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ctfrbt
+      POSTGRES_PASSWORD: ctfrbt
+      POSTGRES_DB: ctfrbt_test
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctfrbt -d ctfrbt_test"]
       interval: 5s
       timeout: 5s
       retries: 5
