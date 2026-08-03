@@ -12,6 +12,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Same gate as the challenge listing: no hint ids/costs before the CTF
+  // starts. Once it ends, reads stay open so teams can review what they bought.
+  if (!session.user.isAdmin) {
+    const gameStatus = await getGameWindowStatus();
+    if (gameStatus.state === "not_started") {
+      return NextResponse.json(
+        { error: "The CTF hasn't started yet" },
+        { status: 403 },
+      );
+    }
+  }
+
   const { searchParams } = new URL(request.url);
   const challengeId = searchParams.get("challengeId");
 
@@ -52,9 +64,9 @@ export async function GET(request: Request) {
       content: true,
       teamHints: teamId
         ? {
-          where: { teamId },
-          select: { id: true },
-        }
+            where: { teamId },
+            select: { id: true },
+          }
         : false,
     },
   });
