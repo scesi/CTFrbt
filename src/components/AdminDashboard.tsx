@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import UsersView from "./admin/UsersView";
 import TeamsView from "./admin/TeamsView";
@@ -12,6 +12,7 @@ import SubmissionsView from "./admin/SubmissionsView";
 import LogsView from "./admin/LogsView";
 import LoadingSpinner from "./admin/loading/LoadingSpinner";
 import AdminTabs from "./admin/AdminTabs";
+import AdminHeader from "./admin/AdminHeader";
 
 interface Challenge {
   id: string;
@@ -36,7 +37,6 @@ export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("challenges");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -298,39 +298,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ paddingTop: "8px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
-        }}
-      >
-        <h1 style={{ fontSize: "24px", fontWeight: 700 }}>Admin Panel</h1>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleImport}
-            style={{ display: "none" }}
-            ref={fileInputRef}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="btn"
-            style={{ fontSize: "12px", padding: "6px 12px" }}
-          >
-            Import
-          </button>
-          <button
-            onClick={handleExport}
-            className="btn btn-primary"
-            style={{ fontSize: "12px", padding: "6px 12px" }}
-          >
-            Export All
-          </button>
-        </div>
-      </div>
+      <AdminHeader onImport={handleImport} onExport={handleExport} />
 
       {/* Tab Navigation */}
       <AdminTabs
