@@ -16,17 +16,10 @@ import AdminHeader from "./admin/AdminHeader";
 import AnnouncementsView, {
   type Announcement,
 } from "./admin/AnnouncementsView";
-
-interface Challenge {
-  id: string;
-  title: string;
-  category: string;
-  points: number;
-  difficulty: string;
-  isActive: boolean;
-  isLocked: boolean;
-  _count: { submissions: number };
-}
+import ChallengesManagement, {
+  type Challenge,
+  type ChallengeForm,
+} from "./admin/ChallengesManagement";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -37,7 +30,7 @@ export default function AdminDashboard() {
 
   // New challenge form
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ChallengeForm>({
     title: "",
     description: "",
     points: 100,
@@ -305,197 +298,18 @@ export default function AdminDashboard() {
 
       {/* Challenges Tab */}
       {activeTab === "challenges" && (
-        <>
-          {/* Challenges header */}
-          <div
-            style={{
-              marginBottom: "16px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
-              Challenges ({challenges.length})
-            </h2>
-            <button className="btn" onClick={() => setShowForm(!showForm)}>
-              {showForm ? "Cancel" : "+ New Challenge"}
-            </button>
-          </div>
-
-          {/* New challenge form */}
-          {showForm && (
-            <div className="card" style={{ marginBottom: "16px" }}>
-              <form onSubmit={createChallenge}>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "10px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={form.title}
-                    onChange={(e) =>
-                      setForm({ ...form, title: e.target.value })
-                    }
-                    placeholder="Title"
-                    required
-                  />
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={form.flag}
-                    onChange={(e) => setForm({ ...form, flag: e.target.value })}
-                    placeholder="flag{...}"
-                    required
-                  />
-                </div>
-                <textarea
-                  className="form-input"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  placeholder="Description"
-                  required
-                  rows={4}
-                  style={{ marginBottom: "10px", resize: "vertical" }}
-                />
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                    gap: "10px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={form.points}
-                    onChange={(e) =>
-                      setForm({ ...form, points: Number(e.target.value) })
-                    }
-                    placeholder="Points"
-                    required
-                    min={1}
-                  />
-                  <input
-                    type="text"
-                    className="form-input"
-                    list="admin-category-options"
-                    value={form.category}
-                    onChange={(e) =>
-                      setForm({ ...form, category: e.target.value })
-                    }
-                    placeholder="Category"
-                    required
-                  />
-                  <datalist id="admin-category-options">
-                    {categoryOptions.map((c) => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
-                  <select
-                    className="form-input"
-                    value={form.difficulty}
-                    onChange={(e) =>
-                      setForm({ ...form, difficulty: e.target.value })
-                    }
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                    <option value="insane">Insane</option>
-                  </select>
-                  <input
-                    type="url"
-                    className="form-input"
-                    value={form.link}
-                    onChange={(e) => setForm({ ...form, link: e.target.value })}
-                    placeholder="Link (optional)"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={creating}
-                >
-                  {creating ? "Creating..." : "Create Challenge"}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* Challenges table */}
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th style={{ textAlign: "right" }}>Pts</th>
-                <th>Diff</th>
-                <th style={{ textAlign: "right" }}>Solves</th>
-                <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {challenges.map((c) => (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 500 }}>{c.title}</td>
-                  <td>{c.category}</td>
-                  <td style={{ textAlign: "right" }}>{c.points}</td>
-                  <td>{c.difficulty}</td>
-                  <td style={{ textAlign: "right" }}>{c._count.submissions}</td>
-                  <td>
-                    <span
-                      style={{
-                        color: c.isActive ? "var(--success)" : "var(--danger)",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {c.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <button
-                      onClick={() => toggleChallenge(c.id, c.isActive)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--fg-muted)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                        marginRight: "8px",
-                      }}
-                    >
-                      {c.isActive ? "disable" : "enable"}
-                    </button>
-                    <button
-                      onClick={() => deleteChallenge(c.id, c.title)}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--danger)",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+        <ChallengesManagement
+          challenges={challenges}
+          showForm={showForm}
+          form={form}
+          creating={creating}
+          categoryOptions={categoryOptions}
+          onToggleForm={() => setShowForm(!showForm)}
+          onFormChange={setForm}
+          onSubmit={createChallenge}
+          onToggleChallenge={toggleChallenge}
+          onDeleteChallenge={deleteChallenge}
+        />
       )}
 
       {/* Users Tab */}
