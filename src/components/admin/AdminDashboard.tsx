@@ -246,7 +246,7 @@ export default function AdminDashboard() {
 
     if (
       !confirm(
-        "Importing data will replace all existing challenges, users, teams, announcements, and game configuration. This cannot be undone. Are you sure?",
+        "Importing data will update or create teams, users, and challenges. If the file contains announcements, existing announcements will be replaced. If it contains game configuration, the existing configuration will be replaced. Existing activity (submissions, scores, etc.) will be preserved. This cannot be undone. Are you sure?",
       )
     ) {
       e.target.value = "";
