@@ -89,13 +89,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The generated Prisma client is gitignored, so build it before tests.
       - name: Generate Prisma client
         run: pnpm prisma generate
-
-      # The admin backup endpoint shells out to pg_dump/psql, and the test DB
-      # is postgres:18.4-alpine. The distro's postgresql-client (16.x) refuses
-      # to dump a newer server, so install the matching 18.x client from PGDG.
       - name: Install PostgreSQL 18 client
         run: |
           sudo apt-get update
