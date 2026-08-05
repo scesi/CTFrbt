@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "next-auth";
 import Sidebar from "../Sidebar";
 import StatusBar from "../StatusBar";
@@ -14,6 +15,12 @@ export default function TerminalWindow({
   session: Session | null;
 }) {
   const [isMinimized, setIsMinimized] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const goToTerminal = () => {
+    if (pathname !== "/dashboard") router.push("/dashboard");
+  };
 
   return (
     <div className="app-shell">
@@ -44,7 +51,11 @@ export default function TerminalWindow({
           }
         >
           <div className="window-controls">
-            <button className="window-btn close" title="Close" />
+            <button
+              className="window-btn close"
+              title="Close"
+              onClick={goToTerminal}
+            />
             <button
               className="window-btn minimize"
               title="Minimize"
@@ -57,7 +68,9 @@ export default function TerminalWindow({
             />
           </div>
 
-          <span className="title-text">guest@ctfrbt: ~</span>
+          <span className="title-text">
+            {`${session?.user?.alias || "guest"}@ctfrbt: ~`}
+          </span>
 
           <div className="title-actions">
             <CRTSettings />
