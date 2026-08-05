@@ -33,6 +33,12 @@ export async function PATCH(
           { status: 400 },
         );
       }
+      if (name.trim().length === 0) {
+        return NextResponse.json(
+          { error: "name must not be empty" },
+          { status: 400 },
+        );
+      }
       if (name.length > 48) {
         return NextResponse.json(
           { error: "name must be max 48 characters" },
@@ -129,9 +135,14 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    await prisma.user.delete({
-      where: { id },
-    });
+    // Remove the user's own activity first: submissions and scores reference
+    // the user with RESTRICT semantics, so they must be deleted explicitly.
+    // Sessions cascade on delete.
+    await prisma.$transaction([
+      prisma.submission.deleteMany({ where: { userId: id } }),
+      prisma.score.deleteMany({ where: { userId: id } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
 
     return NextResponse.json({ message: "User deleted successfully" });
   } catch (error) {

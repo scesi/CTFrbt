@@ -47,6 +47,17 @@ export async function PUT(
       );
     }
 
+    const existing = await prisma.challenge.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 },
+      );
+    }
+
     const challenge = await prisma.challenge.update({
       where: { id },
       data: {
@@ -92,6 +103,17 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    const existing = await prisma.challenge.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 404 },
+      );
+    }
+
     await prisma.challenge.delete({ where: { id } });
     invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ message: "Challenge deleted" });

@@ -27,7 +27,10 @@ export async function PATCH(
     }
 
     // Validate field types and basic constraints when provided
-    if (name !== undefined && (typeof name !== "string" || name.length > 32)) {
+    if (
+      name !== undefined &&
+      (typeof name !== "string" || name.trim().length === 0 || name.length > 32)
+    ) {
       return NextResponse.json(
         { error: "name must be a string of max 32 characters" },
         { status: 400 },
@@ -126,16 +129,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
     }
 
-    // Remove teamId from all members (don't delete users)
-    await prisma.user.updateMany({
-      where: { teamId: id },
-      data: { teamId: null },
-    });
-
-    // Delete team (cascade will handle related data per schema)
-    await prisma.team.delete({
-      where: { id },
-    });
+    // Remove the team's own activity first: submissions, scores, team hints
+    // and activity logs reference the team with RESTRICT semantics, so they
+    // must be deleted explicitly. Point history cascades on delete. Members
+    // keep their accounts, detached from the team.
+    await prisma.$transaction([
+      prisma.submission.deleteMany({ where: { teamId: id } }),
+      prisma.score.deleteMany({ where: { teamId: id } }),
+      prisma.teamHint.deleteMany({ where: { teamId: id } }),
+      prisma.activityLog.deleteMany({ where: { teamId: id } }),
+      prisma.user.updateMany({ where: { teamId: id }, data: { teamId: null } }),
+      prisma.team.delete({ where: { id } }),
+    ]);
 
     return NextResponse.json({ message: "Team deleted successfully" });
   } catch (error) {
