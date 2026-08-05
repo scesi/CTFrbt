@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useRef, type ChangeEvent } from "react";
 import styles from "./AdminHeader.module.css";
 
 interface AdminHeaderProps {
@@ -18,39 +18,19 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
-  const importDetailsRef = useRef<HTMLDetailsElement>(null);
-  const exportDetailsRef = useRef<HTMLDetailsElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        importDetailsRef.current?.contains(target) ||
-        exportDetailsRef.current?.contains(target)
-      ) {
-        return;
-      }
-      if (importDetailsRef.current) importDetailsRef.current.open = false;
-      if (exportDetailsRef.current) exportDetailsRef.current.open = false;
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const pickJson = () => {
-    if (importDetailsRef.current) importDetailsRef.current.open = false;
-    jsonInputRef.current?.click();
+  const handleImportSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    const action = e.target.value;
+    e.target.value = "";
+    if (action === "zip") zipInputRef.current?.click();
+    if (action === "json") jsonInputRef.current?.click();
   };
 
-  const pickZip = () => {
-    if (importDetailsRef.current) importDetailsRef.current.open = false;
-    zipInputRef.current?.click();
-  };
-
-  const runExport = (action: () => void) => {
-    if (exportDetailsRef.current) exportDetailsRef.current.open = false;
-    action();
+  const handleExportSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    const action = e.target.value;
+    e.target.value = "";
+    if (action === "zip") onExportZip();
+    if (action === "json") onExportSettings();
   };
 
   return (
@@ -72,41 +52,31 @@ export default function AdminHeader({
           ref={zipInputRef}
         />
 
-        <details ref={importDetailsRef} className={styles.menuWrapper}>
-          <summary className={`btn ${styles.actionButton} ${styles.summary}`}>
-            Import <span className={styles.caret}>▾</span>
-          </summary>
-          <div className={styles.menu}>
-            <button className={styles.menuItem} onClick={pickZip}>
-              Restore from ZIP
-            </button>
-            <button className={styles.menuItem} onClick={pickJson}>
-              Import Settings (JSON)
-            </button>
-          </div>
-        </details>
+        <select
+          className={`btn ${styles.select}`}
+          defaultValue=""
+          aria-label="Import actions"
+          onChange={handleImportSelect}
+        >
+          <option value="" disabled>
+            Import ▾
+          </option>
+          <option value="zip">Restore from ZIP</option>
+          <option value="json">Import Settings (JSON)</option>
+        </select>
 
-        <details ref={exportDetailsRef} className={styles.menuWrapper}>
-          <summary
-            className={`btn btn-primary ${styles.actionButton} ${styles.summary}`}
-          >
-            Export <span className={styles.caret}>▾</span>
-          </summary>
-          <div className={styles.menu}>
-            <button
-              className={styles.menuItem}
-              onClick={() => runExport(onExportZip)}
-            >
-              Export All (ZIP)
-            </button>
-            <button
-              className={styles.menuItem}
-              onClick={() => runExport(onExportSettings)}
-            >
-              Export Settings (JSON)
-            </button>
-          </div>
-        </details>
+        <select
+          className={`btn btn-primary ${styles.select}`}
+          defaultValue=""
+          aria-label="Export actions"
+          onChange={handleExportSelect}
+        >
+          <option value="" disabled>
+            Export ▾
+          </option>
+          <option value="zip">Export All (ZIP)</option>
+          <option value="json">Export Settings (JSON)</option>
+        </select>
       </div>
     </div>
   );
