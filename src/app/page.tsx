@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (session?.user) redirect("/dashboard");
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <h1
