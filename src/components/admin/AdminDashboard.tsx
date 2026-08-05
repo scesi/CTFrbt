@@ -215,7 +215,7 @@ export default function AdminDashboard() {
     if (session?.user?.isAdmin) loadAnnouncements();
   }, [session, loadAnnouncements]);
 
-  const handleExport = async () => {
+  const handleExportSettings = async () => {
     try {
       const res = await fetch("/api/admin/export");
       if (!res.ok) {
@@ -240,7 +240,31 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExportZip = async () => {
+    try {
+      const res = await fetch("/api/admin/backup");
+      if (!res.ok) {
+        toast.error("Failed to create backup");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ctfrbt-backup-${new Date().toISOString().split("T")[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Backup downloaded successfully");
+    } catch {
+      toast.error("Failed to create backup");
+    }
+  };
+
+  const handleImportSettings = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -278,6 +302,48 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRestoreBackup = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (
+      !confirm(
+        "Restoring a backup will replace the entire database and all uploaded files with the backup contents. This cannot be undone. Are you sure?",
+      )
+    ) {
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("confirm", "true");
+
+      const res = await fetch("/api/admin/backup", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Failed to restore backup");
+        return;
+      }
+
+      toast.success("Backup restored successfully");
+      // The whole database and uploaded files were replaced, so reload to
+      // drop every tab's cached data.
+      window.setTimeout(() => window.location.reload(), 300);
+    } catch {
+      toast.error("Failed to restore backup - invalid file format");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   if (status === "loading" || loading) {
     return <LoadingSpinner />;
   }
@@ -286,7 +352,12 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <AdminHeader onImport={handleImport} onExport={handleExport} />
+      <AdminHeader
+        onImportSettings={handleImportSettings}
+        onImportZip={handleRestoreBackup}
+        onExportSettings={handleExportSettings}
+        onExportZip={handleExportZip}
+      />
 
       {/* Tab Navigation */}
       <AdminTabs
