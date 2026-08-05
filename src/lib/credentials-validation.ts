@@ -10,8 +10,7 @@ export interface CredentialFields {
 }
 
 export type ValidationResult =
-  | { ok: true }
-  | { ok: false; error: string; status: number };
+  { ok: true } | { ok: false; error: string; status: number };
 
 export function validateNewUserCredentials(
   f: CredentialFields,
@@ -21,14 +20,22 @@ export function validateNewUserCredentials(
     typeof f.name !== "string" ||
     typeof f.password !== "string"
   ) {
-    return { ok: false, error: "alias, name, and password are required", status: 400 };
+    return {
+      ok: false,
+      error: "alias, name, and password are required",
+      status: 400,
+    };
   }
 
   const alias = f.alias.trim();
   const name = f.name.trim();
 
   if (!alias || !name || !f.password) {
-    return { ok: false, error: "alias, name, and password are required", status: 400 };
+    return {
+      ok: false,
+      error: "alias, name, and password are required",
+      status: 400,
+    };
   }
 
   if (!ALIAS_REGEX.test(alias)) {
@@ -75,10 +82,7 @@ export function validatePasswordPair(
   currentPassword: unknown,
   newPassword: unknown,
 ): { ok: true } | { ok: false; error: string; status: number } {
-  if (
-    typeof currentPassword !== "string" ||
-    typeof newPassword !== "string"
-  ) {
+  if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
     return {
       ok: false,
       error: "currentPassword and newPassword are required",
@@ -87,7 +91,11 @@ export function validatePasswordPair(
   }
 
   if (/\s/.test(newPassword)) {
-    return { ok: false, error: "Password must not contain spaces", status: 400 };
+    return {
+      ok: false,
+      error: "Password must not contain spaces",
+      status: 400,
+    };
   }
 
   if (

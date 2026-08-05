@@ -222,9 +222,7 @@ export function TeamView() {
               color={team.color || DEFAULT_COLOR}
               size={26}
             />
-            <div style={{ fontSize: "16px", fontWeight: 600 }}>
-              {team.name}
-            </div>
+            <div style={{ fontSize: "16px", fontWeight: 600 }}>{team.name}</div>
             {isLeader && (
               <button
                 onClick={() => setCustomizing((c) => !c)}

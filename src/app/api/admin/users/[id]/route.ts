@@ -4,7 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
-import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "@/lib/credentials-validation";
+import {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from "@/lib/credentials-validation";
 
 export async function PATCH(
   request: Request,
@@ -46,7 +49,9 @@ export async function PATCH(
         password.length > PASSWORD_MAX_LENGTH
       ) {
         return NextResponse.json(
-          { error: `Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters` },
+          {
+            error: `Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters`,
+          },
           { status: 400 },
         );
       }

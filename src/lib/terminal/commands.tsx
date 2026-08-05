@@ -447,7 +447,10 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
   passwd: async (args, ctx) => {
     if (!ctx.session?.user) {
-      ctx.appendOutput("You must be logged in to change your password.", "error");
+      ctx.appendOutput(
+        "You must be logged in to change your password.",
+        "error",
+      );
       return;
     }
     if (args[0] !== undefined) {
@@ -465,34 +468,40 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       setTerminalPrompt(ctx, "New password: ", "password", async (input) => {
         const newPassword = input;
         ctx.appendOutput("Confirm new password:", "system");
-        setTerminalPrompt(ctx, "Confirm password: ", "password", async (confirm) => {
-          if (confirm !== newPassword) {
-            ctx.appendOutput("Passwords do not match.", "error");
-            return;
-          }
+        setTerminalPrompt(
+          ctx,
+          "Confirm password: ",
+          "password",
+          async (confirm) => {
+            if (confirm !== newPassword) {
+              ctx.appendOutput("Passwords do not match.", "error");
+              return;
+            }
 
-          ctx.dispatch({ type: "SET_PROCESSING", payload: true });
-          try {
-            const res = await fetch("/api/auth/password", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ currentPassword, newPassword }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed to change password");
+            ctx.dispatch({ type: "SET_PROCESSING", payload: true });
+            try {
+              const res = await fetch("/api/auth/password", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ currentPassword, newPassword }),
+              });
+              const data = await res.json();
+              if (!res.ok)
+                throw new Error(data.error || "Failed to change password");
 
-            ctx.appendOutput(
-              <div style={{ color: "var(--success)" }}>
-                Password changed successfully. Please log in again.
-              </div>,
-            );
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Unknown error";
-            ctx.appendOutput(`Error: ${msg}`, "error");
-          } finally {
-            ctx.dispatch({ type: "SET_PROCESSING", payload: false });
-          }
-        });
+              ctx.appendOutput(
+                <div style={{ color: "var(--success)" }}>
+                  Password changed successfully. Please log in again.
+                </div>,
+              );
+            } catch (e: unknown) {
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              ctx.appendOutput(`Error: ${msg}`, "error");
+            } finally {
+              ctx.dispatch({ type: "SET_PROCESSING", payload: false });
+            }
+          },
+        );
       });
     });
   },

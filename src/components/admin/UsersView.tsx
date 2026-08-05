@@ -77,8 +77,7 @@ export default function UsersView({
         const data = await res.json();
         setTeams(data.teams || []);
       }
-    } catch {
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {

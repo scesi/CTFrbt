@@ -75,10 +75,7 @@ describe("admin users", () => {
     const target = await createUser();
     mockSession(admin);
 
-    const res = await PATCH(
-      json({ isTeamLeader: true }),
-      params(target.id),
-    );
+    const res = await PATCH(json({ isTeamLeader: true }), params(target.id));
     expect(res.status).toBe(400);
 
     const body = await res.json();
@@ -92,10 +89,7 @@ describe("admin users", () => {
     const target = await createUser({ teamId: team.id });
     mockSession(admin);
 
-    const res = await PATCH(
-      json({ isTeamLeader: true }),
-      params(target.id),
-    );
+    const res = await PATCH(json({ isTeamLeader: true }), params(target.id));
     expect(res.status).toBe(400);
 
     const body = await res.json();
@@ -250,7 +244,9 @@ describe("admin users POST", () => {
     const team = await createTeam();
     mockSession(admin);
 
-    const res = await POST(json({ ...creds, teamId: team.id, isTeamLeader: true }));
+    const res = await POST(
+      json({ ...creds, teamId: team.id, isTeamLeader: true }),
+    );
     expect(res.status).toBe(201);
     expect((await res.json()).user.isTeamLeader).toBe(true);
   });
@@ -269,7 +265,9 @@ describe("admin users POST", () => {
     await createUser({ teamId: team.id, isTeamLeader: true });
     mockSession(admin);
 
-    const res = await POST(json({ ...creds, teamId: team.id, isTeamLeader: true }));
+    const res = await POST(
+      json({ ...creds, teamId: team.id, isTeamLeader: true }),
+    );
     expect(res.status).toBe(400);
     expect((await res.json()).error).toContain("leader");
   });
