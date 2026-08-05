@@ -25,6 +25,7 @@ const MAX_PROCESS_BUFFER = 100 * 1024 * 1024;
 const PG_TOOL_PATHS = [
   "/opt/homebrew/opt/libpq/bin",
   "/usr/local/opt/libpq/bin",
+  "/usr/lib/postgresql/18/bin",
 ].filter((dir) => existsSync(dir));
 
 function pgToolEnv() {
