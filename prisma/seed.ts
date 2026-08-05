@@ -51,7 +51,7 @@ async function main() {
   });
 
   console.log(
-    `  ✓ Sample users: @alice, @bob, @charlie @Stevenjoelrs(password: "password")`,
+    `  ✓ Sample users: @alice, @bob, @charlie (password: "password")`,
   );
 
   // ── Teams ───────────────────────────────────────────────
