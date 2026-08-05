@@ -6,6 +6,7 @@ import { ScoreboardView } from "@/components/views/ScoreboardView";
 import { RulesView } from "@/components/views/RulesView";
 import { TeamView } from "@/components/views/TeamView";
 import { CategoryView } from "@/components/views/CategoryView";
+import TeamIcon from "@/components/ui/TeamIcon";
 import { fetchCached, invalidateCache, apiCache } from "./cache";
 
 function resolvePath(cwd: string, target: string): string {
@@ -64,7 +65,6 @@ export async function getAutocompleteCandidates(
 
   let options: string[] = [];
 
-  // Naive filesystem mapping using local memory cache (0 server cost)
   if (cwd === "~") {
     options = ["challenges", "teams", "rules.txt", "announcements.txt"];
   } else if (cwd === "~/challenges") {
@@ -78,7 +78,6 @@ export async function getAutocompleteCandidates(
     const data = apiCache["/api/challenges"] as
       { challengesByCategory?: Record<string, { id: string }[]> } | undefined;
     if (data?.challengesByCategory?.[category]) {
-      // For cat/ls we might want .txt, for submit/hint we just want the ID
       if (cmd === "submit" || cmd === "hint") {
         options = data.challengesByCategory[category].map((c) => c.id);
       } else {
@@ -157,8 +156,8 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
             rules
           </li>
           <li>
-            <span style={{ color: "var(--fg)" }}>team</span> - View or manage
-            your team
+            <span style={{ color: "var(--fg)" }}>team</span> - View your team
+            (leaders can customize icon &amp; color)
           </li>
           <li>
             <span style={{ color: "var(--fg)" }}>
@@ -289,7 +288,6 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const target = args[0] || "~";
     const newPath = resolvePath(state.cwd, target);
 
-    // Naive directory validation
     if (
       newPath === "~" ||
       newPath === "~/challenges" ||
@@ -312,7 +310,6 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 
     const targetPath = resolvePath(state.cwd, target);
 
-    // If it's a directory
     if (
       targetPath === "~" ||
       targetPath === "~/challenges" ||
@@ -382,7 +379,13 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       const teamName = filename.replace(".txt", "");
       try {
         const data = (await fetchCached("/api/leaderboard")) as {
-          teams: { id: string; name: string; score: number }[];
+          teams: {
+            id: string;
+            name: string;
+            score: number;
+            icon?: string;
+            color?: string;
+          }[];
         };
         const teams = data.teams;
         const team = teams.find(
@@ -400,7 +403,14 @@ export const COMMAND_REGISTRY: Record<string, CommandHandler> = {
               margin: "10px 0",
             }}
           >
-            <h3 style={{ margin: "0 0 10px 0" }}>Team: {team.name}</h3>
+            <h3 style={{ margin: "0 0 10px 0" }}>
+              <TeamIcon
+                name={team.icon || "GiSpaceship"}
+                color={team.color || "var(--fg)"}
+                size={18}
+              />{" "}
+              {team.name}
+            </h3>
             <div style={{ color: "var(--neon-amber)" }}>
               Score: {team.score}
             </div>
