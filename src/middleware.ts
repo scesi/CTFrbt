@@ -78,6 +78,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAuthRoute =
     path === "/api/auth/register" ||
+    path === "/api/auth/password" ||
     path.startsWith("/api/auth/callback/credentials");
 
   if (
