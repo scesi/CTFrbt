@@ -213,7 +213,6 @@ describe("admin backup/restore", () => {
     expect(res.status).toBe(400);
   });
 
-  // The implementer must cap the number of entries below this threshold.
   it("POST rejects a zip-bomb with too many entries", async () => {
     const admin = await createAdminUser();
     mockSession(admin);
@@ -285,7 +284,6 @@ describe("admin backup/restore", () => {
     expect(backupRes.status).toBe(200);
     const zip = Buffer.from(await backupRes.arrayBuffer());
 
-    // Wipe everything: DB + uploaded files.
     await resetDb();
     await fs.rm(UPLOADS_DIR, { recursive: true, force: true });
 

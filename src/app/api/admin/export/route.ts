@@ -25,10 +25,6 @@ const isRecord = (v: unknown): v is Rec =>
 const isStrId = (v: unknown): v is string =>
   typeof v === "string" && v.length > 0;
 
-// numberOrThrow: only a finite number is accepted; null/undefined fall back to
-// the provided default; any other type throws a ValidationError. This rejects
-// strings, NaN, Infinity, booleans and objects so invalid payloads are never
-// silently coerced.
 function numberOrThrow(v: unknown, fallback: number): number {
   if (v === null || v === undefined) return fallback;
   if (typeof v !== "number" || !Number.isFinite(v)) {
@@ -37,8 +33,6 @@ function numberOrThrow(v: unknown, fallback: number): number {
   return v;
 }
 
-// boolOrThrow: only a real boolean is accepted; undefined falls back to the
-// default; any other type (including "false" strings) throws.
 function boolOrThrow(v: unknown, fallback: boolean): boolean {
   if (v === undefined) return fallback;
   if (typeof v !== "boolean") {
@@ -218,7 +212,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Validate input: reject a totally empty payload.
   if (!teams && !users && !challenges && !announcements && !gameConfig) {
     return NextResponse.json(
       { error: "No data provided for import" },
@@ -256,7 +249,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Each element of a section must be a plain object.
   const sectionMustBeObjects = (arr: unknown): arr is Rec[] => {
     if (!Array.isArray(arr)) return true;
     return arr.every((e) => isRecord(e));
@@ -336,7 +328,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Begin transaction for all-or-nothing import
     const result = await prisma.$transaction(async (tx) => {
       const imported: Record<string, unknown> = {};
 
