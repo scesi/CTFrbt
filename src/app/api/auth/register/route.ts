@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
-
-const ALIAS_REGEX = /^[a-zA-Z0-9_.-]{3,32}$/;
+import { ALIAS_REGEX } from "@/lib/credentials-validation";
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +61,13 @@ export async function POST(request: Request) {
     if (password.length < 6 || password.length > 128) {
       return NextResponse.json(
         { error: "Password must be between 6 and 128 characters" },
+        { status: 400 },
+      );
+    }
+
+    if (/\s/.test(password)) {
+      return NextResponse.json(
+        { error: "Password must not contain spaces" },
         { status: 400 },
       );
     }
