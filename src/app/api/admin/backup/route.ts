@@ -16,8 +16,8 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 
 // Restore guards: reject zip-bombs and absolute/traversal entry names.
 const MAX_ZIP_ENTRIES = 10_000;
-const MAX_TOTAL_UNCOMPRESSED = 500 * 1024 * 1024; // 500 MB
-const MAX_PROCESS_BUFFER = 100 * 1024 * 1024; // 100 MB
+const MAX_TOTAL_UNCOMPRESSED = 500 * 1024 * 1024;
+const MAX_PROCESS_BUFFER = 100 * 1024 * 1024;
 
 // Homebrew's libpq keg is not on PATH by default, yet pg_dump/psql ship there.
 // Look for them in the well-known prefixes first and fall back to whatever
@@ -116,7 +116,7 @@ export async function GET() {
     zip.addFile("dump.sql", dump);
     await addUploadsToZip(zip);
 
-    return new NextResponse(zip.toBuffer(), {
+    return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": 'attachment; filename="ctfrbt-backup.zip"',
