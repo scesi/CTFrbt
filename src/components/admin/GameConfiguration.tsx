@@ -7,6 +7,7 @@ import TimeInput24 from "../ui/TimeInput24";
 interface GameConfig {
   startTime: string;
   endTime: string | null;
+  registrationEnabled?: boolean;
 }
 
 function pad(num: number): string {
@@ -58,6 +59,7 @@ export default function GameConfiguration() {
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -70,6 +72,10 @@ export default function GameConfiguration() {
       }
       const data = await res.json();
       const config: GameConfig | null = data.config ?? null;
+
+      setRegistrationEnabled(
+        config ? config.registrationEnabled !== false : true,
+      );
 
       if (config && config.startTime) {
         const start = new Date(config.startTime);
@@ -148,6 +154,7 @@ export default function GameConfiguration() {
         body: JSON.stringify({
           startTime: startDateTime.toISOString(),
           endTime: endDateTime ? endDateTime.toISOString() : null,
+          registrationEnabled,
         }),
       });
 
@@ -161,6 +168,10 @@ export default function GameConfiguration() {
         const start = new Date(data.config.startTime);
         setStartDate(formatLocalDate(start));
         setStartTime(formatLocalTime(start));
+
+        if (data.config.registrationEnabled !== undefined) {
+          setRegistrationEnabled(data.config.registrationEnabled);
+        }
 
         if (data.config.endTime) {
           const end = new Date(data.config.endTime);
@@ -329,6 +340,32 @@ export default function GameConfiguration() {
                 clear end
               </button>
             </div>
+          </section>
+
+          <section
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                fontSize: "13px",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={registrationEnabled}
+                onChange={(e) => setRegistrationEnabled(e.target.checked)}
+                disabled={saving}
+              />
+              Allow new user registration
+            </label>
           </section>
 
           <button

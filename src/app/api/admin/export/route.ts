@@ -126,6 +126,7 @@ export async function GET() {
           startTime: true,
           endTime: true,
           isActive: true,
+          registrationEnabled: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -581,6 +582,10 @@ export async function POST(request: Request) {
               ? new Date(gameConfig.endTime as string)
               : null,
             isActive: boolOrThrow(gameConfig.isActive, true),
+            registrationEnabled: boolOrThrow(
+              gameConfig.registrationEnabled,
+              true,
+            ),
           },
         });
       }

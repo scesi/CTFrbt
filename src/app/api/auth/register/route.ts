@@ -7,6 +7,17 @@ const ALIAS_REGEX = /^[a-zA-Z0-9_.-]{3,32}$/;
 
 export async function POST(request: Request) {
   try {
+    const gameConfig = await prisma.gameConfig.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { registrationEnabled: true },
+    });
+    if (gameConfig && gameConfig.registrationEnabled === false) {
+      return NextResponse.json(
+        { error: "Registration is disabled" },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const { alias, name, password } = body;
 

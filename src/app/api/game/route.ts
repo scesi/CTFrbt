@@ -14,6 +14,7 @@ export async function GET() {
             startTime: config.startTime.toISOString(),
             endTime: config.endTime?.toISOString() || null,
             isActive: config.isActive,
+            registrationEnabled: config.registrationEnabled,
           }
         : null,
     });

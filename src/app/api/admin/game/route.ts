@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { startTime, endTime, isActive } = body;
+    const { startTime, endTime, isActive, registrationEnabled } = body;
 
     if (!startTime) {
       return NextResponse.json(
@@ -59,22 +59,22 @@ export async function POST(request: Request) {
     });
 
     let config;
+    const data = {
+      startTime: start,
+      endTime: end,
+      isActive: isActive !== false,
+      ...(registrationEnabled !== undefined && {
+        registrationEnabled: registrationEnabled === true,
+      }),
+    };
     if (existing) {
       config = await prisma.gameConfig.update({
         where: { id: existing.id },
-        data: {
-          startTime: start,
-          endTime: end,
-          isActive: isActive !== false,
-        },
+        data,
       });
     } else {
       config = await prisma.gameConfig.create({
-        data: {
-          startTime: start,
-          endTime: end,
-          isActive: isActive !== false,
-        },
+        data,
       });
     }
 
