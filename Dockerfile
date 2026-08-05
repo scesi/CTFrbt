@@ -42,4 +42,4 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 USER nextjs
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
