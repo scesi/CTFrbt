@@ -27,7 +27,7 @@ const zipFromResponse = async (res: Response): Promise<AdmZip> =>
 
 const backupRequest = (file: Buffer, extra: Record<string, string> = {}) => {
   const form = new FormData();
-  form.set("file", new Blob([file]), "backup.zip");
+  form.set("file", new Blob([new Uint8Array(file)]), "backup.zip");
   for (const [key, value] of Object.entries(extra)) form.set(key, value);
   return new Request("http://localhost/api/admin/backup", {
     method: "POST",
