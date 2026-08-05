@@ -46,7 +46,17 @@ export default function UsersView({
     isAdmin: false,
     isTeamLeader: false,
     teamId: "",
+    password: "",
   });
+  const [createForm, setCreateForm] = useState({
+    alias: "",
+    name: "",
+    password: "",
+    isAdmin: false,
+    isTeamLeader: false,
+    teamId: "",
+  });
+  const [creating, setCreating] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -68,7 +78,6 @@ export default function UsersView({
         setTeams(data.teams || []);
       }
     } catch {
-      // Teams are optional, don't show error
     }
   }, []);
 
@@ -87,6 +96,7 @@ export default function UsersView({
       isAdmin: user.isAdmin,
       isTeamLeader: user.isTeamLeader,
       teamId: user.teamId || "",
+      password: "",
     });
   };
 
@@ -97,17 +107,71 @@ export default function UsersView({
       isAdmin: false,
       isTeamLeader: false,
       teamId: "",
+      password: "",
     });
+  };
+
+  const createUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (/\s/.test(createForm.password)) {
+      toast.error("Password must not contain spaces");
+      return;
+    }
+    if (!createForm.alias.trim() || !createForm.name.trim()) {
+      toast.error("Alias and name must not be blank");
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...createForm,
+          teamId: createForm.teamId || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to create user");
+        return;
+      }
+
+      toast.success(`User "${data.user.alias}" created`);
+      setCreateForm({
+        alias: "",
+        name: "",
+        password: "",
+        isAdmin: false,
+        isTeamLeader: false,
+        teamId: "",
+      });
+      loadUsers();
+      onUserUpdated?.();
+    } catch {
+      toast.error("Failed to create user");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const saveEdit = async () => {
     if (!editingId) return;
 
     try {
+      const payload = {
+        name: editForm.name,
+        isAdmin: editForm.isAdmin,
+        isTeamLeader: editForm.isTeamLeader,
+        teamId: editForm.teamId,
+        ...(editForm.password ? { password: editForm.password } : {}),
+      };
+
       const res = await fetch(`/api/admin/users/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -180,6 +244,129 @@ export default function UsersView({
         </h2>
       </div>
 
+      <div className="card" style={{ marginBottom: "24px" }}>
+        <form
+          onSubmit={createUser}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(6, auto)",
+            gap: "10px",
+            alignItems: "end",
+          }}
+        >
+          <div>
+            <label className="form-label">Alias</label>
+            <input
+              type="text"
+              className="form-input"
+              value={createForm.alias}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, alias: e.target.value })
+              }
+              placeholder="alias"
+              maxLength={32}
+              required
+            />
+          </div>
+          <div>
+            <label className="form-label">Name</label>
+            <input
+              type="text"
+              className="form-input"
+              value={createForm.name}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, name: e.target.value })
+              }
+              placeholder="Full name"
+              maxLength={48}
+              pattern=".*\S.*"
+              title="Name must contain at least one non-space character"
+              required
+            />
+          </div>
+          <div>
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-input"
+              value={createForm.password}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, password: e.target.value })
+              }
+              placeholder="Password"
+              minLength={6}
+              maxLength={128}
+              pattern="\S+"
+              title="Password must not contain spaces"
+              required
+            />
+          </div>
+          <div>
+            <label className="form-label">Team</label>
+            <select
+              className="form-input"
+              value={createForm.teamId}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, teamId: e.target.value })
+              }
+            >
+              <option value="">No team</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "flex", gap: "14px", paddingBottom: "6px" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "13px",
+                color: "var(--fg-muted)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={createForm.isAdmin}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, isAdmin: e.target.checked })
+                }
+                style={checkboxStyle}
+              />
+              Admin
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "13px",
+                color: "var(--fg-muted)",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={createForm.isTeamLeader}
+                onChange={(e) =>
+                  setCreateForm({
+                    ...createForm,
+                    isTeamLeader: e.target.checked,
+                  })
+                }
+                style={checkboxStyle}
+              />
+              Leader
+            </label>
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={creating}>
+            {creating ? "Creating..." : "Create User"}
+          </button>
+        </form>
+      </div>
+
       <table className="table">
         <thead>
           <tr>
@@ -201,15 +388,32 @@ export default function UsersView({
                 <td style={{ fontWeight: 500 }}>{user.alias}</td>
                 <td>
                   {editingId === user.id ? (
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={editForm.name}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, name: e.target.value })
-                      }
-                      style={{ width: "150px", fontSize: "13px" }}
-                    />
+                    <>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editForm.name}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, name: e.target.value })
+                        }
+                        style={{ width: "150px", fontSize: "13px" }}
+                      />
+                      <input
+                        type="password"
+                        className="form-input"
+                        value={editForm.password}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, password: e.target.value })
+                        }
+                        placeholder="New password"
+                        maxLength={128}
+                        style={{
+                          width: "150px",
+                          fontSize: "13px",
+                          marginTop: "4px",
+                        }}
+                      />
+                    </>
                   ) : (
                     user.name
                   )}

@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from "@/lib/credentials-validation";
 
-// PATCH /api/admin/users/[id] - Update user properties (admin, team leader, name)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -16,7 +18,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, isAdmin, isTeamLeader, teamId } = body;
+    const { name, isAdmin, isTeamLeader, teamId, password } = body;
 
     const user = await prisma.user.findUnique({
       where: { id },
@@ -24,6 +26,30 @@ export async function PATCH(
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (password !== undefined) {
+      if (typeof password !== "string") {
+        return NextResponse.json(
+          { error: "password must be a string" },
+          { status: 400 },
+        );
+      }
+      if (/\s/.test(password)) {
+        return NextResponse.json(
+          { error: "Password must not contain spaces" },
+          { status: 400 },
+        );
+      }
+      if (
+        password.length < PASSWORD_MIN_LENGTH ||
+        password.length > PASSWORD_MAX_LENGTH
+      ) {
+        return NextResponse.json(
+          { error: `Password must be between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters` },
+          { status: 400 },
+        );
+      }
     }
 
     if (name !== undefined) {
@@ -70,34 +96,58 @@ export async function PATCH(
       }
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(typeof isAdmin === "boolean" && { isAdmin }),
-        ...(typeof isTeamLeader === "boolean" && { isTeamLeader }),
-        ...(teamIdValue !== undefined && { teamId: teamIdValue }),
-      },
-      select: {
-        id: true,
-        alias: true,
-        name: true,
-        isAdmin: true,
-        isTeamLeader: true,
-        teamId: true,
-        team: {
-          select: {
-            id: true,
-            name: true,
-          },
+    let hashedPassword: string | undefined;
+    if (password !== undefined) {
+      hashedPassword = await withBcryptSlot(() => bcrypt.hash(password, 12));
+    }
+
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id },
+        data: {
+          ...(name !== undefined && { name }),
+          ...(typeof isAdmin === "boolean" && { isAdmin }),
+          ...(typeof isTeamLeader === "boolean" && {
+            isTeamLeader: isTeamLeader,
+          }),
+          ...(teamIdValue !== undefined && {
+            teamId: teamIdValue,
+          }),
+          ...(hashedPassword !== undefined && { password: hashedPassword }),
         },
-        createdAt: true,
-        updatedAt: true,
-      },
+        select: {
+          id: true,
+          alias: true,
+          name: true,
+          isAdmin: true,
+          isTeamLeader: true,
+          teamId: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      if (hashedPassword !== undefined) {
+        await tx.userSession.deleteMany({ where: { userId: id } });
+      }
+
+      return updated;
     });
 
     return NextResponse.json({ user: updatedUser });
   } catch (error) {
+    if (error instanceof BcryptBusyError) {
+      return NextResponse.json(
+        { error: "Server busy, please try again shortly" },
+        { status: 503 },
+      );
+    }
     console.error("Error updating user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -106,7 +156,6 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/users/[id] - Admin-only; cascades to related data
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -119,7 +168,6 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Prevent self-deletion
     if (id === session.user.id) {
       return NextResponse.json(
         { error: "Cannot delete your own account" },
@@ -135,9 +183,6 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Remove the user's own activity first: submissions and scores reference
-    // the user with RESTRICT semantics, so they must be deleted explicitly.
-    // Sessions cascade on delete.
     await prisma.$transaction([
       prisma.submission.deleteMany({ where: { userId: id } }),
       prisma.score.deleteMany({ where: { userId: id } }),

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
+import { validateNewUserCredentials } from "@/lib/credentials-validation";
 
-// GET /api/admin/users - List all users with team info
-// Admin-only endpoint to view all users in the system
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -19,7 +20,6 @@ export async function GET() {
         name: true,
         isAdmin: true,
         isTeamLeader: true,
-        teamId: true,
         createdAt: true,
         updatedAt: true,
         team: {
@@ -48,8 +48,6 @@ export async function GET() {
   }
 }
 
-// POST /api/admin/users - Create a new user (if needed for admin panel)
-// Currently unused, but kept for potential bulk user creation
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {
@@ -60,23 +58,19 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { alias, name, password, isAdmin, isTeamLeader } = body;
 
-    if (!alias || !name || !password) {
+    const validation = validateNewUserCredentials({ alias, name, password });
+    if (!validation.ok) {
       return NextResponse.json(
-        { error: "alias, name, and password are required" },
-        { status: 400 },
+        { error: validation.error },
+        { status: validation.status },
       );
     }
 
-    if (alias.length > 32 || name.length > 48) {
-      return NextResponse.json(
-        { error: "alias (max 32) and name (max 48) constraints violated" },
-        { status: 400 },
-      );
-    }
+    const trimmedAlias = (alias as string).trim();
+    const trimmedName = (name as string).trim();
 
-    // Check if alias already exists
     const existingUser = await prisma.user.findUnique({
-      where: { alias },
+      where: { alias: trimmedAlias },
     });
 
     if (existingUser) {
@@ -86,13 +80,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Note: Password hashing should be done here with bcryptjs
-    // For now, we'll accept raw password (should implement hashing in production)
+    const hashedPassword = await withBcryptSlot(() =>
+      bcrypt.hash(password as string, 12),
+    );
+
     const user = await prisma.user.create({
       data: {
-        alias,
-        name,
-        password, // TODO: Hash with bcryptjs before saving
+        alias: trimmedAlias,
+        name: trimmedName,
+        password: hashedPassword,
         isAdmin: isAdmin || false,
         isTeamLeader: isTeamLeader || false,
       },
@@ -108,6 +104,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
+    if (error instanceof BcryptBusyError) {
+      return NextResponse.json(
+        { error: "Server busy, please try again shortly" },
+        { status: 503 },
+      );
+    }
     console.error("Error creating user:", error);
     return NextResponse.json(
       { error: "Internal server error" },

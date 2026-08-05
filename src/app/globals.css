@@ -769,6 +769,15 @@ body::after {
   transition: border-color 0.2s ease;
 }
 
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--fg-dim);
+}
+
 .form-input:focus {
   outline: none;
   border-color: var(--fg);
