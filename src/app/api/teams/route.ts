@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 const MAX_TEAM_MEMBERS = 4;
-const JOIN_LOCKOUT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const JOIN_LOCKOUT_WINDOW_MS = 10 * 60 * 1000;
 const MAX_JOIN_FAILURES = 5;
 
-// GET /api/teams — Get current user's team info
+const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
+const MAX_ICON_LENGTH = 64;
+
 export async function GET() {
   const session = await getServerSession(authOptions);
 
@@ -41,7 +43,81 @@ export async function GET() {
   return NextResponse.json({ team: user.team });
 }
 
-// POST /api/teams — Create or join a team
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+  });
+
+  if (!user?.teamId) {
+    return NextResponse.json(
+      { error: "You are not in a team" },
+      { status: 400 },
+    );
+  }
+
+  if (!user.isTeamLeader) {
+    return NextResponse.json(
+      { error: "Only the team leader can customize the team" },
+      { status: 403 },
+    );
+  }
+
+  let body: { icon?: unknown; color?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { icon, color } = body;
+
+  if (icon !== undefined) {
+    if (
+      typeof icon !== "string" ||
+      icon.length === 0 ||
+      icon.length > MAX_ICON_LENGTH
+    ) {
+      return NextResponse.json(
+        { error: `icon must be a string of max ${MAX_ICON_LENGTH} characters` },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (color !== undefined) {
+    if (typeof color !== "string" || !COLOR_REGEX.test(color)) {
+      return NextResponse.json(
+        { error: "color must be a hex color like #ff00aa" },
+        { status: 400 },
+      );
+    }
+  }
+
+  const team = await prisma.team.update({
+    where: { id: user.teamId },
+    data: {
+      ...(icon !== undefined && { icon }),
+      ...(color !== undefined && { color }),
+    },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      icon: true,
+      color: true,
+      score: true,
+    },
+  });
+
+  return NextResponse.json({ team });
+}
+
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -49,7 +125,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check if user already has a team
   const currentUser = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
@@ -65,7 +140,6 @@ export async function POST(request: Request) {
   const { action, teamName, teamCode } = body;
 
   if (action === "create") {
-    // Create a new team
     const trimmedName = typeof teamName === "string" ? teamName.trim() : "";
     if (!trimmedName || trimmedName.length > 32) {
       return NextResponse.json(
@@ -74,10 +148,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate a cryptographically secure invite code (48 bits → 12 hex chars)
     const code = crypto.randomBytes(6).toString("hex").toUpperCase();
 
-    // Generate a random cyberpunk color
     const cyberpunkColors = [
       "#8a2be2",
       "#00bfff",
@@ -93,14 +165,10 @@ export async function POST(request: Request) {
 
     let team: { id: string; name: string; code: string };
     try {
-      // Atomic: if the leader assignment fails (user grabbed a team
-      // concurrently), the team creation rolls back too.
       team = await prisma.$transaction(async (tx) => {
         const created = await tx.team.create({
           data: { name: trimmedName, code, color },
         });
-
-        // Conditional update guards the "already in a team" TOCTOU race
         const joined = await tx.user.updateMany({
           where: { id: session.user.id, teamId: null },
           data: { teamId: created.id, isTeamLeader: true },
@@ -143,7 +211,6 @@ export async function POST(request: Request) {
   }
 
   if (action === "join") {
-    // Join an existing team by invite code
     if (
       typeof teamCode !== "string" ||
       !teamCode.trim() ||
@@ -155,7 +222,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Brute-force lockout — per user, 5 failures in 10 minutes
     const recentFailures = await prisma.teamJoinAttempt.count({
       where: {
         userId: session.user.id,
@@ -175,8 +241,6 @@ export async function POST(request: Request) {
     let failureReason: "INVALID_CODE" | "TEAM_FULL" | null = null;
 
     try {
-      // Serializable transaction prevents race condition:
-      // two concurrent joins can't both read count < MAX and both succeed
       joinedTeam = await prisma.$transaction(
         async (tx) => {
           const team = await tx.team.findUnique({
@@ -192,7 +256,6 @@ export async function POST(request: Request) {
             throw new Error("TEAM_FULL");
           }
 
-          // Conditional update guards the "already in a team" TOCTOU race
           const joined = await tx.user.updateMany({
             where: { id: session.user.id, teamId: null },
             data: { teamId: team.id },
@@ -218,7 +281,6 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       } else if (err.code === "P2034") {
-        // Serialization conflict — ask client to retry
         return NextResponse.json(
           { error: "Please try again" },
           { status: 409 },
@@ -228,7 +290,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Record attempt (both success and failure)
     await prisma.teamJoinAttempt.create({
       data: { userId: session.user.id, success: !!joinedTeam },
     });
