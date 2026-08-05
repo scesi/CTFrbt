@@ -46,6 +46,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
+    "adm-zip": "^0.6.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^15.2.5",
