@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, type ChangeEvent } from "react";
 import styles from "./AdminHeader.module.css";
 
 interface AdminHeaderProps {
@@ -10,50 +10,51 @@ interface AdminHeaderProps {
   onExportZip: () => void;
 }
 
-type MenuKey = "import" | "export" | null;
-
 export default function AdminHeader({
   onImportSettings,
   onImportZip,
   onExportSettings,
   onExportZip,
 }: AdminHeaderProps) {
-  const [openMenu, setOpenMenu] = useState<MenuKey>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
+  const importDetailsRef = useRef<HTMLDetailsElement>(null);
+  const exportDetailsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenMenu(null);
-    };
-
     const handleClickOutside = (e: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
+      const target = e.target as Node;
+      if (
+        importDetailsRef.current?.contains(target) ||
+        exportDetailsRef.current?.contains(target)
+      ) {
+        return;
       }
+      if (importDetailsRef.current) importDetailsRef.current.open = false;
+      if (exportDetailsRef.current) exportDetailsRef.current.open = false;
     };
 
-    document.addEventListener("keydown", handleEscape);
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const pickJson = () => {
-    setOpenMenu(null);
+    if (importDetailsRef.current) importDetailsRef.current.open = false;
     jsonInputRef.current?.click();
   };
 
   const pickZip = () => {
-    setOpenMenu(null);
+    if (importDetailsRef.current) importDetailsRef.current.open = false;
     zipInputRef.current?.click();
   };
 
+  const runExport = (action: () => void) => {
+    if (exportDetailsRef.current) exportDetailsRef.current.open = false;
+    action();
+  };
+
   return (
-    <div className={styles.header} ref={headerRef}>
+    <div className={styles.header}>
       <h1 className={styles.title}>Admin Panel</h1>
       <div className={styles.actions}>
         <input
@@ -71,57 +72,41 @@ export default function AdminHeader({
           ref={zipInputRef}
         />
 
-        <div className={styles.menuWrapper}>
-          <button
-            onClick={() => setOpenMenu(openMenu === "import" ? null : "import")}
-            className={`btn ${styles.actionButton}`}
-            aria-expanded={openMenu === "import"}
-          >
+        <details ref={importDetailsRef} className={styles.menuWrapper}>
+          <summary className={`btn ${styles.actionButton} ${styles.summary}`}>
             Import <span className={styles.caret}>▾</span>
-          </button>
-          {openMenu === "import" && (
-            <div className={styles.menu}>
-              <button className={styles.menuItem} onClick={pickZip}>
-                Restore from ZIP
-              </button>
-              <button className={styles.menuItem} onClick={pickJson}>
-                Import Settings (JSON)
-              </button>
-            </div>
-          )}
-        </div>
+          </summary>
+          <div className={styles.menu}>
+            <button className={styles.menuItem} onClick={pickZip}>
+              Restore from ZIP
+            </button>
+            <button className={styles.menuItem} onClick={pickJson}>
+              Import Settings (JSON)
+            </button>
+          </div>
+        </details>
 
-        <div className={styles.menuWrapper}>
-          <button
-            onClick={() => setOpenMenu(openMenu === "export" ? null : "export")}
-            className={`btn btn-primary ${styles.actionButton}`}
-            aria-expanded={openMenu === "export"}
+        <details ref={exportDetailsRef} className={styles.menuWrapper}>
+          <summary
+            className={`btn btn-primary ${styles.actionButton} ${styles.summary}`}
           >
             Export <span className={styles.caret}>▾</span>
-          </button>
-          {openMenu === "export" && (
-            <div className={styles.menu}>
-              <button
-                className={styles.menuItem}
-                onClick={() => {
-                  setOpenMenu(null);
-                  onExportZip();
-                }}
-              >
-                Export All (ZIP)
-              </button>
-              <button
-                className={styles.menuItem}
-                onClick={() => {
-                  setOpenMenu(null);
-                  onExportSettings();
-                }}
-              >
-                Export Settings (JSON)
-              </button>
-            </div>
-          )}
-        </div>
+          </summary>
+          <div className={styles.menu}>
+            <button
+              className={styles.menuItem}
+              onClick={() => runExport(onExportZip)}
+            >
+              Export All (ZIP)
+            </button>
+            <button
+              className={styles.menuItem}
+              onClick={() => runExport(onExportSettings)}
+            >
+              Export Settings (JSON)
+            </button>
+          </div>
+        </details>
       </div>
     </div>
   );
