@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { execFile } from "child_process";
+import { existsSync } from "fs";
 import { promisify } from "util";
 import fs from "fs/promises";
 import os from "os";
@@ -17,6 +18,21 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 const MAX_ZIP_ENTRIES = 10_000;
 const MAX_TOTAL_UNCOMPRESSED = 500 * 1024 * 1024; // 500 MB
 const MAX_PROCESS_BUFFER = 100 * 1024 * 1024; // 100 MB
+
+// Homebrew's libpq keg is not on PATH by default, yet pg_dump/psql ship there.
+// Look for them in the well-known prefixes first and fall back to whatever
+// PATH provides (Docker/CI), so backup/restore work without shell tweaks.
+const PG_TOOL_PATHS = [
+  "/opt/homebrew/opt/libpq/bin",
+  "/usr/local/opt/libpq/bin",
+].filter((dir) => existsSync(dir));
+
+function pgToolEnv() {
+  return {
+    ...process.env,
+    PATH: [...PG_TOOL_PATHS, process.env.PATH ?? ""].filter(Boolean).join(":"),
+  };
+}
 
 function forbidden() {
   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -93,7 +109,7 @@ export async function GET() {
         "--no-owner",
         "--no-privileges",
       ],
-      { maxBuffer: MAX_PROCESS_BUFFER },
+      { maxBuffer: MAX_PROCESS_BUFFER, env: pgToolEnv() },
     );
 
     const zip = new AdmZip();
@@ -234,6 +250,7 @@ export async function POST(request: Request) {
   try {
     await run("psql", [dbUrl, "-v", "ON_ERROR_STOP=1", "-q", "-f", tmpDump], {
       maxBuffer: MAX_PROCESS_BUFFER,
+      env: pgToolEnv(),
     });
   } catch (error) {
     console.error("Backup restore error:", error);
