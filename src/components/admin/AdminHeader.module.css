@@ -24,9 +24,45 @@
   font-size: 12px;
 }
 
-/* The closed trigger looks like a button; the options popup is rendered by
-   the browser/OS (Safari liquid glass, Chrome native), so options are
-   intentionally not styled. */
+.importMenu {
+  position: relative;
+}
+
+.importMenu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.importMenu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.importMenuList {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: var(--surface, #000000);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  z-index: 20;
+}
+
+.importMenuItem {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.importMenuItem:hover,
+.importMenuItem:focus-visible {
+  background: var(--surface-hover, #383838);
+  outline: none;
+}
+
 .select {
   appearance: none;
   -webkit-appearance: none;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, type ChangeEvent, type KeyboardEvent } from "react";
 import styles from "./AdminHeader.module.css";
 
 interface AdminHeaderProps {
@@ -16,14 +16,34 @@ export default function AdminHeader({
   onExportSettings,
   onExportZip,
 }: AdminHeaderProps) {
-  const jsonInputRef = useRef<HTMLInputElement>(null);
-  const zipInputRef = useRef<HTMLInputElement>(null);
+  const importMenuRef = useRef<HTMLDetailsElement>(null);
 
-  const handleImportSelect = (e: ChangeEvent<HTMLSelectElement>) => {
-    const action = e.target.value;
-    e.target.value = "";
-    if (action === "zip") zipInputRef.current?.click();
-    if (action === "json") jsonInputRef.current?.click();
+  // The <details> only closes on Escape or summary click; this adds the
+  // outside-click close for the Import menu.
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        importMenuRef.current &&
+        !importMenuRef.current.contains(e.target as Node)
+      ) {
+        importMenuRef.current.open = false;
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  const closeImportMenu = () => {
+    if (importMenuRef.current) {
+      importMenuRef.current.open = false;
+    }
+  };
+
+  const handleLabelKeyDown = (e: KeyboardEvent<HTMLLabelElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.currentTarget.click();
+    }
   };
 
   const handleExportSelect = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -42,28 +62,42 @@ export default function AdminHeader({
           accept=".json"
           onChange={onImportSettings}
           className={styles.fileInput}
-          ref={jsonInputRef}
+          id="import-json"
         />
         <input
           type="file"
           accept=".zip"
           onChange={onImportZip}
           className={styles.fileInput}
-          ref={zipInputRef}
+          id="import-zip"
         />
 
-        <select
-          className={`btn ${styles.select}`}
-          defaultValue=""
-          aria-label="Import actions"
-          onChange={handleImportSelect}
+        <details
+          ref={importMenuRef}
+          className={`btn ${styles.select} ${styles.importMenu}`}
         >
-          <option value="" disabled>
-            Import ▾
-          </option>
-          <option value="zip">Restore from ZIP</option>
-          <option value="json">Import Settings (JSON)</option>
-        </select>
+          <summary className={styles.importSummary}>Import ▾</summary>
+          <div className={styles.importMenuList}>
+            <label
+              htmlFor="import-zip"
+              tabIndex={0}
+              onClick={closeImportMenu}
+              onKeyDown={handleLabelKeyDown}
+              className={styles.importMenuItem}
+            >
+              Restore from ZIP
+            </label>
+            <label
+              htmlFor="import-json"
+              tabIndex={0}
+              onClick={closeImportMenu}
+              onKeyDown={handleLabelKeyDown}
+              className={styles.importMenuItem}
+            >
+              Import Settings (JSON)
+            </label>
+          </div>
+        </details>
 
         <select
           className={`btn btn-primary ${styles.select}`}
