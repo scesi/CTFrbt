@@ -21,7 +21,7 @@ const json = (body: unknown) =>
   });
 
 describe("admin export/import", () => {
-  it("GET export returns all five sections", async () => {
+  it("GET export returns content sections without users", async () => {
     const admin = await createAdminUser();
     mockSession(admin);
 
@@ -33,12 +33,12 @@ describe("admin export/import", () => {
 
     const body = await res.json();
     expect(Array.isArray(body.challenges)).toBe(true);
-    expect(Array.isArray(body.users)).toBe(true);
     expect(Array.isArray(body.teams)).toBe(true);
     expect(Array.isArray(body.announcements)).toBe(true);
+    expect(body.users).toBeUndefined();
   });
 
-  it("GET export does not leak password hashes", async () => {
+  it("GET export does not leak credentials", async () => {
     const admin = await createAdminUser();
     mockSession(admin);
 
@@ -47,9 +47,21 @@ describe("admin export/import", () => {
     const res = await GET();
     const body = await res.json();
 
-    expect(
-      body.users.some((u: Record<string, unknown>) => "password" in u),
-    ).toBe(false);
+    expect(body.users).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain("password");
+  });
+
+  it("GET export includes challenge flags", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    await createChallenge({ flag: "flag{exported}" });
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    expect(body.challenges[0].flag).toBe("flag{exported}");
   });
 
   it("POST import rejects an empty payload", async () => {
@@ -60,7 +72,7 @@ describe("admin export/import", () => {
     expect(res.status).toBe(400);
   });
 
-  it("POST import rejects users without a password hash", async () => {
+  it("POST import rejects payloads that include users", async () => {
     const admin = await createAdminUser();
     mockSession(admin);
 
@@ -72,7 +84,7 @@ describe("admin export/import", () => {
     const admin = await createAdminUser();
     mockSession(admin);
 
-    const { user } = await createUserWithTeam();
+    await createUserWithTeam();
     await createChallenge();
     await setGameConfig(
       new Date(Date.now() - 60 * 60 * 1000),
@@ -81,7 +93,7 @@ describe("admin export/import", () => {
 
     const exported = await GET();
     const payload = await exported.json();
-    expect(payload.users.map((u: { id: string }) => u.id)).toContain(user.id);
+    expect(payload.users).toBeUndefined();
 
     const res = await POST(json(payload));
     expect(res.status).toBe(200);

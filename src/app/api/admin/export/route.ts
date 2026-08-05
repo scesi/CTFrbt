@@ -55,106 +55,91 @@ export async function GET() {
   }
 
   try {
-    const [challenges, users, teams, announcements, gameConfig] =
-      await Promise.all([
-        prisma.challenge.findMany({
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            points: true,
-            flag: true,
-            multipleFlags: true,
-            category: true,
-            difficulty: true,
-            isActive: true,
-            isLocked: true,
-            link: true,
-            solveExplanation: true,
-            createdAt: true,
-            updatedAt: true,
-            flags: {
-              select: {
-                id: true,
-                flag: true,
-                points: true,
-                challengeId: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-            hints: {
-              select: {
-                id: true,
-                content: true,
-                cost: true,
-                challengeId: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-            unlockConditions: {
-              select: {
-                id: true,
-                type: true,
-                requiredChallengeId: true,
-                timeThresholdSeconds: true,
-                challengeId: true,
-                createdAt: true,
-                updatedAt: true,
-              },
+    const [challenges, teams, announcements, gameConfig] = await Promise.all([
+      prisma.challenge.findMany({
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          points: true,
+          flag: true,
+          multipleFlags: true,
+          category: true,
+          difficulty: true,
+          isActive: true,
+          isLocked: true,
+          link: true,
+          solveExplanation: true,
+          createdAt: true,
+          updatedAt: true,
+          flags: {
+            select: {
+              id: true,
+              flag: true,
+              points: true,
+              challengeId: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
-        }),
-        prisma.user.findMany({
-          select: {
-            id: true,
-            alias: true,
-            name: true,
-            password: true,
-            isAdmin: true,
-            isTeamLeader: true,
-            teamId: true,
-            createdAt: true,
-            updatedAt: true,
+          hints: {
+            select: {
+              id: true,
+              content: true,
+              cost: true,
+              challengeId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           },
-        }),
-        prisma.team.findMany({
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            icon: true,
-            color: true,
-            score: true,
-            createdAt: true,
-            updatedAt: true,
+          unlockConditions: {
+            select: {
+              id: true,
+              type: true,
+              requiredChallengeId: true,
+              timeThresholdSeconds: true,
+              challengeId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           },
-        }),
-        prisma.announcement.findMany({
-          select: {
-            id: true,
-            title: true,
-            content: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        }),
-        prisma.gameConfig.findFirst({
-          select: {
-            id: true,
-            startTime: true,
-            endTime: true,
-            isActive: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        }),
-      ]);
+        },
+      }),
+      prisma.team.findMany({
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          icon: true,
+          color: true,
+          score: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.announcement.findMany({
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.gameConfig.findFirst({
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       challenges,
-      users,
       teams,
       announcements,
       gameConfig,
@@ -225,6 +210,14 @@ export async function POST(request: Request) {
   const body = parsed as ImportBody;
   const { teams, users, challenges, announcements, gameConfig } = body;
 
+  // Content-only contract: the JSON payload must not carry users.
+  if (users !== undefined) {
+    return NextResponse.json(
+      { error: "users are not part of the content-only export" },
+      { status: 400 },
+    );
+  }
+
   // Validate input: reject a totally empty payload.
   if (!teams && !users && !challenges && !announcements && !gameConfig) {
     return NextResponse.json(
@@ -243,12 +236,6 @@ export async function POST(request: Request) {
   if (challenges !== undefined && !Array.isArray(challenges)) {
     return NextResponse.json(
       { error: "challenges must be an array" },
-      { status: 400 },
-    );
-  }
-  if (users !== undefined && !Array.isArray(users)) {
-    return NextResponse.json(
-      { error: "users must be an array" },
       { status: 400 },
     );
   }
@@ -286,27 +273,9 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (users !== undefined && !sectionMustBeObjects(users)) {
-    return NextResponse.json(
-      { error: "users must be an array of objects" },
-      { status: 400 },
-    );
-  }
   if (announcements !== undefined && !sectionMustBeObjects(announcements)) {
     return NextResponse.json(
       { error: "announcements must be an array of objects" },
-      { status: 400 },
-    );
-  }
-
-  if (
-    Array.isArray(users) &&
-    users.some(
-      (u: Rec) => typeof u.password !== "string" || u.password.length === 0,
-    )
-  ) {
-    return NextResponse.json(
-      { error: "All users must include a password hash" },
       { status: 400 },
     );
   }
@@ -362,38 +331,6 @@ export async function POST(request: Request) {
           { error: "challenge.unlockConditions must be an array" },
           { status: 400 },
         );
-      }
-    }
-  }
-  if (Array.isArray(users)) {
-    for (const u of users) {
-      if (!isStrId(u.id)) {
-        return NextResponse.json(
-          { error: "user.id must be a non-empty string" },
-          { status: 400 },
-        );
-      }
-      if (typeof u.alias !== "string" || u.alias.length === 0) {
-        return NextResponse.json(
-          { error: "user.alias must be a non-empty string" },
-          { status: 400 },
-        );
-      }
-    }
-  }
-
-  // teamId type validation (pre-flight, 400). Existence is verified inside the
-  // transaction against freshly-imported or pre-existing teams.
-  if (Array.isArray(users)) {
-    for (const u of users) {
-      const rawTeamId = u.teamId;
-      if (rawTeamId !== null && rawTeamId !== undefined && rawTeamId !== "") {
-        if (typeof rawTeamId !== "string") {
-          return NextResponse.json(
-            { error: "user.teamId must be a string, null or omitted" },
-            { status: 400 },
-          );
-        }
       }
     }
   }
@@ -624,58 +561,6 @@ export async function POST(request: Request) {
             }
           }
         }
-      }
-
-      // --- Users (upsert preserves IDs & teamId) ---
-      if (Array.isArray(users) && users.length > 0) {
-        for (const user of users) {
-          const id = user.id as string;
-          const rawTeamId = user.teamId;
-          let teamId: string | null;
-          if (rawTeamId === null || rawTeamId === undefined) {
-            teamId = null;
-          } else if (typeof rawTeamId === "string") {
-            if (rawTeamId.trim() === "") {
-              throw new ValidationError(
-                "user.teamId must be a non-empty string or null",
-              );
-            }
-            teamId = rawTeamId;
-            // Existence check: accept freshly-imported or pre-existing teams.
-            const teamExists = await tx.team.findUnique({
-              where: { id: teamId },
-              select: { id: true },
-            });
-            if (!teamExists) {
-              throw new ValidationError(
-                `user.teamId "${teamId}" does not refer to an existing or imported team`,
-              );
-            }
-          } else {
-            throw new ValidationError("user.teamId must be a string or null");
-          }
-          await tx.user.upsert({
-            where: { id },
-            create: {
-              id,
-              alias: user.alias as string,
-              name: user.name as string,
-              password: user.password as string,
-              isAdmin: boolOrThrow(user.isAdmin, false),
-              isTeamLeader: boolOrThrow(user.isTeamLeader, false),
-              teamId,
-            },
-            update: {
-              alias: user.alias as string,
-              name: user.name as string,
-              password: user.password as string,
-              isAdmin: boolOrThrow(user.isAdmin, false),
-              isTeamLeader: boolOrThrow(user.isTeamLeader, false),
-              teamId,
-            },
-          });
-        }
-        imported.users = users;
       }
 
       if (Array.isArray(announcements)) {
