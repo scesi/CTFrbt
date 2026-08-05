@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { FiFolder, FiFolderMinus, FiFile, FiLock } from "react-icons/fi";
 import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 import { fetchCached } from "@/lib/terminal/cache";
 
@@ -31,14 +32,16 @@ function TreeItem({
   node,
   depth = 0,
   pathname,
+  isAdmin,
 }: {
   node: TreeNode;
   depth?: number;
   pathname: string;
+  isAdmin: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
   const hasChildren = node.children && node.children.length > 0;
-  const isActive = node.href === pathname || false; // We don't really have active paths anymore for these
+  const isActive = node.href === pathname || false;
 
   const { status } = useSession();
   const { executeCommand } = useTerminal();
@@ -59,6 +62,12 @@ function TreeItem({
   const handleClick = (e: React.MouseEvent) => {
     if (hasChildren) {
       setIsOpen(!isOpen);
+      return;
+    }
+
+    if (node.href) {
+      e.preventDefault();
+      router.push(node.href);
       return;
     }
 
@@ -105,6 +114,7 @@ function TreeItem({
               node={child}
               depth={depth + 1}
               pathname={pathname}
+              isAdmin={isAdmin}
             />
           ))}
         </ul>
@@ -113,9 +123,11 @@ function TreeItem({
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ session }: { session: Session | null }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const isAdmin = !!session?.user?.isAdmin;
+
   const { status } = useSession();
   const [categories, setCategories] = useState<string[] | null>(null);
 
@@ -149,8 +161,11 @@ export default function Sidebar() {
       { label: "scoreboard", icon: "file", command: "scoreboard" },
       { label: "rules", icon: "file", command: "rules" },
       { label: "team", icon: "file", command: "team" },
+      ...(isAdmin
+        ? [{ label: "admin", icon: "file" as const, href: "/admin" }]
+        : []),
     ],
-    [categories],
+    [categories, isAdmin],
   );
 
   return (
@@ -169,7 +184,12 @@ export default function Sidebar() {
         <nav className="sidebar-content">
           <ul className="file-tree">
             {fileTree.map((node) => (
-              <TreeItem key={node.label} node={node} pathname={pathname} />
+              <TreeItem
+                key={node.label}
+                node={node}
+                pathname={pathname}
+                isAdmin={isAdmin}
+              />
             ))}
           </ul>
         </nav>

@@ -6,6 +6,28 @@ import { prisma } from "@/lib/prisma";
 const MAX_TITLE_LENGTH = 120;
 const MAX_CONTENT_LENGTH = 2000;
 
+// GET /api/admin/announcements - List all announcements
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const announcements = await prisma.announcement.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json({ announcements });
+  } catch (error) {
+    console.error("Error fetching announcements:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 // POST /api/admin/announcements — Create announcement
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);

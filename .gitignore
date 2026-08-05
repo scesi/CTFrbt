@@ -42,5 +42,8 @@ public/uploads/
 *.tsbuildinfo
 next-env.d.ts
 
+# Progress tracking (personal)
+PROGRESS.md
+
 # Claude
 .claude/

@@ -1,4 +1,4 @@
-import TerminalOutput from "@/components/TerminalOutput";
+import TerminalOutput from "@/components/terminal/TerminalOutput";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
