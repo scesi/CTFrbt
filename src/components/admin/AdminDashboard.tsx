@@ -39,6 +39,7 @@ export default function AdminDashboard() {
     link: "",
   });
   const [creating, setCreating] = useState(false);
+  const [formFile, setFormFile] = useState<File | null>(null);
 
   // Announcement
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -85,11 +86,28 @@ export default function AdminDashboard() {
     e.preventDefault();
     setCreating(true);
     try {
-      const res = await fetch("/api/admin/challenges", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      let res: Response;
+      if (formFile) {
+        const formData = new FormData();
+        formData.append("title", form.title);
+        formData.append("description", form.description);
+        formData.append("points", String(form.points));
+        formData.append("flag", form.flag);
+        formData.append("category", form.category);
+        formData.append("difficulty", form.difficulty);
+        if (form.link) formData.append("link", form.link);
+        formData.append("file", formFile);
+        res = await fetch("/api/admin/challenges", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetch("/api/admin/challenges", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+      }
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error);
@@ -106,6 +124,7 @@ export default function AdminDashboard() {
         difficulty: "easy",
         link: "",
       });
+      setFormFile(null);
       loadChallenges();
     } catch {
       toast.error("Failed to create challenge");
@@ -373,10 +392,12 @@ export default function AdminDashboard() {
           challenges={challenges}
           showForm={showForm}
           form={form}
+          formFile={formFile}
           creating={creating}
           categoryOptions={categoryOptions}
           onToggleForm={() => setShowForm(!showForm)}
           onFormChange={setForm}
+          onFormFileChange={setFormFile}
           onSubmit={createChallenge}
           onToggleChallenge={toggleChallenge}
           onDeleteChallenge={deleteChallenge}

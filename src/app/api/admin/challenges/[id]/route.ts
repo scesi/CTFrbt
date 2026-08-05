@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { invalidate, CACHE_KEYS } from "@/lib/cache";
 import { isValidChallengeLink, isValidPoints } from "@/lib/validation";
+import { rm } from "fs/promises";
+import { uploadDirFor } from "@/lib/uploads";
 
 // PUT /api/admin/challenges/[id] — Update a challenge
 export async function PUT(
@@ -115,6 +117,9 @@ export async function DELETE(
     }
 
     await prisma.challenge.delete({ where: { id } });
+    await rm(uploadDirFor(id), { recursive: true, force: true }).catch(
+      () => {},
+    );
     invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ message: "Challenge deleted" });
   } catch (error) {

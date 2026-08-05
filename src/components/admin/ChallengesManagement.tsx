@@ -27,23 +27,33 @@ interface ChallengesManagementProps {
   challenges: Challenge[];
   showForm: boolean;
   form: ChallengeForm;
+  formFile: File | null;
   creating: boolean;
   categoryOptions: string[];
   onToggleForm: () => void;
   onFormChange: (form: ChallengeForm) => void;
+  onFormFileChange: (file: File | null) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onToggleChallenge: (id: string, isActive: boolean) => void;
   onDeleteChallenge: (id: string, title: string) => void;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default function ChallengesManagement({
   challenges,
   showForm,
   form,
+  formFile,
   creating,
   categoryOptions,
   onToggleForm,
   onFormChange,
+  onFormFileChange,
   onSubmit,
   onToggleChallenge,
   onDeleteChallenge,
@@ -167,6 +177,49 @@ export default function ChallengesManagement({
                 }
                 placeholder="Link (optional)"
               />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <label
+                className="btn"
+                style={{
+                  fontSize: "12px",
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  margin: 0,
+                }}
+              >
+                {formFile ? "Change file" : "Upload file"}
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => {
+                    onFormFileChange(e.target.files?.[0] ?? null);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {formFile && (
+                <>
+                  <span style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
+                    {formFile.name} ({formatSize(formFile.size)})
+                  </span>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ fontSize: "11px", padding: "4px 8px" }}
+                    onClick={() => onFormFileChange(null)}
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
             </div>
             <button
               type="submit"

@@ -4,6 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { invalidate, CACHE_KEYS } from "@/lib/cache";
 import { isValidChallengeLink, isValidPoints } from "@/lib/validation";
+import { writeFile, mkdir, rm } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
+import {
+  MAX_UPLOAD_BYTES,
+  sanitizeUploadName,
+  uploadDirFor,
+} from "@/lib/uploads";
 
 // GET /api/admin/challenges — List all challenges (admin)
 export async function GET() {
@@ -28,6 +36,22 @@ export async function GET() {
   return NextResponse.json({ challenges });
 }
 
+interface ChallengeCreateInput {
+  title?: string;
+  description?: string;
+  points?: number;
+  flag?: string;
+  multipleFlags?: boolean;
+  category?: string;
+  difficulty?: string;
+  isActive?: boolean;
+  isLocked?: boolean;
+  link?: string;
+  solveExplanation?: string;
+  flags?: Array<{ flag: string; points: number }>;
+  hints?: Array<{ content: string; cost: number }>;
+}
+
 // POST /api/admin/challenges — Create a new challenge
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -36,7 +60,34 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const contentType = request.headers.get("content-type") || "";
+    const isMultipart = contentType.includes("multipart/form-data");
+
+    let body: ChallengeCreateInput;
+    let upload: File | null = null;
+
+    if (isMultipart) {
+      const form = await request.formData();
+      const field = (k: string): string | undefined => {
+        const v = form.get(k);
+        return typeof v === "string" && v.length > 0 ? v : undefined;
+      };
+      const pointsRaw = field("points");
+      body = {
+        title: field("title"),
+        description: field("description"),
+        points: pointsRaw !== undefined ? Number(pointsRaw) : undefined,
+        flag: field("flag"),
+        category: field("category"),
+        difficulty: field("difficulty"),
+        link: field("link"),
+      };
+      const f = form.get("file");
+      if (f instanceof File) upload = f;
+    } else {
+      body = (await request.json()) as ChallengeCreateInput;
+    }
+
     const {
       title,
       description,
@@ -128,6 +179,56 @@ export async function POST(request: Request) {
       },
       include: { flags: true, hints: true },
     });
+
+    if (upload) {
+      if (upload.size > MAX_UPLOAD_BYTES) {
+        await prisma.challenge.delete({ where: { id: challenge.id } });
+        return NextResponse.json(
+          { error: "File is too large (max 25 MB)" },
+          { status: 400 },
+        );
+      }
+
+      const dir = uploadDirFor(challenge.id);
+      const cleanName = sanitizeUploadName(upload.name);
+      let storedName = cleanName;
+      const ext = path.extname(cleanName);
+      const base = path.basename(cleanName, ext);
+      let counter = 2;
+      while (existsSync(path.join(dir, storedName))) {
+        storedName = `${base}-${counter}${ext}`;
+        counter += 1;
+      }
+
+      try {
+        await mkdir(dir, { recursive: true });
+        await writeFile(
+          path.join(dir, storedName),
+          Buffer.from(await upload.arrayBuffer()),
+        );
+        await prisma.challengeFile.create({
+          data: {
+            name: upload.name,
+            path: `uploads/${challenge.id}/${storedName}`,
+            size: upload.size,
+            challengeId: challenge.id,
+          },
+        });
+      } catch (uploadError) {
+        await prisma.challenge
+          .delete({ where: { id: challenge.id } })
+          .catch(() => {});
+        await rm(uploadDirFor(challenge.id), {
+          recursive: true,
+          force: true,
+        }).catch(() => {});
+        console.error("Challenge file upload error:", uploadError);
+        return NextResponse.json(
+          { error: "Internal server error" },
+          { status: 500 },
+        );
+      }
+    }
 
     invalidate(CACHE_KEYS.CHALLENGES);
     return NextResponse.json({ challenge }, { status: 201 });
