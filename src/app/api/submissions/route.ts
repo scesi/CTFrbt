@@ -150,10 +150,15 @@ export async function POST(request: Request) {
     }
 
     // Correct flag: the duplicate check and every scoring write run in one
-    // serializable transaction so two concurrent submissions can't both
-    // pass the "already solved" check and double-award points.
+    // transaction. The per-team row is locked pessimistically first so
+    // concurrent submissions from the same team serialize here instead of
+    // clashing on the score row; under ReadCommitted the loser re-reads the
+    // committed state after the lock, sees the winner's solve and responds
+    // alreadySubmitted instead of hitting a serialization error (P2034).
     const result = await prisma.$transaction(
       async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Team" WHERE "id" = ${teamId} FOR UPDATE`;
+
         const alreadySolved = await tx.submission.findFirst({
           where: matchedFlagId
             ? { teamId, flagId: matchedFlagId, isCorrect: true }
@@ -213,7 +218,7 @@ export async function POST(request: Request) {
 
         return { alreadySubmitted: false as const };
       },
-      { isolationLevel: "Serializable" },
+      { isolationLevel: "ReadCommitted" },
     );
 
     if (result.alreadySubmitted) {
