@@ -96,6 +96,41 @@ export async function PATCH(
       }
     }
 
+    const becomingLeader = isTeamLeader === true;
+    const movingAsLeader =
+      user.isTeamLeader &&
+      teamIdValue !== undefined &&
+      teamIdValue !== user.teamId &&
+      teamIdValue !== null;
+
+    if (becomingLeader || movingAsLeader) {
+      const targetTeamId =
+        teamIdValue !== undefined ? teamIdValue : user.teamId;
+
+      if (!targetTeamId) {
+        return NextResponse.json(
+          { error: "User must be in a team to be a leader" },
+          { status: 400 },
+        );
+      }
+
+      const existingLeader = await prisma.user.findFirst({
+        where: {
+          teamId: targetTeamId,
+          isTeamLeader: true,
+          id: { not: id },
+        },
+        select: { id: true, alias: true },
+      });
+
+      if (existingLeader) {
+        return NextResponse.json(
+          { error: "Team already has a leader" },
+          { status: 400 },
+        );
+      }
+    }
+
     let hashedPassword: string | undefined;
     if (password !== undefined) {
       hashedPassword = await withBcryptSlot(() => bcrypt.hash(password, 12));
@@ -112,6 +147,8 @@ export async function PATCH(
           }),
           ...(teamIdValue !== undefined && {
             teamId: teamIdValue,
+            ...(user.isTeamLeader &&
+              teamIdValue === null && { isTeamLeader: false }),
           }),
           ...(hashedPassword !== undefined && { password: hashedPassword }),
         },
@@ -146,6 +183,13 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Server busy, please try again shortly" },
         { status: 503 },
+      );
+    }
+    const err = error as { code?: string };
+    if (err.code === "P2002") {
+      return NextResponse.json(
+        { error: "Team already has a leader" },
+        { status: 400 },
       );
     }
     console.error("Error updating user:", error);

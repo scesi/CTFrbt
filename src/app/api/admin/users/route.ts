@@ -20,6 +20,7 @@ export async function GET() {
         name: true,
         isAdmin: true,
         isTeamLeader: true,
+        teamId: true,
         createdAt: true,
         updatedAt: true,
         team: {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { alias, name, password, isAdmin, isTeamLeader } = body;
+    const { alias, name, password, isAdmin, isTeamLeader, teamId } = body;
 
     const validation = validateNewUserCredentials({ alias, name, password });
     if (!validation.ok) {
@@ -84,6 +85,50 @@ export async function POST(request: Request) {
       bcrypt.hash(password as string, 12),
     );
 
+    let teamIdValue: string | null | undefined;
+    if (teamId !== undefined) {
+      if (teamId === "") {
+        teamIdValue = null;
+      } else if (typeof teamId === "string") {
+        const team = await prisma.team.findUnique({
+          where: { id: teamId },
+        });
+        if (!team) {
+          return NextResponse.json(
+            { error: "Team not found" },
+            { status: 404 },
+          );
+        }
+        teamIdValue = teamId;
+      } else {
+        return NextResponse.json(
+          { error: "teamId must be a string" },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (isTeamLeader) {
+      if (!teamIdValue) {
+        return NextResponse.json(
+          { error: "User must be in a team to be a leader" },
+          { status: 400 },
+        );
+      }
+
+      const existingLeader = await prisma.user.findFirst({
+        where: { teamId: teamIdValue, isTeamLeader: true },
+        select: { id: true, alias: true },
+      });
+
+      if (existingLeader) {
+        return NextResponse.json(
+          { error: "Team already has a leader" },
+          { status: 400 },
+        );
+      }
+    }
+
     const user = await prisma.user.create({
       data: {
         alias: trimmedAlias,
@@ -91,6 +136,7 @@ export async function POST(request: Request) {
         password: hashedPassword,
         isAdmin: isAdmin || false,
         isTeamLeader: isTeamLeader || false,
+        ...(teamIdValue !== undefined && { teamId: teamIdValue }),
       },
       select: {
         id: true,
@@ -98,6 +144,7 @@ export async function POST(request: Request) {
         name: true,
         isAdmin: true,
         isTeamLeader: true,
+        teamId: true,
         createdAt: true,
       },
     });
@@ -108,6 +155,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Server busy, please try again shortly" },
         { status: 503 },
+      );
+    }
+    const err = error as { code?: string };
+    if (err.code === "P2002") {
+      return NextResponse.json(
+        { error: "Team already has a leader" },
+        { status: 400 },
       );
     }
     console.error("Error creating user:", error);
