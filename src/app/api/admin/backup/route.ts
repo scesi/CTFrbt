@@ -125,10 +125,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Backup export error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    const raw = error instanceof Error ? error.message : String(error);
+    const message = raw.replace(databaseUrl(), "***");
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
