@@ -9,7 +9,10 @@ vi.mock("child_process", async (importOriginal) => {
       _cmd: string,
       _args: string[],
       _opts: unknown,
-      cb?: (err: Error | null, result: { stdout: string; stderr: string }) => void,
+      cb?: (
+        err: Error | null,
+        result: { stdout: string; stderr: string },
+      ) => void,
     ) => {
       process.nextTick(() => cb?.(null, { stdout: "ok", stderr: "" }));
     },

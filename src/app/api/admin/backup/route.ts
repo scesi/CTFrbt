@@ -135,12 +135,7 @@ export async function GET() {
   try {
     const { stdout: dump } = await run(
       "pg_dump",
-      [
-        "--clean",
-        "--if-exists",
-        "--no-owner",
-        "--no-privileges",
-      ],
+      ["--clean", "--if-exists", "--no-owner", "--no-privileges"],
       { maxBuffer: MAX_PROCESS_BUFFER, env: { ...pgToolEnv(), ...libpqEnv() } },
     );
 
