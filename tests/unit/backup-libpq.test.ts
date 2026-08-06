@@ -43,7 +43,7 @@ describe("backup libpq env (raw special-char passwords)", () => {
 
   it("calls pg_dump with libpq env, no URL argument, and decoded password", async () => {
     process.env.DATABASE_URL =
-      "postgresql://ctfrbt_dev:REDACTED@postgres:5432/ctfrbt_dev";
+      "postgresql://demo_user:Pa%26ss%25w%40rd@db.local:5432/demo_db";
     process.env.UPLOADS_DIR = "/nonexistent/uploads";
     vi.mocked(getServerSession).mockResolvedValue({
       user: { id: "a1", teamId: null, isAdmin: true },
@@ -56,16 +56,16 @@ describe("backup libpq env (raw special-char passwords)", () => {
     const [cmd, args, opts] = execMock.mock.calls[0];
     expect(cmd).toBe("pg_dump");
     expect(args).not.toContain(process.env.DATABASE_URL);
-    expect(opts.env.PGPASSWORD).toBe("REDACTED");
-    expect(opts.env.PGUSER).toBe("ctfrbt_dev");
-    expect(opts.env.PGHOST).toBe("postgres");
+    expect(opts.env.PGPASSWORD).toBe("Pa&ss%w@rd");
+    expect(opts.env.PGUSER).toBe("demo_user");
+    expect(opts.env.PGHOST).toBe("db.local");
     expect(opts.env.PGPORT).toBe("5432");
-    expect(opts.env.PGDATABASE).toBe("ctfrbt_dev");
+    expect(opts.env.PGDATABASE).toBe("demo_db");
   });
 
   it("falls back to the raw password when percent-decoding fails", async () => {
     process.env.DATABASE_URL =
-      "postgresql://ctfrbt_dev:REDACTED@postgres:5432/ctfrbt_dev";
+      "postgresql://demo_user:Pa&ss%w@db.local:5432/demo_db";
     process.env.UPLOADS_DIR = "/nonexistent/uploads";
     vi.mocked(getServerSession).mockResolvedValue({
       user: { id: "a1", teamId: null, isAdmin: true },
@@ -75,6 +75,6 @@ describe("backup libpq env (raw special-char passwords)", () => {
     expect(res.status).toBe(200);
 
     const [, , opts] = execMock.mock.calls[0];
-    expect(opts.env.PGPASSWORD).toBe("REDACTED");
+    expect(opts.env.PGPASSWORD).toBe("Pa&ss%w");
   });
 });
