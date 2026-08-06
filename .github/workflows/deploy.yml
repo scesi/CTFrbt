@@ -80,6 +80,17 @@ jobs:
             echo "NEXTAUTH_SECRET=${{ secrets.DEV_NEXTAUTH_SECRET }}" >> $GITHUB_ENV
           fi
 
+      - name: Codificar password para la URL
+        run: |
+          ENCODED="$(python3 -c "import urllib.parse,os;print(urllib.parse.quote(os.environ['DB_PASS'],safe=''))")"
+          echo "DB_PASS_ENC=$ENCODED" >> "$GITHUB_ENV"
+
+      - name: Validar URL de conexión
+        env:
+          DB_URL: ${{ format('postgresql://{0}:{1}@postgres:5432/{2}', env.DB_USER, env.DB_PASS_ENC, env.DB_NAME) }}
+        run: |
+          python3 -c "import os,urllib.parse;p=urllib.parse.urlparse(os.environ['DB_URL']);assert p.username and p.password;print('OK',p.hostname)"
+
       - name: Copiar Compose File al Servidor
         uses: appleboy/scp-action@master
         with:
@@ -110,6 +121,7 @@ jobs:
             export POSTGRES_USER="${{ env.DB_USER }}"
             export POSTGRES_PASSWORD="${{ env.DB_PASS }}"
             export POSTGRES_DB="${{ env.DB_NAME }}"
+            export DATABASE_URL="postgresql://${POSTGRES_USER}:${{ env.DB_PASS_ENC }}@postgres:5432/${POSTGRES_DB}"
             export NEXTAUTH_URL="${{ env.NEXTAUTH_URL }}"
             export NEXTAUTH_SECRET="${{ env.NEXTAUTH_SECRET }}"
 
