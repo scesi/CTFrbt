@@ -47,6 +47,38 @@ function databaseUrl(): string {
   return url;
 }
 
+// libpq (pg_dump/psql) rejects URLs whose password holds raw special
+// characters (&, %, @), while the rest of the app (Prisma) tolerates them.
+// Passing the credentials via libpq environment variables dodges URL parsing
+// entirely, so backups work regardless of how DATABASE_URL is stored.
+const PG_URL_RE =
+  /^postgres(?:ql)?:\/\/(?:(?:([^:@]+)(?::([^@]*))?)@)?([^:/@]+)(?::(\d+))?\/([^?#\s]+).*$/;
+
+function percentDecode(value: string): string {
+  if (!value.includes("%")) return value;
+  try {
+    return decodeURIComponent(value.replace(/\+/g, "%2B"));
+  } catch {
+    return value;
+  }
+}
+
+function libpqEnv() {
+  const url = databaseUrl();
+  const match = url.match(PG_URL_RE);
+  if (!match) {
+    throw new Error(`DATABASE_URL is not a valid postgres URL: ${url}`);
+  }
+  const [, user = "", password = "", host, port, db] = match;
+  return {
+    PGHOST: host,
+    PGPORT: port ?? "5432",
+    PGUSER: percentDecode(user),
+    PGPASSWORD: percentDecode(password),
+    PGDATABASE: db,
+  };
+}
+
 // Minimal CSRF guard, mirroring the export route: reject explicit cross-site
 // signals or a mismatching Origin. Missing headers remain allowed because
 // tests and non-browser clients may omit them.
@@ -104,13 +136,12 @@ export async function GET() {
     const { stdout: dump } = await run(
       "pg_dump",
       [
-        databaseUrl(),
         "--clean",
         "--if-exists",
         "--no-owner",
         "--no-privileges",
       ],
-      { maxBuffer: MAX_PROCESS_BUFFER, env: pgToolEnv() },
+      { maxBuffer: MAX_PROCESS_BUFFER, env: { ...pgToolEnv(), ...libpqEnv() } },
     );
 
     const zip = new AdmZip();
@@ -156,8 +187,6 @@ export async function POST(request: Request) {
   if (!session?.user?.isAdmin) return forbidden();
   const blocked = csrfGuard(request);
   if (blocked) return blocked;
-
-  const dbUrl = databaseUrl();
 
   let form: FormData;
   try {
@@ -249,9 +278,9 @@ export async function POST(request: Request) {
   const tmpDump = path.join(os.tmpdir(), `ctfrbt-restore-${Date.now()}.sql`);
   await fs.writeFile(tmpDump, dumpSql);
   try {
-    await run("psql", [dbUrl, "-v", "ON_ERROR_STOP=1", "-q", "-f", tmpDump], {
+    await run("psql", ["-v", "ON_ERROR_STOP=1", "-q", "-f", tmpDump], {
       maxBuffer: MAX_PROCESS_BUFFER,
-      env: pgToolEnv(),
+      env: { ...pgToolEnv(), ...libpqEnv() },
     });
   } catch (error) {
     console.error("Backup restore error:", error);
