@@ -15,6 +15,12 @@ export default defineConfig({
       DATABASE_URL: process.env.DATABASE_URL ?? "",
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? "test-secret",
       NEXTAUTH_URL: process.env.NEXTAUTH_URL ?? "http://localhost:3000",
+      LIBPQ_TEST_URL_ENCODED:
+        process.env.LIBPQ_TEST_URL_ENCODED ??
+        "postgresql://demo_user:Pa%26ss%25w%40rd@db.local:5432/demo_db",
+      LIBPQ_TEST_URL_RAW:
+        process.env.LIBPQ_TEST_URL_RAW ??
+        "postgresql://demo_user:Pa&ss%w@db.local:5432/demo_db",
     },
     projects: [
       {

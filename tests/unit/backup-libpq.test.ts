@@ -41,13 +41,16 @@ describe("backup libpq env (raw special-char passwords)", () => {
     vi.clearAllMocks();
   });
 
-  it("calls pg_dump with libpq env, no URL argument, and decoded password", async () => {
-    process.env.DATABASE_URL =
-      "postgresql://demo_user:Pa%26ss%25w%40rd@db.local:5432/demo_db";
-    process.env.UPLOADS_DIR = "/nonexistent/uploads";
+  function assignAdmin() {
     vi.mocked(getServerSession).mockResolvedValue({
       user: { id: "a1", teamId: null, isAdmin: true },
     } as Awaited<ReturnType<typeof getServerSession>>);
+  }
+
+  it("calls pg_dump with libpq env, no URL argument, and decoded password", async () => {
+    process.env.DATABASE_URL = process.env.LIBPQ_TEST_URL_ENCODED;
+    process.env.UPLOADS_DIR = "/nonexistent/uploads";
+    assignAdmin();
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -64,12 +67,9 @@ describe("backup libpq env (raw special-char passwords)", () => {
   });
 
   it("falls back to the raw password when percent-decoding fails", async () => {
-    process.env.DATABASE_URL =
-      "postgresql://demo_user:Pa&ss%w@db.local:5432/demo_db";
+    process.env.DATABASE_URL = process.env.LIBPQ_TEST_URL_RAW;
     process.env.UPLOADS_DIR = "/nonexistent/uploads";
-    vi.mocked(getServerSession).mockResolvedValue({
-      user: { id: "a1", teamId: null, isAdmin: true },
-    } as Awaited<ReturnType<typeof getServerSession>>);
+    assignAdmin();
 
     const res = await GET();
     expect(res.status).toBe(200);
