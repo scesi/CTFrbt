@@ -84,6 +84,33 @@ export async function POST(request: Request) {
       };
       const f = form.get("file");
       if (f instanceof File) upload = f;
+      const hintsRaw = form.get("hints");
+      if (typeof hintsRaw === "string" && hintsRaw.length > 0) {
+        try {
+          const parsed = JSON.parse(hintsRaw);
+          if (
+            !Array.isArray(parsed) ||
+            !parsed.every(
+              (h) =>
+                typeof h === "object" &&
+                h !== null &&
+                typeof (h as { content?: unknown }).content === "string" &&
+                typeof (h as { cost?: unknown }).cost === "number",
+            )
+          ) {
+            return NextResponse.json(
+              { error: "hints must be an array of { content, cost }" },
+              { status: 400 },
+            );
+          }
+          body.hints = parsed as Array<{ content: string; cost: number }>;
+        } catch {
+          return NextResponse.json(
+            { error: "hints must be valid JSON" },
+            { status: 400 },
+          );
+        }
+      }
     } else {
       body = (await request.json()) as ChallengeCreateInput;
     }

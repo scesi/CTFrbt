@@ -13,6 +13,11 @@ export interface Challenge {
   _count: { submissions: number };
 }
 
+export interface ChallengeHint {
+  content: string;
+  cost: number;
+}
+
 export interface ChallengeForm {
   title: string;
   description: string;
@@ -21,6 +26,7 @@ export interface ChallengeForm {
   category: string;
   difficulty: string;
   link: string;
+  hints: ChallengeHint[];
 }
 
 interface ChallengesManagementProps {
@@ -220,6 +226,92 @@ export default function ChallengesManagement({
                   </button>
                 </>
               )}
+            </div>
+            <div
+              style={{
+                marginBottom: "10px",
+                padding: "10px",
+                border: "1px solid var(--border)",
+                borderRadius: "4px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "6px",
+                }}
+              >
+                <span style={{ fontSize: "12px", fontWeight: 600 }}>Hints</span>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ fontSize: "11px", padding: "4px 8px" }}
+                  onClick={() =>
+                    onFormChange({
+                      ...form,
+                      hints: [...form.hints, { content: "", cost: 0 }],
+                    })
+                  }
+                >
+                  + Add hint
+                </button>
+              </div>
+              {form.hints.length === 0 && (
+                <span style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
+                  No hints yet.
+                </span>
+              )}
+              {form.hints.map((hint, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 80px auto",
+                    gap: "8px",
+                    alignItems: "center",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={hint.content}
+                    onChange={(e) => {
+                      const hints = [...form.hints];
+                      hints[index] = { ...hint, content: e.target.value };
+                      onFormChange({ ...form, hints });
+                    }}
+                    placeholder={`Hint ${index + 1} content`}
+                  />
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={hint.cost}
+                    onChange={(e) => {
+                      const hints = [...form.hints];
+                      hints[index] = { ...hint, cost: Number(e.target.value) };
+                      onFormChange({ ...form, hints });
+                    }}
+                    placeholder="Cost"
+                    min={0}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ fontSize: "11px", padding: "4px 8px" }}
+                    onClick={() =>
+                      onFormChange({
+                        ...form,
+                        hints: form.hints.filter((_, i) => i !== index),
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
             </div>
             <button
               type="submit"

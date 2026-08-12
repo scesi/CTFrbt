@@ -37,6 +37,7 @@ export default function AdminDashboard() {
     category: "web",
     difficulty: "easy",
     link: "",
+    hints: [],
   });
   const [creating, setCreating] = useState(false);
   const [formFile, setFormFile] = useState<File | null>(null);
@@ -96,6 +97,9 @@ export default function AdminDashboard() {
         formData.append("category", form.category);
         formData.append("difficulty", form.difficulty);
         if (form.link) formData.append("link", form.link);
+        if (form.hints.length > 0) {
+          formData.append("hints", JSON.stringify(form.hints));
+        }
         formData.append("file", formFile);
         res = await fetch("/api/admin/challenges", {
           method: "POST",
@@ -123,6 +127,7 @@ export default function AdminDashboard() {
         category: "web",
         difficulty: "easy",
         link: "",
+        hints: [],
       });
       setFormFile(null);
       loadChallenges();
