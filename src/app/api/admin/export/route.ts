@@ -275,6 +275,8 @@ export async function POST(request: Request) {
 
   // --- pre-flight validation of identifiers ---
   if (Array.isArray(teams)) {
+    const seenCodes = new Set<string>();
+    const seenNames = new Set<string>();
     for (const t of teams) {
       if (!isStrId(t.id)) {
         return NextResponse.json(
@@ -294,6 +296,20 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
+      if (seenCodes.has(t.code)) {
+        return NextResponse.json(
+          { error: `duplicate team code "${t.code}" in payload` },
+          { status: 400 },
+        );
+      }
+      seenCodes.add(t.code);
+      if (seenNames.has(t.name)) {
+        return NextResponse.json(
+          { error: `duplicate team name "${t.name}" in payload` },
+          { status: 400 },
+        );
+      }
+      seenNames.add(t.name);
     }
   }
   if (Array.isArray(challenges)) {
@@ -332,14 +348,34 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const imported: Record<string, unknown> = {};
 
-      // --- Teams (upsert preserves IDs) ---
+      // --- Teams (upsert preserves IDs, merging into existing teams) ---
       if (Array.isArray(teams) && teams.length > 0) {
         for (const team of teams) {
           const id = team.id as string;
-          await tx.team.upsert({
+          // Merge instead of blindly creating: match an existing team by id,
+          // then by invite code, then by name, so re-imports against a seeded
+          // database update teams in place instead of violating @unique(code).
+          let existing = await tx.team.findUnique({
             where: { id },
+            select: { id: true },
+          });
+          if (!existing) {
+            existing = await tx.team.findUnique({
+              where: { code: team.code as string },
+              select: { id: true },
+            });
+          }
+          if (!existing) {
+            existing = await tx.team.findUnique({
+              where: { name: team.name as string },
+              select: { id: true },
+            });
+          }
+          const targetId = existing?.id ?? id;
+          await tx.team.upsert({
+            where: { id: targetId },
             create: {
-              id,
+              id: targetId,
               name: team.name as string,
               code: team.code as string,
               icon: (team.icon as string) || "GiSpaceship",
@@ -601,10 +637,11 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const err = error as { code?: string };
+    const err = error as { code?: string; meta?: { target?: string[] } };
     if (err.code === "P2002") {
+      const target = err.meta?.target?.join(", ") ?? "unknown";
       return NextResponse.json(
-        { error: "Unique constraint violation (name or code already taken)" },
+        { error: `Unique constraint violation (${target} already taken)` },
         { status: 409 },
       );
     }

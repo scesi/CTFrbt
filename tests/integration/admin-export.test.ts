@@ -116,6 +116,81 @@ describe("admin export/import", () => {
     expect(res.status).toBe(400);
   });
 
+  it("import merges a team into an existing one with the same code", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const seed = await prisma.team.create({
+      data: { name: "Alpha", code: "SEED001" },
+    });
+
+    const res = await POST(
+      json({
+        teams: [
+          {
+            id: "cmsh4l6op0004qvhfwhoy3xvw",
+            name: "Alpha",
+            code: "SEED001",
+            icon: "GiSpaceship",
+            color: "#ff0000",
+            score: 99,
+          },
+        ],
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    const teams = await prisma.team.findMany();
+    expect(teams).toHaveLength(1);
+    expect(teams[0].id).toBe(seed.id);
+    expect(teams[0].score).toBe(99);
+    expect(teams[0].color).toBe("#ff0000");
+  });
+
+  it("import is idempotent when the team id already exists", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const seed = await prisma.team.create({
+      data: { name: "Bravo", code: "SEED002" },
+    });
+
+    const res = await POST(
+      json({
+        teams: [
+          {
+            id: seed.id,
+            name: "Bravo",
+            code: "SEED002",
+            score: 7,
+          },
+        ],
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    const teams = await prisma.team.findMany();
+    expect(teams).toHaveLength(1);
+    expect(teams[0].id).toBe(seed.id);
+    expect(teams[0].score).toBe(7);
+  });
+
+  it("import rejects duplicate team codes inside the payload", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      json({
+        teams: [
+          { id: "id-a", name: "Alpha", code: "DUP001" },
+          { id: "id-b", name: "Beta", code: "DUP001" },
+        ],
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("duplicate team code");
+  });
+
   it("POST import rejects an empty payload", async () => {
     const admin = await createAdminUser();
     mockSession(admin);
