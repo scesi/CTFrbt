@@ -67,7 +67,7 @@ jobs:
             echo "DB_USER=ctfrbt_org" >> $GITHUB_ENV
             echo "DB_PASS=${{ secrets.ORG_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_org" >> $GITHUB_ENV
-            echo "NEXTAUTH_URL=https://ctfrbt.scesi.org" >> $GITHUB_ENV
+            echo "NEXTAUTH_URL=https://ctf.scesi.org" >> $GITHUB_ENV
             echo "NEXTAUTH_SECRET=${{ secrets.ORG_NEXTAUTH_SECRET }}" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "STACK_NAME=ctfrbt_dev" >> $GITHUB_ENV
@@ -76,7 +76,7 @@ jobs:
             echo "DB_USER=ctfrbt_dev" >> $GITHUB_ENV
             echo "DB_PASS=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_dev" >> $GITHUB_ENV
-            echo "NEXTAUTH_URL=https://ctfrbt.scesi.dev" >> $GITHUB_ENV
+            echo "NEXTAUTH_URL=https://ctf.scesi.dev" >> $GITHUB_ENV
             echo "NEXTAUTH_SECRET=${{ secrets.DEV_NEXTAUTH_SECRET }}" >> $GITHUB_ENV
           fi
 
