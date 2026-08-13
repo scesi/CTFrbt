@@ -25,12 +25,17 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 const zipFromResponse = async (res: Response): Promise<AdmZip> =>
   new AdmZip(Buffer.from(await res.arrayBuffer()));
 
-const backupRequest = (file: Buffer, extra: Record<string, string> = {}) => {
+const backupRequest = (
+  file: Buffer,
+  extra: Record<string, string> = {},
+  headers: Record<string, string> = {},
+) => {
   const form = new FormData();
   form.set("file", new Blob([new Uint8Array(file)]), "backup.zip");
   for (const [key, value] of Object.entries(extra)) form.set(key, value);
   return new Request("http://localhost/api/admin/backup", {
     method: "POST",
+    headers,
     body: form,
   });
 };
@@ -179,6 +184,27 @@ describe("admin backup/restore", () => {
       .getEntries()
       .map((e) => e.entryName);
     expect(names).toContain(rel);
+  });
+
+  it("POST rejects a restore with a mismatched Origin", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      backupRequest(Buffer.from("x"), {}, { Origin: "http://evil.example" }),
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Invalid request origin");
+  });
+
+  it("POST accepts a restore with an Origin matching NEXTAUTH_URL", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      backupRequest(Buffer.from("x"), {}, { Origin: "http://localhost:3000" }),
+    );
+    expect(res.status).toBe(400);
   });
 
   it("POST rejects a restore without an explicit confirm", async () => {

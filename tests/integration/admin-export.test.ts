@@ -64,6 +64,58 @@ describe("admin export/import", () => {
     expect(body.challenges[0].flag).toBe("flag{exported}");
   });
 
+  it("POST import rejects a mismatched Origin", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      new Request("http://localhost/api/admin/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "http://evil.example",
+        },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe("Invalid request origin");
+  });
+
+  it("POST import rejects a cross-site Sec-Fetch-Site header", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      new Request("http://localhost/api/admin/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Sec-Fetch-Site": "cross-site",
+        },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("POST import accepts an Origin matching NEXTAUTH_URL", async () => {
+    const admin = await createAdminUser();
+    mockSession(admin);
+
+    const res = await POST(
+      new Request("http://localhost/api/admin/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "http://localhost:3000",
+        },
+        body: JSON.stringify({}),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
   it("POST import rejects an empty payload", async () => {
     const admin = await createAdminUser();
     mockSession(admin);

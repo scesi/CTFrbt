@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   // and non-browser clients may omit them.
   const origin = request.headers.get("origin");
   if (origin) {
-    const expected = new URL(request.url).origin;
+    const expected = new URL(process.env.NEXTAUTH_URL ?? request.url).origin;
     if (origin !== expected) {
       return NextResponse.json(
         { error: "Invalid request origin" },
