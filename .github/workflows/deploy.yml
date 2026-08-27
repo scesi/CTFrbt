@@ -65,9 +65,14 @@ jobs:
 
           echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
+      - name: Configurar credenciales de GitLab
+        run: |
+          echo "machine lab.sasxr.com login oauth2 password ${{ secrets.GITLAB_TOKEN }}" > ~/.netrc
+          chmod 600 ~/.netrc
+
       - name: Clonar Repo de Manifiestos (GitLab)
         run: |
-          git clone https://deploy:${{ secrets.GITLAB_TOKEN }}@lab.sasxr.com/s-system/deploy.git
+          git clone https://lab.sasxr.com/s-system/deploy.git
 
       - name: Instalar Kustomize
         uses: imranismail/setup-kustomize@v2
