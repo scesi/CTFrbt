@@ -1,39 +1,39 @@
 deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Determinar Entorno y Tag
-        id: env-vars
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "OVERLAY=prod" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
-            echo "OVERLAY=dev" >> $GITHUB_ENV
-          fi
-          
-          echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+  needs: build-and-push
+  runs-on: ubuntu-latest
+  steps:
+    - name: Determinar Entorno y Tag
+      id: env-vars
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "OVERLAY=prod" >> $GITHUB_ENV
+        elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+          echo "OVERLAY=dev" >> $GITHUB_ENV
+        fi
 
-      - name: Clonar Repo de Manifiestos (GitLab)
-        run: |
-          git clone https://oauth2:${{ secrets.GITLAB_TOKEN }}@lab.sasxr.com/s-system/deploy.git
+        echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
-      - name: Instalar Kustomize
-        uses: imranismail/setup-kustomize@v2
+    - name: Clonar Repo de Manifiestos (GitLab)
+      run: |
+        git clone https://oauth2:${{ secrets.GITLAB_TOKEN }}@lab.sasxr.com/s-system/deploy.git
 
-      - name: Actualizar manifiestos con Kustomize
-        run: |
-          cd deploy/k/scesi-ctfrbt/overlays/${{ env.OVERLAY }}
-          
-          # Actualizamos la imagen usando el SHORT_SHA
-          kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${{ env.SHORT_SHA }}
+    - name: Instalar Kustomize
+      uses: imranismail/setup-kustomize@v2
 
-      - name: Hacer Commit y Push a GitLab
-        run: |
-          cd deploy
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          git add k/scesi-ctfrbt/overlays/${{ env.OVERLAY }}/kustomization.yaml
-          
-          git commit -m "chore(ctfrbt): update ${{ env.OVERLAY }} image to tag ${{ env.SHORT_SHA }}" || true
-          
-          git push origin main
+    - name: Actualizar manifiestos con Kustomize
+      run: |
+        cd deploy/k/scesi-ctfrbt/overlays/${{ env.OVERLAY }}
+
+        # Actualizamos la imagen usando el SHORT_SHA
+        kustomize edit set image ${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${{ env.SHORT_SHA }}
+
+    - name: Hacer Commit y Push a GitLab
+      run: |
+        cd deploy
+        git config user.name "GitHub Actions Bot"
+        git config user.email "actions@github.com"
+        git add k/scesi-ctfrbt/overlays/${{ env.OVERLAY }}/kustomization.yaml
+
+        git commit -m "chore(ctfrbt): update ${{ env.OVERLAY }} image to tag ${{ env.SHORT_SHA }}" || true
+
+        git push origin main
