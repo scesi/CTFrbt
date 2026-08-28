@@ -6,6 +6,5 @@ variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
 
 include:
-  - local: '/.gitlab/ci/build.yml'
-  - local: '/.gitlab/ci/deploy.yml'
-
+  - local: "/.gitlab/ci/build.yml"
+  - local: "/.gitlab/ci/deploy.yml"
