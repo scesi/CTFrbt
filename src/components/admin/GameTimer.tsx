@@ -19,7 +19,11 @@ interface GameTimerProps {
   session?: Session | null;
 }
 
-export default function GameTimer({ variant = "full", isAdmin = false, session }: GameTimerProps) {
+export default function GameTimer({
+  variant = "full",
+  isAdmin = false,
+  session,
+}: GameTimerProps) {
   const { data: sessionData } = useSession();
   const sessionToUse = session ?? sessionData;
   const isAdminUser = isAdmin || sessionToUse?.user?.isAdmin;
@@ -41,7 +45,8 @@ export default function GameTimer({ variant = "full", isAdmin = false, session }
           startTime: data.gameConfig.startTime || null,
           endTime: data.gameConfig.endTime || null,
           isActive: data.gameConfig.isActive ?? false,
-          leaderboardFreezeMinutes: data.gameConfig.leaderboardFreezeMinutes ?? null,
+          leaderboardFreezeMinutes:
+            data.gameConfig.leaderboardFreezeMinutes ?? null,
         });
       }
     } catch {
@@ -67,7 +72,10 @@ export default function GameTimer({ variant = "full", isAdmin = false, session }
       ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000)
       : null;
   const isFrozen = freezeAt && now >= freezeAt;
-  const isFreezeWarning = freezeAt && !isFrozen && now >= new Date(freezeAt.getTime() - 5 * 60 * 1000);
+  const isFreezeWarning =
+    freezeAt &&
+    !isFrozen &&
+    now >= new Date(freezeAt.getTime() - 5 * 60 * 1000);
 
   // Before start
   if (now < startTime) {
@@ -139,16 +147,32 @@ export default function GameTimer({ variant = "full", isAdmin = false, session }
 
       if (isFrozen) {
         return (
-          <span style={{ color: "var(--neon-amber)", marginLeft: "8px", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+          <span
+            style={{
+              color: "var(--neon-amber)",
+              marginLeft: "8px",
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
             Scoreboard frozen
           </span>
         );
       }
 
       if (isFreezeWarning) {
-        const minsLeft = Math.ceil((freezeAt!.getTime() - now.getTime()) / 60000);
+        const minsLeft = Math.ceil(
+          (freezeAt!.getTime() - now.getTime()) / 60000,
+        );
         return (
-          <span style={{ color: "var(--neon-amber)", marginLeft: "8px", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+          <span
+            style={{
+              color: "var(--neon-amber)",
+              marginLeft: "8px",
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
             Scoreboard closing in {minsLeft} min
           </span>
         );
@@ -168,20 +192,18 @@ export default function GameTimer({ variant = "full", isAdmin = false, session }
 
     // Full variant (admin dashboard)
     const freezeInfo =
-      freezeAt && !isFrozen && now >= new Date(freezeAt.getTime() - 5 * 60 * 1000)
-        ? (
-          <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-            ⚠ Scoreboard closing in{" "}
-            {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
-          </span>
-        )
-        : freezeAt && isFrozen
-          ? (
-            <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-              ⚠ Scoreboard FROZEN for participants
-            </span>
-          )
-          : null;
+      freezeAt &&
+      !isFrozen &&
+      now >= new Date(freezeAt.getTime() - 5 * 60 * 1000) ? (
+        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+          ⚠ Scoreboard closing in{" "}
+          {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
+        </span>
+      ) : freezeAt && isFrozen ? (
+        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+          ⚠ Scoreboard FROZEN for participants
+        </span>
+      ) : null;
 
     return (
       <div
@@ -197,11 +219,17 @@ export default function GameTimer({ variant = "full", isAdmin = false, session }
       >
         <span>CTF Live - ends in:</span> {days > 0 && `${days}d `}{" "}
         {String(hours).padStart(2, "0")}h {String(minutes).padStart(2, "0")}m{" "}
-        {String(seconds).padStart(2, "0")}s
-        {freezeInfo}
+        {String(seconds).padStart(2, "0")}s{freezeInfo}
         {isAdminUser && freezeAt && (
-          <span style={{ color: "var(--fg-dim)", marginLeft: "8px", fontSize: "11px" }}>
-            | Freeze at: {freezeAt.toLocaleTimeString()} ({freezeMinutes} min before end)
+          <span
+            style={{
+              color: "var(--fg-dim)",
+              marginLeft: "8px",
+              fontSize: "11px",
+            }}
+          >
+            | Freeze at: {freezeAt.toLocaleTimeString()} ({freezeMinutes} min
+            before end)
           </span>
         )}
       </div>
