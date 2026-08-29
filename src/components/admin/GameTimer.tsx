@@ -115,17 +115,21 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
 
     const freezeInfo =
       freezeAt &&
-      !isFrozen &&
-      now >= new Date(freezeAt.getTime() - 5 * 60 * 1000) ? (
-        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-          ⚠ Leaderboard freeze in{" "}
-          {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
-        </span>
-      ) : freezeAt && isFrozen ? (
-        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-          ⚠ Leaderboard FROZEN for participants
-        </span>
-      ) : null;
+        !isFrozen &&
+        now >= new Date(freezeAt.getTime() - 5 * 60 * 1000)
+        ? (
+          <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+            Leaderboard freeze in{" "}
+            {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
+          </span>
+        )
+        : freezeAt && isFrozen
+          ? (
+            <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+              Leaderboard FROZEN for participants
+            </span>
+          )
+          : null;
 
     return (
       <div
@@ -141,7 +145,8 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
       >
         <span>CTF en vivo - termina en:</span> {days > 0 && `${days}d `}{" "}
         {String(hours).padStart(2, "0")}h {String(minutes).padStart(2, "0")}m{" "}
-        {String(seconds).padStart(2, "0")}s{freezeInfo}
+        {String(seconds).padStart(2, "0")}s
+        {freezeInfo}
         {isAdminUser && freezeAt && (
           <span
             style={{
