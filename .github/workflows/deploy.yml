@@ -63,7 +63,7 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "STACK_NAME=ctfrbt_org" >> $GITHUB_ENV
             echo "APP_PORT=3002" >> $GITHUB_ENV
-            echo "TARGET_DIR=/opt/stacks/ctfrbt-org/" >> $GITHUB_ENV
+            echo "TARGET_DIR=/opt/ctfrbt/prod/" >> $GITHUB_ENV
             echo "DB_USER=ctfrbt_org" >> $GITHUB_ENV
             echo "DB_PASS=${{ secrets.ORG_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_org" >> $GITHUB_ENV
@@ -72,7 +72,7 @@ jobs:
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "STACK_NAME=ctfrbt_dev" >> $GITHUB_ENV
             echo "APP_PORT=3001" >> $GITHUB_ENV
-            echo "TARGET_DIR=/opt/stacks/ctfrbt-dev/" >> $GITHUB_ENV
+            echo "TARGET_DIR=/opt/ctfrbt/dev/" >> $GITHUB_ENV
             echo "DB_USER=ctfrbt_dev" >> $GITHUB_ENV
             echo "DB_PASS=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_dev" >> $GITHUB_ENV
