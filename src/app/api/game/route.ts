@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getOrSet, CACHE_KEYS } from "@/lib/cache";
+
+const GAME_CONFIG_TTL_MS = 15_000; // 15 seconds
 
 // GET /api/game - Public endpoint to get game config
 export async function GET() {
   try {
-    const config = await prisma.gameConfig.findFirst({
-      orderBy: { createdAt: "desc" },
-    });
+    const config = await getOrSet(
+      CACHE_KEYS.GAME_CONFIG,
+      GAME_CONFIG_TTL_MS,
+      async () => {
+        return prisma.gameConfig.findFirst({
+          orderBy: { createdAt: "desc" },
+        });
+      },
+    );
 
     return NextResponse.json({
       gameConfig: config

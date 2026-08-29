@@ -444,9 +444,8 @@ body::after {
 .terminal-window {
   display: flex;
   flex-direction: column;
-  width: 96vw;
-  height: 94vh;
-  max-width: 1600px;
+  width: 100%;
+  height: 100%;
   background: rgba(0, 0, 0, 0.65);
   border: 1px solid var(--border);
   border-radius: var(--terminal-radius);
@@ -870,14 +869,18 @@ a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 16px 12px;
+  box-sizing: border-box;
   pointer-events: none;
 }
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
+  .app-shell {
+    padding: 0;
+  }
+
   .terminal-window {
-    width: 100vw;
-    height: 100vh;
     border-radius: 0;
     border: none;
   }

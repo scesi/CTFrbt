@@ -33,7 +33,7 @@ export async function GET() {
 
   const rankedTeams = await getOrSet(
     cacheKey,
-    isFrozen ? 60_000 : LEADERBOARD_TTL_MS, // Longer TTL when frozen
+    isFrozen ? 86_400_000 : LEADERBOARD_TTL_MS, // Frozen: 24h (effectively permanent until restart)
     async () => {
       const [teams, correctSubs, multiFlagChallenges] = await Promise.all([
         prisma.team.findMany({
