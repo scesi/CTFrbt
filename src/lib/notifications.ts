@@ -31,8 +31,8 @@ export interface NotificationsResponse {
   endTime: string | null;
 }
 
-export const NOTIFICATION_POLL_INTERVAL_MS = 10_000; // 10 seconds
-export const FREEZE_WARNING_MINUTES_BEFORE = 5; // Show warning 5 minutes before freeze
+export const NOTIFICATION_POLL_INTERVAL_MS = 30_000; // 30 seconds
+export const FREEZE_WARNING_MINUTES_BEFORE = 15; // Show warning 5 minutes before freeze
 
 export function isFreezeWarningActive(
   endTime: string | null,
