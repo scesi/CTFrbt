@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 
 interface GameConfig {
   startTime: string | null;
@@ -10,9 +11,22 @@ interface GameConfig {
   leaderboardFreezeMinutes: number | null;
 }
 
-export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
-  const { data: session } = useSession();
-  const isAdminUser = isAdmin || session?.user?.isAdmin;
+type GameTimerVariant = "titlebar" | "statusbar" | "full";
+
+interface GameTimerProps {
+  variant?: GameTimerVariant;
+  isAdmin?: boolean;
+  session?: Session | null;
+}
+
+export default function GameTimer({
+  variant = "full",
+  isAdmin = false,
+  session,
+}: GameTimerProps) {
+  const { data: sessionData } = useSession();
+  const sessionToUse = session ?? sessionData;
+  const isAdminUser = isAdmin || sessionToUse?.user?.isAdmin;
   const [config, setConfig] = useState<GameConfig>({
     startTime: null,
     endTime: null,
@@ -58,6 +72,10 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
       ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000)
       : null;
   const isFrozen = freezeAt && now >= freezeAt;
+  const isFreezeWarning =
+    freezeAt &&
+    !isFrozen &&
+    now >= new Date(freezeAt.getTime() - 5 * 60 * 1000);
 
   // Before start
   if (now < startTime) {
@@ -66,6 +84,11 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    const timeStr = `${days > 0 ? `${days}d ` : ""}${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+
+    if (variant === "titlebar") return null;
+    if (variant === "statusbar") return <span>CTF starts in: {timeStr}</span>;
 
     return (
       <div
@@ -88,6 +111,9 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
 
   // After end (with endTime)
   if (endTime && now > endTime) {
+    if (variant === "titlebar") return null;
+    if (variant === "statusbar") return <span>CTF ended</span>;
+
     return (
       <div
         style={{
@@ -100,7 +126,7 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
           background: "rgba(255,255,255,0.02)",
         }}
       >
-        <span>CTF finalizado</span>
+        <span>CTF ended</span>
       </div>
     );
   }
@@ -113,17 +139,69 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+    const timeStr = `${days > 0 ? `${days}d ` : ""}${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+
+    // Title bar variant: only show freeze warning
+    if (variant === "titlebar") {
+      if (!freezeAt) return null;
+
+      if (isFrozen) {
+        return (
+          <span
+            style={{
+              color: "var(--neon-amber)",
+              marginLeft: "8px",
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Scoreboard frozen
+          </span>
+        );
+      }
+
+      if (isFreezeWarning) {
+        const minsLeft = Math.ceil(
+          (freezeAt!.getTime() - now.getTime()) / 60000,
+        );
+        return (
+          <span
+            style={{
+              color: "var(--neon-amber)",
+              marginLeft: "8px",
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Scoreboard closing in {minsLeft} min
+          </span>
+        );
+      }
+
+      return null;
+    }
+
+    // Status bar variant: show timer only
+    if (variant === "statusbar") {
+      return (
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>
+          CTF Live - ends in: {timeStr}
+        </span>
+      );
+    }
+
+    // Full variant (admin dashboard)
     const freezeInfo =
       freezeAt &&
       !isFrozen &&
       now >= new Date(freezeAt.getTime() - 5 * 60 * 1000) ? (
         <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-          Leaderboard freeze in{" "}
+          ⚠ Scoreboard closing in{" "}
           {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
         </span>
       ) : freezeAt && isFrozen ? (
         <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
-          Leaderboard FROZEN for participants
+          ⚠ Scoreboard FROZEN for participants
         </span>
       ) : null;
 
@@ -139,7 +217,7 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
           background: "rgba(255,255,255,0.02)",
         }}
       >
-        <span>CTF en vivo - termina en:</span> {days > 0 && `${days}d `}{" "}
+        <span>CTF Live - ends in:</span> {days > 0 && `${days}d `}{" "}
         {String(hours).padStart(2, "0")}h {String(minutes).padStart(2, "0")}m{" "}
         {String(seconds).padStart(2, "0")}s{freezeInfo}
         {isAdminUser && freezeAt && (
@@ -159,6 +237,9 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
   }
 
   // Infinite mode (no endTime)
+  if (variant === "titlebar") return null;
+  if (variant === "statusbar") return <span>CTF Live - infinite mode</span>;
+
   return (
     <div
       style={{
@@ -171,7 +252,7 @@ export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
         background: "rgba(255,255,255,0.02)",
       }}
     >
-      <span>CTF en vivo - modo infinito</span>
+      <span>CTF Live - infinite mode</span>
     </div>
   );
 }

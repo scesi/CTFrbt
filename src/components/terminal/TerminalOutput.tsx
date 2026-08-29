@@ -3,7 +3,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTerminal } from "@/lib/terminal/TerminalContext";
 import TerminalInput from "./TerminalInput";
-import GameTimer from "../admin/GameTimer";
 import NotificationPortal from "../ui/NotificationPortal";
 
 export default function TerminalOutput() {
@@ -27,7 +26,6 @@ export default function TerminalOutput() {
           overflowY: "auto",
         }}
       >
-        <GameTimer />
         {state.history.map((block) => (
           <div
             key={block.id}
