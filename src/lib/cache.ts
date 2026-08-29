@@ -71,4 +71,5 @@ export const CACHE_KEYS = {
   LEADERBOARD_FROZEN: "leaderboard:frozen",
   CHALLENGES: "challenges",
   GAME_CONFIG: "game-config",
+  ANNOUNCEMENTS: "announcements",
 } as const;
