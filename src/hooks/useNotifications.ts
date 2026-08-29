@@ -73,8 +73,7 @@ export function useNotifications(): UseNotificationsReturn {
             return {
               id: `freeze-${freezeWarning.freezeAt}`,
               type: "freeze-warning" as const,
-              message:
-                "Leaderboard frozen — only admins see real-time updates",
+              message: "Leaderboard frozen — only admins see real-time updates",
               timestamp: Date.now(),
               autoHide: true,
               autoHideDelay: 10_000,
