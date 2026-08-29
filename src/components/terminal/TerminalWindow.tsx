@@ -6,6 +6,7 @@ import type { Session } from "next-auth";
 import Sidebar from "../Sidebar";
 import StatusBar from "../StatusBar";
 import CRTSettings from "./CRTSettings";
+import GameTimer from "../admin/GameTimer";
 
 export default function TerminalWindow({
   children,
@@ -73,6 +74,7 @@ export default function TerminalWindow({
           </span>
 
           <div className="title-actions">
+            <GameTimer variant="titlebar" session={session} />
             <CRTSettings />
           </div>
         </div>

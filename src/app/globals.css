@@ -475,6 +475,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
   flex-shrink: 0;
 }
 
@@ -505,7 +506,6 @@ body::after {
 }
 
 .title-text {
-  flex: 1;
   text-align: center;
   font-size: 13px;
   font-weight: 500;
@@ -519,7 +519,9 @@ body::after {
 .title-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  flex: 1;
   flex-shrink: 0;
 }
 
@@ -696,7 +698,6 @@ body::after {
 .status-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 28px;
   padding: 0 14px;
   background: rgba(30, 30, 30, 0.9);
@@ -711,6 +712,15 @@ body::after {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1;
+}
+
+.status-item:nth-child(2) {
+  justify-content: center;
+}
+
+.status-item:last-child {
+  justify-content: flex-end;
 }
 
 .status-dot {

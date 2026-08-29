@@ -237,13 +237,14 @@ model ActivityLog {
 }
 
 model GameConfig {
-  id                   String    @id @default(cuid())
-  startTime            DateTime
-  endTime              DateTime?
-  isActive             Boolean   @default(true)
-  registrationEnabled  Boolean   @default(true)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id                      String    @id @default(cuid())
+  startTime               DateTime
+  endTime                 DateTime?
+  isActive                Boolean   @default(true)
+  registrationEnabled     Boolean   @default(true)
+  leaderboardFreezeMinutes Int?      /// Minutes before endTime to freeze leaderboard for participants
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 }
 
 model SiteConfig {

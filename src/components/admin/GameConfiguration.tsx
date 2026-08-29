@@ -8,6 +8,7 @@ interface GameConfig {
   startTime: string;
   endTime: string | null;
   registrationEnabled?: boolean;
+  leaderboardFreezeMinutes?: number | null;
 }
 
 function pad(num: number): string {
@@ -60,6 +61,9 @@ export default function GameConfiguration() {
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [leaderboardFreezeMinutes, setLeaderboardFreezeMinutes] = useState<
+    number | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -96,6 +100,15 @@ export default function GameConfiguration() {
         setStartTime(formatLocalTime(start));
         setEndDate("");
         setEndTime("");
+      }
+
+      if (
+        config?.leaderboardFreezeMinutes !== undefined &&
+        config?.leaderboardFreezeMinutes !== null
+      ) {
+        setLeaderboardFreezeMinutes(config.leaderboardFreezeMinutes);
+      } else {
+        setLeaderboardFreezeMinutes(null);
       }
     } catch {
       toast.error("Failed to load game config");
@@ -146,6 +159,26 @@ export default function GameConfiguration() {
       }
     }
 
+    // Validate freeze minutes against endTime
+    if (
+      leaderboardFreezeMinutes !== null &&
+      leaderboardFreezeMinutes !== undefined &&
+      leaderboardFreezeMinutes > 0
+    ) {
+      if (!endDateTime) {
+        toast.error("leaderboardFreezeMinutes requires an END time to be set");
+        return;
+      }
+      const totalMinutes =
+        (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
+      if (leaderboardFreezeMinutes > totalMinutes) {
+        toast.error(
+          "leaderboardFreezeMinutes cannot exceed total competition duration",
+        );
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/admin/game", {
@@ -155,6 +188,11 @@ export default function GameConfiguration() {
           startTime: startDateTime.toISOString(),
           endTime: endDateTime ? endDateTime.toISOString() : null,
           registrationEnabled,
+          leaderboardFreezeMinutes:
+            leaderboardFreezeMinutes === null ||
+            leaderboardFreezeMinutes === undefined
+              ? undefined
+              : leaderboardFreezeMinutes,
         }),
       });
 
@@ -180,6 +218,15 @@ export default function GameConfiguration() {
         } else {
           setEndDate("");
           setEndTime("");
+        }
+
+        if (
+          data.config.leaderboardFreezeMinutes !== undefined &&
+          data.config.leaderboardFreezeMinutes !== null
+        ) {
+          setLeaderboardFreezeMinutes(data.config.leaderboardFreezeMinutes);
+        } else {
+          setLeaderboardFreezeMinutes(null);
         }
       }
 
@@ -345,27 +392,58 @@ export default function GameConfiguration() {
           <section
             style={{
               display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              flexDirection: "column",
+              gap: "6px",
             }}
           >
-            <label
+            <span style={headerSpan}>LEADERBOARD FREEZE (OPTIONAL)</span>
+            <div style={fieldRow}>
+              <div style={dateWrapper}>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={
+                    leaderboardFreezeMinutes === null ||
+                    leaderboardFreezeMinutes === undefined
+                      ? ""
+                      : leaderboardFreezeMinutes
+                  }
+                  onChange={(e) =>
+                    setLeaderboardFreezeMinutes(
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  disabled={saving}
+                  min={0}
+                  aria-label="Leaderboard freeze minutes before end"
+                  style={inputStyle}
+                  placeholder="0"
+                />
+              </div>
+              <div style={timeWrapper}>
+                <span
+                  style={{
+                    color: "var(--fg-dim)",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  minutes before end
+                </span>
+              </div>
+            </div>
+            <p
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-                fontSize: "13px",
+                fontSize: "11px",
+                color: "var(--fg-dim)",
+                lineHeight: 1.5,
+                margin: 0,
               }}
             >
-              <input
-                type="checkbox"
-                checked={registrationEnabled}
-                onChange={(e) => setRegistrationEnabled(e.target.checked)}
-                disabled={saving}
-              />
-              Allow new user registration
-            </label>
+              Minutes before competition end to freeze leaderboard for
+              participants. Admins always see real-time scores. Leave empty or 0
+              to disable.
+            </p>
           </section>
 
           <button

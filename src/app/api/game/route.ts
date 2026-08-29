@@ -15,6 +15,7 @@ export async function GET() {
             endTime: config.endTime?.toISOString() || null,
             isActive: config.isActive,
             registrationEnabled: config.registrationEnabled,
+            leaderboardFreezeMinutes: config.leaderboardFreezeMinutes ?? null,
           }
         : null,
     });

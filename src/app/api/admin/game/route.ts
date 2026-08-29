@@ -27,7 +27,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { startTime, endTime, isActive, registrationEnabled } = body;
+    const {
+      startTime,
+      endTime,
+      isActive,
+      registrationEnabled,
+      leaderboardFreezeMinutes,
+    } = body;
 
     if (!startTime) {
       return NextResponse.json(
@@ -53,6 +59,34 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate leaderboardFreezeMinutes
+    let freezeMinutes: number | null = null;
+    if (
+      leaderboardFreezeMinutes !== undefined &&
+      leaderboardFreezeMinutes !== null
+    ) {
+      const parsed = Number(leaderboardFreezeMinutes);
+      if (!Number.isInteger(parsed) || parsed < 0) {
+        return NextResponse.json(
+          { error: "leaderboardFreezeMinutes must be a non-negative integer" },
+          { status: 400 },
+        );
+      }
+      if (end && parsed > 0) {
+        const totalMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        if (parsed > totalMinutes) {
+          return NextResponse.json(
+            {
+              error:
+                "leaderboardFreezeMinutes cannot exceed total competition duration",
+            },
+            { status: 400 },
+          );
+        }
+      }
+      freezeMinutes = parsed;
+    }
+
     // Upsert — only one active game config
     const existing = await prisma.gameConfig.findFirst({
       orderBy: { createdAt: "desc" },
@@ -65,6 +99,9 @@ export async function POST(request: Request) {
       isActive: isActive !== false,
       ...(registrationEnabled !== undefined && {
         registrationEnabled: registrationEnabled === true,
+      }),
+      ...(freezeMinutes !== null && {
+        leaderboardFreezeMinutes: freezeMinutes,
       }),
     };
     if (existing) {
