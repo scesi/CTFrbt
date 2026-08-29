@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import TeamEditModal from "./TeamEditModal";
 import TeamIcon from "../ui/TeamIcon";
+import { useSortableTable } from "@/hooks/useSortableTable";
 
 export interface Team {
   id: string;
@@ -28,6 +29,23 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+
+  const sortAccessors = useMemo(
+    () => ({
+      name: (t: Team) => t.name,
+      code: (t: Team) => t.code,
+      score: (t: Team) => t.score,
+      members: (t: Team) => t._count.members,
+      created: (t: Team) => new Date(t.createdAt).getTime(),
+    }),
+    [],
+  );
+
+  const { sortedData, getSortIndicator, getThProps } = useSortableTable(
+    teams,
+    { key: "name", direction: "asc" },
+    sortAccessors,
+  );
 
   const loadTeams = useCallback(async () => {
     try {
@@ -131,16 +149,22 @@ export default function TeamsView({ onTeamUpdated }: TeamsViewProps) {
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Code</th>
-            <th style={{ textAlign: "right" }}>Score</th>
-            <th style={{ textAlign: "right" }}>Members</th>
-            <th>Created</th>
+            <th {...getThProps("name")}>Name{getSortIndicator("name")}</th>
+            <th {...getThProps("code")}>Code{getSortIndicator("code")}</th>
+            <th {...getThProps("score", { textAlign: "right" })}>
+              Score{getSortIndicator("score")}
+            </th>
+            <th {...getThProps("members", { textAlign: "right" })}>
+              Members{getSortIndicator("members")}
+            </th>
+            <th {...getThProps("created")}>
+              Created{getSortIndicator("created")}
+            </th>
             <th style={{ textAlign: "right" }}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {teams.map((team) => (
+          {sortedData.map((team) => (
             <tr key={team.id}>
               <td style={{ fontWeight: 500 }}>
                 <div

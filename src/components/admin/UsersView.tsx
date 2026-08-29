@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { useSortableTable } from "@/hooks/useSortableTable";
 
 interface User {
   id: string;
@@ -57,6 +58,25 @@ export default function UsersView({
     teamId: "",
   });
   const [creating, setCreating] = useState(false);
+
+  const sortAccessors = useMemo(
+    () => ({
+      alias: (u: User) => u.alias,
+      name: (u: User) => u.name,
+      isAdmin: (u: User) => u.isAdmin,
+      isTeamLeader: (u: User) => u.isTeamLeader,
+      team: (u: User) => u.team?.name ?? null,
+      submissions: (u: User) => u._count.submissions,
+      scores: (u: User) => u._count.scores,
+    }),
+    [],
+  );
+
+  const { sortedData, getSortIndicator, getThProps } = useSortableTable(
+    users,
+    { key: "alias", direction: "asc" },
+    sortAccessors,
+  );
 
   const loadUsers = useCallback(async () => {
     try {
@@ -369,18 +389,26 @@ export default function UsersView({
       <table className="table">
         <thead>
           <tr>
-            <th>Alias</th>
-            <th>Name</th>
-            <th>Admin</th>
-            <th>Team Leader</th>
-            <th>Team</th>
-            <th style={{ textAlign: "right" }}>Submissions</th>
-            <th style={{ textAlign: "right" }}>Scores</th>
+            <th {...getThProps("alias")}>Alias{getSortIndicator("alias")}</th>
+            <th {...getThProps("name")}>Name{getSortIndicator("name")}</th>
+            <th {...getThProps("isAdmin")}>
+              Admin{getSortIndicator("isAdmin")}
+            </th>
+            <th {...getThProps("isTeamLeader")}>
+              Team Leader{getSortIndicator("isTeamLeader")}
+            </th>
+            <th {...getThProps("team")}>Team{getSortIndicator("team")}</th>
+            <th {...getThProps("submissions", { textAlign: "right" })}>
+              Submissions{getSortIndicator("submissions")}
+            </th>
+            <th {...getThProps("scores", { textAlign: "right" })}>
+              Scores{getSortIndicator("scores")}
+            </th>
             <th style={{ textAlign: "right" }}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => {
+          {sortedData.map((user) => {
             const isSelf = user.id === currentUserId;
             return (
               <tr key={user.id}>

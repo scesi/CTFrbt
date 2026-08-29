@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { useSortableTable } from "@/hooks/useSortableTable";
 
 interface Submission {
   id: string;
@@ -28,6 +29,24 @@ interface Submission {
 export default function SubmissionsView() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const sortAccessors = useMemo(
+    () => ({
+      time: (s: Submission) => new Date(s.createdAt).getTime(),
+      team: (s: Submission) => s.team?.name ?? null,
+      user: (s: Submission) => s.user.alias,
+      challenge: (s: Submission) => s.challenge.title,
+      flag: (s: Submission) => s.flag,
+      correct: (s: Submission) => s.isCorrect,
+    }),
+    [],
+  );
+
+  const { sortedData, getSortIndicator, getThProps } = useSortableTable(
+    submissions,
+    { key: "time", direction: "desc" },
+    sortAccessors,
+  );
 
   const loadSubmissions = useCallback(async () => {
     try {
@@ -71,16 +90,20 @@ export default function SubmissionsView() {
       <table className="table">
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Team</th>
-            <th>User</th>
-            <th>Challenge</th>
-            <th>Flag</th>
-            <th>Correct</th>
+            <th {...getThProps("time")}>Time{getSortIndicator("time")}</th>
+            <th {...getThProps("team")}>Team{getSortIndicator("team")}</th>
+            <th {...getThProps("user")}>User{getSortIndicator("user")}</th>
+            <th {...getThProps("challenge")}>
+              Challenge{getSortIndicator("challenge")}
+            </th>
+            <th {...getThProps("flag")}>Flag{getSortIndicator("flag")}</th>
+            <th {...getThProps("correct")}>
+              Correct{getSortIndicator("correct")}
+            </th>
           </tr>
         </thead>
         <tbody>
-          {submissions.map((sub) => (
+          {sortedData.map((sub) => (
             <tr key={sub.id}>
               <td style={{ fontSize: "12px", color: "var(--fg-dim)" }}>
                 {new Date(sub.createdAt).toLocaleString()}

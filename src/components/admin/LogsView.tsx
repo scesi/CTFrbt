@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../ui/LoadingSpinner";
+import { useSortableTable } from "@/hooks/useSortableTable";
 
 interface ActivityLog {
   id: string;
@@ -20,6 +21,22 @@ interface ActivityLog {
 export default function LogsView() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const sortAccessors = useMemo(
+    () => ({
+      type: (l: ActivityLog) => l.type,
+      description: (l: ActivityLog) => l.description,
+      team: (l: ActivityLog) => l.team?.name ?? null,
+      time: (l: ActivityLog) => new Date(l.createdAt).getTime(),
+    }),
+    [],
+  );
+
+  const { sortedData, getSortIndicator, getThProps } = useSortableTable(
+    logs,
+    { key: "time", direction: "desc" },
+    sortAccessors,
+  );
 
   const loadLogs = useCallback(async () => {
     try {
@@ -63,14 +80,16 @@ export default function LogsView() {
       <table className="table">
         <thead>
           <tr>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Team</th>
-            <th>Time</th>
+            <th {...getThProps("type")}>Type{getSortIndicator("type")}</th>
+            <th {...getThProps("description")}>
+              Description{getSortIndicator("description")}
+            </th>
+            <th {...getThProps("team")}>Team{getSortIndicator("team")}</th>
+            <th {...getThProps("time")}>Time{getSortIndicator("time")}</th>
           </tr>
         </thead>
         <tbody>
-          {logs.map((log) => (
+          {sortedData.map((log) => (
             <tr key={log.id}>
               <td style={{ fontSize: "12px" }}>{log.type}</td>
               <td style={{ fontSize: "12px", color: "var(--fg-muted)" }}>

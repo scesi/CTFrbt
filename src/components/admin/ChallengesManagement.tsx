@@ -1,6 +1,8 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { useMemo } from "react";
+import { useSortableTable } from "@/hooks/useSortableTable";
 
 export interface Challenge {
   id: string;
@@ -64,6 +66,24 @@ export default function ChallengesManagement({
   onToggleChallenge,
   onDeleteChallenge,
 }: ChallengesManagementProps) {
+  const sortAccessors = useMemo(
+    () => ({
+      title: (c: Challenge) => c.title,
+      category: (c: Challenge) => c.category,
+      points: (c: Challenge) => c.points,
+      difficulty: (c: Challenge) => c.difficulty,
+      solves: (c: Challenge) => c._count.submissions,
+      status: (c: Challenge) => c.isActive,
+    }),
+    [],
+  );
+
+  const { sortedData, getSortIndicator, getThProps } = useSortableTable(
+    challenges,
+    { key: "title", direction: "asc" },
+    sortAccessors,
+  );
+
   return (
     <>
       {/* Challenges header */}
@@ -328,17 +348,27 @@ export default function ChallengesManagement({
       <table className="table">
         <thead>
           <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th style={{ textAlign: "right" }}>Pts</th>
-            <th>Diff</th>
-            <th style={{ textAlign: "right" }}>Solves</th>
-            <th>Status</th>
+            <th {...getThProps("title")}>Title{getSortIndicator("title")}</th>
+            <th {...getThProps("category")}>
+              Category{getSortIndicator("category")}
+            </th>
+            <th {...getThProps("points", { textAlign: "right" })}>
+              Pts{getSortIndicator("points")}
+            </th>
+            <th {...getThProps("difficulty")}>
+              Diff{getSortIndicator("difficulty")}
+            </th>
+            <th {...getThProps("solves", { textAlign: "right" })}>
+              Solves{getSortIndicator("solves")}
+            </th>
+            <th {...getThProps("status")}>
+              Status{getSortIndicator("status")}
+            </th>
             <th style={{ textAlign: "right" }}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {challenges.map((c) => (
+          {sortedData.map((c) => (
             <tr key={c.id}>
               <td style={{ fontWeight: 500 }}>{c.title}</td>
               <td>{c.category}</td>
