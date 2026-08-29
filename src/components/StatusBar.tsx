@@ -1,11 +1,12 @@
 "use client";
 
+import GameTimer from "./admin/GameTimer";
+
 export default function StatusBar() {
   return (
     <footer className="status-bar">
       <div className="status-item">
-        <span className="status-dot" />
-        <span>ONLINE</span>
+        <GameTimer variant="statusbar" />
       </div>
 
       <div className="status-item">
