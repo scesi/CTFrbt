@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -71,7 +71,7 @@ export default function RecaptchaWidget({
     };
     script.onerror = () => {
       console.error(
-        "[reCAPTCHA] Failed to load Google reCAPTCHA script. Check internet connection or ad-blockers.",
+        "[reCAPTCHA] Failed to load script from Google. Check internet connection or ad-blockers.",
       );
       setError(true);
       onError?.();
@@ -87,17 +87,15 @@ export default function RecaptchaWidget({
     window.grecaptcha.ready(() => {
       if (!containerRef.current || !window.grecaptcha) return;
 
-      // Reset if already rendered
       if (widgetIdRef.current !== null) {
         try {
           window.grecaptcha.reset(widgetIdRef.current);
         } catch {
-          // Ignore reset errors
+          // Ignore reset error
         }
         return;
       }
 
-      // Avoid double rendering if container already has children
       if (containerRef.current.children.length > 0) {
         return;
       }
@@ -115,7 +113,7 @@ export default function RecaptchaWidget({
           },
           "error-callback": () => {
             console.error(
-              "[reCAPTCHA] Google returned an error. Possible reasons: invalid site key, domain not authorized in Google Console (e.g. localhost), or key type mismatch (must be v2 Checkbox).",
+              "[reCAPTCHA] Google error: Check if domain (localhost) is authorized and key is v2 Checkbox.",
             );
             setError(true);
             onError?.();
@@ -142,7 +140,7 @@ export default function RecaptchaWidget({
       try {
         window.grecaptcha.reset(widgetIdRef.current);
       } catch {
-        // Ignore reset errors
+        // Ignore reset error
       }
     }
   }, []);
@@ -196,26 +194,8 @@ export default function RecaptchaWidget({
         }}
       >
         <p style={{ margin: "0 0 6px 0" }}>
-          Failed to load reCAPTCHA. Please check your connection or site keys.
+          Failed to load reCAPTCHA. Please refresh the page.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setError(false);
-            if (isLoaded) renderWidget();
-          }}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--danger)",
-            color: "var(--danger)",
-            fontSize: "11px",
-            fontFamily: "var(--font-mono)",
-            padding: "3px 8px",
-            cursor: "pointer",
-          }}
-        >
-          Retry
-        </button>
       </div>
     );
   }
