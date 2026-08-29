@@ -1,18 +1,23 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 
 interface GameConfig {
   startTime: string | null;
   endTime: string | null;
   isActive: boolean;
+  leaderboardFreezeMinutes: number | null;
 }
 
-export default function GameTimer() {
+export default function GameTimer({ isAdmin = false }: { isAdmin?: boolean }) {
+  const { data: session } = useSession();
+  const isAdminUser = isAdmin || session?.user?.isAdmin;
   const [config, setConfig] = useState<GameConfig>({
     startTime: null,
     endTime: null,
     isActive: false,
+    leaderboardFreezeMinutes: null,
   });
   const [now, setNow] = useState(new Date());
 
@@ -26,6 +31,8 @@ export default function GameTimer() {
           startTime: data.gameConfig.startTime || null,
           endTime: data.gameConfig.endTime || null,
           isActive: data.gameConfig.isActive ?? false,
+          leaderboardFreezeMinutes:
+            data.gameConfig.leaderboardFreezeMinutes ?? null,
         });
       }
     } catch {
@@ -45,6 +52,12 @@ export default function GameTimer() {
 
   const startTime = new Date(config.startTime);
   const endTime = config.endTime ? new Date(config.endTime) : null;
+  const freezeMinutes = config.leaderboardFreezeMinutes ?? 0;
+  const freezeAt =
+    endTime && freezeMinutes > 0
+      ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000)
+      : null;
+  const isFrozen = freezeAt && now >= freezeAt;
 
   // Before start
   if (now < startTime) {
@@ -100,6 +113,20 @@ export default function GameTimer() {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+    const freezeInfo =
+      freezeAt &&
+      !isFrozen &&
+      now >= new Date(freezeAt.getTime() - 5 * 60 * 1000) ? (
+        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+          ⚠ Leaderboard freeze in{" "}
+          {Math.ceil((freezeAt.getTime() - now.getTime()) / 60000)} min
+        </span>
+      ) : freezeAt && isFrozen ? (
+        <span style={{ color: "var(--neon-amber)", marginLeft: "8px" }}>
+          ⚠ Leaderboard FROZEN for participants
+        </span>
+      ) : null;
+
     return (
       <div
         style={{
@@ -114,7 +141,19 @@ export default function GameTimer() {
       >
         <span>CTF en vivo - termina en:</span> {days > 0 && `${days}d `}{" "}
         {String(hours).padStart(2, "0")}h {String(minutes).padStart(2, "0")}m{" "}
-        {String(seconds).padStart(2, "0")}s
+        {String(seconds).padStart(2, "0")}s{freezeInfo}
+        {isAdminUser && freezeAt && (
+          <span
+            style={{
+              color: "var(--fg-dim)",
+              marginLeft: "8px",
+              fontSize: "11px",
+            }}
+          >
+            | Freeze at: {freezeAt.toLocaleTimeString()} ({freezeMinutes} min
+            before end)
+          </span>
+        )}
       </div>
     );
   }

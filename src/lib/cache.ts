@@ -68,6 +68,7 @@ export function invalidate(key: string): void {
 
 export const CACHE_KEYS = {
   LEADERBOARD: "leaderboard",
+  LEADERBOARD_FROZEN: "leaderboard:frozen",
   CHALLENGES: "challenges",
   GAME_CONFIG: "game-config",
 } as const;

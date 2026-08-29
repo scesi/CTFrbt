@@ -9,10 +9,31 @@ const LEADERBOARD_TTL_MS = 10_000; // 10 seconds
 // GET /api/leaderboard — Get team rankings
 export async function GET() {
   const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.isAdmin === true;
+
+  // Check freeze status
+  const gameConfig = await prisma.gameConfig.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { endTime: true, leaderboardFreezeMinutes: true },
+  });
+
+  const now = new Date();
+  const endTime = gameConfig?.endTime ? new Date(gameConfig.endTime) : null;
+  const freezeMinutes = gameConfig?.leaderboardFreezeMinutes ?? 0;
+  const freezeAt =
+    endTime && freezeMinutes > 0
+      ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000)
+      : null;
+  const isFrozen = freezeAt && now >= freezeAt && !isAdmin;
+
+  // Use separate cache key for frozen state
+  const cacheKey = isFrozen
+    ? CACHE_KEYS.LEADERBOARD_FROZEN
+    : CACHE_KEYS.LEADERBOARD;
 
   const rankedTeams = await getOrSet(
-    CACHE_KEYS.LEADERBOARD,
-    LEADERBOARD_TTL_MS,
+    cacheKey,
+    isFrozen ? 60_000 : LEADERBOARD_TTL_MS, // Longer TTL when frozen
     async () => {
       const [teams, correctSubs, multiFlagChallenges] = await Promise.all([
         prisma.team.findMany({
@@ -85,5 +106,5 @@ export async function GET() {
       rankedTeams.find((t) => t.id === session.user.teamId) || null;
   }
 
-  return NextResponse.json({ teams: rankedTeams, currentUserTeam });
+  return NextResponse.json({ teams: rankedTeams, currentUserTeam, isFrozen });
 }
