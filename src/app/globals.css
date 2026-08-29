@@ -829,6 +829,7 @@ body::after {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
 }
 
 .table th,
@@ -836,6 +837,9 @@ body::after {
   border: 1px solid var(--border);
   padding: 8px 12px;
   text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .table th {
@@ -845,6 +849,30 @@ body::after {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+  position: relative;
+}
+
+.table th.sortable:hover {
+  color: var(--fg);
+}
+
+.table th.sortable .sort-indicator {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 10px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.table th.sortable.sort-active .sort-indicator {
+  opacity: 1;
+  color: var(--accent);
 }
 
 .table tr:hover {
