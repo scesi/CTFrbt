@@ -39,18 +39,14 @@ export default function NotificationToast({
   const isFreeze = notification.type === "freeze-warning";
   const bgColor = isFreeze
     ? "rgba(255, 184, 0, 0.15)"
-    : "rgba(74, 144, 226, 0.15)";
-  const borderColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
-  const iconColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
+    : "rgba(255, 255, 255, 0.06)";
+  const borderColor = isFreeze ? "var(--neon-amber)" : "var(--border-hover)";
+  const iconColor = isFreeze ? "var(--neon-amber)" : "var(--fg)";
   const icon = isFreeze ? "!" : ">|";
 
   return (
     <div
       style={{
-        position: "fixed",
-        top: "20px",
-        right: "20px",
-        zIndex: 9999,
         maxWidth: "360px",
         padding: "12px 16px",
         border: `1px solid ${borderColor}`,
@@ -60,7 +56,7 @@ export default function NotificationToast({
         fontFamily: "var(--font-mono)",
         fontSize: "12px",
         lineHeight: 1.5,
-        boxShadow: `0 4px 12px ${isFreeze ? "rgba(255, 184, 0, 0.2)" : "rgba(74, 144, 226, 0.2)"}`,
+        boxShadow: `0 4px 12px ${isFreeze ? "rgba(255, 184, 0, 0.2)" : "rgba(255, 255, 255, 0.08)"}`,
         opacity: exiting ? 0 : 1,
         transform: exiting ? "translateX(20px)" : "translateX(0)",
         transition: "opacity 0.3s ease, transform 0.3s ease",

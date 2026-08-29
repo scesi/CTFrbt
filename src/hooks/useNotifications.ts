@@ -74,7 +74,7 @@ export function useNotifications(): UseNotificationsReturn {
               id: `freeze-${freezeWarning.freezeAt}`,
               type: "freeze-warning" as const,
               message:
-                "Leaderboard congelado — solo admins ven actualizaciones en tiempo real",
+                "Leaderboard frozen — only admins see real-time updates",
               timestamp: Date.now(),
               autoHide: true,
               autoHideDelay: 10_000,
