@@ -35,7 +35,7 @@ export default function NotificationToast({
   const bgColor = isFreeze ? "rgba(255, 184, 0, 0.15)" : "rgba(74, 144, 226, 0.15)";
   const borderColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
   const iconColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
-  const icon = isFreeze ? "⚠" : "📢";
+  const icon = isFreeze ? "!" : ">|";
 
   return (
     <div

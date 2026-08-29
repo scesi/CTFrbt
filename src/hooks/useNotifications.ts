@@ -126,7 +126,7 @@ export function useNotifications(): UseNotificationsReturn {
         setIsLoading(false);
       }
     }
-  }, [isAdmin]);
+  }, [isAdmin, isLoading]);
 
   useEffect(() => {
     // Initial fetch

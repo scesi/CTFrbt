@@ -11,8 +11,7 @@ export default function StatusBar() {
       <div className="status-item">
         <span style={{ color: "var(--fg-dim)" }}>
           Developed by{" "}
-          <strong style={{ color: "var(--fg-muted)" }}>Stevenjoelrs</strong> for
-          SCESI security area
+          <strong style={{ color: "var(--fg-muted)" }}>Stevenjoelrs</strong>
         </span>
       </div>
 

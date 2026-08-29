@@ -20,7 +20,6 @@ export async function GET() {
   const now = new Date();
   const endTime = gameConfig?.endTime ? new Date(gameConfig.endTime) : null;
   const freezeMinutes = gameConfig?.leaderboardFreezeMinutes ?? 0;
-<<<<<<< HEAD
   const freezeAt =
     endTime && freezeMinutes > 0
       ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000)
@@ -31,13 +30,6 @@ export async function GET() {
   const cacheKey = isFrozen
     ? CACHE_KEYS.LEADERBOARD_FROZEN
     : CACHE_KEYS.LEADERBOARD;
-=======
-  const freezeAt = endTime && freezeMinutes > 0 ? new Date(endTime.getTime() - freezeMinutes * 60 * 1000) : null;
-  const isFrozen = freezeAt && now >= freezeAt && !isAdmin;
-
-  // Use separate cache key for frozen state
-  const cacheKey = isFrozen ? CACHE_KEYS.LEADERBOARD_FROZEN : CACHE_KEYS.LEADERBOARD;
->>>>>>> 3f17397 (feat(api): implement leaderboard freeze logic with separate cache for frozen state)
 
   const rankedTeams = await getOrSet(
     cacheKey,
