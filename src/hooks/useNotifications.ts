@@ -51,7 +51,11 @@ export function useNotifications(): UseNotificationsReturn {
       const newNotifications: Notification[] = [];
 
       // Check freeze warning
-      const freezeWarning = isFreezeWarningActive(endTime, freezeMinutes, Date.now());
+      const freezeWarning = isFreezeWarningActive(
+        endTime,
+        freezeMinutes,
+        Date.now(),
+      );
       if (freezeWarning.active && !isAdmin) {
         const freezeNotif = (() => {
           if (freezeWarning.minutesRemaining > 0) {
@@ -69,7 +73,8 @@ export function useNotifications(): UseNotificationsReturn {
             return {
               id: `freeze-${freezeWarning.freezeAt}`,
               type: "freeze-warning" as const,
-              message: "Leaderboard congelado — solo admins ven actualizaciones en tiempo real",
+              message:
+                "Leaderboard congelado — solo admins ven actualizaciones en tiempo real",
               timestamp: Date.now(),
               autoHide: true,
               autoHideDelay: 10_000,
@@ -87,7 +92,10 @@ export function useNotifications(): UseNotificationsReturn {
       // Check announcements
       for (const announcement of announcements) {
         const id = `announcement-${announcement.id}`;
-        if (!lastAnnouncementIdsRef.current.has(id) && !dismissedRef.current.has(id)) {
+        if (
+          !lastAnnouncementIdsRef.current.has(id) &&
+          !dismissedRef.current.has(id)
+        ) {
           newNotifications.push({
             id,
             type: "announcement",
@@ -133,7 +141,10 @@ export function useNotifications(): UseNotificationsReturn {
     fetchNotifications();
 
     // Set up polling
-    intervalRef.current = setInterval(fetchNotifications, NOTIFICATION_POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(
+      fetchNotifications,
+      NOTIFICATION_POLL_INTERVAL_MS,
+    );
 
     return () => {
       if (intervalRef.current) {
