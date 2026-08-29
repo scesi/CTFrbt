@@ -26,9 +26,7 @@ export async function GET() {
       }),
     ]);
 
-    const endTime = gameConfig?.endTime
-      ? new Date(gameConfig.endTime).toISOString()
-      : null;
+    const endTime = gameConfig?.endTime ? new Date(gameConfig.endTime).toISOString() : null;
     const freezeMinutes = gameConfig?.leaderboardFreezeMinutes ?? 0;
 
     const now = Date.now();
@@ -38,24 +36,17 @@ export async function GET() {
 
     // Add freeze warning if active and user is not admin
     if (freezeWarning.active && !isAdmin) {
-      notifications.push(
-        createFreezeWarningNotification(
-          freezeWarning.minutesRemaining,
-          freezeWarning.freezeAt,
-        ),
-      );
+      notifications.push(createFreezeWarningNotification(freezeWarning.minutesRemaining, freezeWarning.freezeAt));
     }
 
     // Add announcements
     for (const announcement of announcements) {
-      notifications.push(
-        createAnnouncementNotification({
-          id: announcement.id,
-          title: announcement.title,
-          content: announcement.content,
-          createdAt: announcement.createdAt.toISOString(),
-        }),
-      );
+      notifications.push(createAnnouncementNotification({
+        id: announcement.id,
+        title: announcement.title,
+        content: announcement.content,
+        createdAt: announcement.createdAt.toISOString(),
+      }));
     }
 
     const response: NotificationsResponse = {

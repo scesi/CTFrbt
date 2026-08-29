@@ -37,7 +37,7 @@ export const FREEZE_WARNING_MINUTES_BEFORE = 5; // Show warning 5 minutes before
 export function isFreezeWarningActive(
   endTime: string | null,
   freezeMinutes: number,
-  now: number,
+  now: number
 ): { active: boolean; minutesRemaining: number; freezeAt: number } {
   if (!endTime || freezeMinutes <= 0) {
     return { active: false, minutesRemaining: 0, freezeAt: 0 };
@@ -61,7 +61,7 @@ export function isFreezeWarningActive(
 
 export function createFreezeWarningNotification(
   minutesRemaining: number,
-  freezeAt: number,
+  freezeAt: number
 ): FreezeWarningNotification {
   const id = `freeze-${freezeAt}`;
   const message =
@@ -81,12 +81,9 @@ export function createFreezeWarningNotification(
   };
 }
 
-export function createAnnouncementNotification(announcement: {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}): AnnouncementNotification {
+export function createAnnouncementNotification(
+  announcement: { id: string; title: string; content: string; createdAt: string }
+): AnnouncementNotification {
   return {
     id: `announcement-${announcement.id}`,
     type: "announcement",

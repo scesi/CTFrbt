@@ -27,19 +27,12 @@ export default function NotificationToast({
     }, notification.autoHideDelay);
 
     return () => clearTimeout(timer);
-  }, [
-    notification.autoHide,
-    notification.autoHideDelay,
-    notification.id,
-    onDismiss,
-  ]);
+  }, [notification.autoHide, notification.autoHideDelay, notification.id, onDismiss]);
 
   if (!visible) return null;
 
   const isFreeze = notification.type === "freeze-warning";
-  const bgColor = isFreeze
-    ? "rgba(255, 184, 0, 0.15)"
-    : "rgba(74, 144, 226, 0.15)";
+  const bgColor = isFreeze ? "rgba(255, 184, 0, 0.15)" : "rgba(74, 144, 226, 0.15)";
   const borderColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
   const iconColor = isFreeze ? "var(--neon-amber)" : "var(--accent)";
   const icon = isFreeze ? "⚠" : "📢";
@@ -101,9 +94,7 @@ export default function NotificationToast({
               wordBreak: "break-word",
             }}
           >
-            {notification.type === "announcement"
-              ? notification.content
-              : notification.message}
+            {notification.type === "announcement" ? notification.content : notification.message}
           </div>
         </div>
         <button
