@@ -48,10 +48,29 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         alias: { label: "Alias", type: "text" },
         password: { label: "Password", type: "password" },
+        recaptchaToken: { label: "Recaptcha Token", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.alias || !credentials?.password) {
           return null;
+        }
+
+        // Verify reCAPTCHA token if secret key is configured
+        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+        if (secretKey) {
+          if (!credentials.recaptchaToken) {
+            throw new Error("Captcha verification required. Please try again.");
+          }
+          const { verifyRecaptcha } = await import("./recaptcha");
+          const ip = await getClientIp();
+          const recaptchaResult = await verifyRecaptcha(
+            credentials.recaptchaToken as string,
+            ip,
+          );
+
+          if (!recaptchaResult.success) {
+            throw new Error("Captcha verification failed. Please try again.");
+          }
         }
 
         if (credentials.password.length > MAX_PASSWORD_LENGTH) {

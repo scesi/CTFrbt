@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { withBcryptSlot, BcryptBusyError } from "@/lib/bcrypt-limit";
 import { ALIAS_REGEX } from "@/lib/credentials-validation";
+import { verifyRecaptcha, getClientIp } from "@/lib/recaptcha";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { alias, name, password } = body;
+    const { alias, name, password, recaptchaToken } = body;
 
     if (
       typeof alias !== "string" ||
@@ -27,6 +28,31 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Alias, name, and password are required" },
+        { status: 400 },
+      );
+    }
+
+    // Verify reCAPTCHA token if provided
+    if (recaptchaToken === undefined || recaptchaToken === null) {
+      return NextResponse.json(
+        { error: "Captcha verification required" },
+        { status: 400 },
+      );
+    }
+
+    if (typeof recaptchaToken !== "string" || recaptchaToken.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid captcha token" },
+        { status: 400 },
+      );
+    }
+
+    const clientIp = getClientIp(request.headers);
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken, clientIp);
+
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { error: "Captcha verification failed. Please try again." },
         { status: 400 },
       );
     }

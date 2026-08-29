@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import RecaptchaWidget from "@/components/auth/RecaptchaWidget";
 
 export default function SignUp() {
   const router = useRouter();
@@ -12,44 +13,87 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaError, setRecaptchaError] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRecaptchaVerify = useCallback((token: string) => {
+    setRecaptchaToken(token);
+    setRecaptchaError(false);
+  }, []);
 
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
+  const handleRecaptchaExpire = useCallback(() => {
+    setRecaptchaToken(null);
+  }, []);
+
+  const handleRecaptchaError = useCallback(() => {
+    setRecaptchaError(true);
+  }, []);
+
+  const resetRecaptcha = useCallback(() => {
+    if (typeof window !== "undefined" && window.__recaptchaReset) {
+      window.__recaptchaReset();
     }
+  }, []);
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alias, name, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || "Registration failed");
+      if (password !== confirmPassword) {
+        toast.error("Passwords do not match");
         return;
       }
 
-      toast.success("Account created! Please sign in.");
-      router.push("/auth/signin");
-    } catch {
-      toast.error("An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (password.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+
+      const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+      if (siteKey && !recaptchaToken) {
+        toast.error("Please complete the captcha verification");
+        setRecaptchaError(true);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ alias, name, password, recaptchaToken }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          toast.error(data.error || "Registration failed");
+          // If captcha was the issue or registration failed, reset captcha
+          if (data.error?.toLowerCase().includes("captcha")) {
+            resetRecaptcha();
+          }
+          return;
+        }
+
+        toast.success("Account created! Please sign in.");
+        router.push("/auth/signin");
+      } catch {
+        toast.error("An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      alias,
+      name,
+      password,
+      confirmPassword,
+      recaptchaToken,
+      resetRecaptcha,
+      router,
+    ],
+  );
 
   return (
     <div style={{ maxWidth: "400px", margin: "0 auto", paddingTop: "48px" }}>
@@ -188,6 +232,38 @@ export default function SignUp() {
             required
             autoComplete="new-password"
           />
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "12px",
+              color: "var(--fg-muted)",
+              marginBottom: "8px",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            Security Verification
+          </label>
+          <RecaptchaWidget
+            onVerify={handleRecaptchaVerify}
+            onExpire={handleRecaptchaExpire}
+            onError={handleRecaptchaError}
+          />
+          {recaptchaError && (
+            <p
+              style={{
+                color: "var(--danger)",
+                fontSize: "11px",
+                fontFamily: "var(--font-mono)",
+                marginTop: "8px",
+              }}
+            >
+              Captcha verification failed. Please try again.
+            </p>
+          )}
         </div>
 
         <button

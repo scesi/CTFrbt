@@ -1,25 +1,56 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import RecaptchaWidget from "@/components/auth/RecaptchaWidget";
 
 export default function SignIn() {
   const router = useRouter();
   const [alias, setAlias] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaError, setRecaptchaError] = useState(false);
+
+  const resetRecaptcha = useCallback(() => {
+    if (typeof window !== "undefined" && window.__recaptchaReset) {
+      window.__recaptchaReset();
+    }
+  }, []);
+
+  const handleRecaptchaVerify = useCallback((token: string) => {
+    setRecaptchaToken(token);
+    setRecaptchaError(false);
+  }, []);
+
+  const handleRecaptchaExpire = useCallback(() => {
+    setRecaptchaToken(null);
+  }, []);
+
+  const handleRecaptchaError = useCallback(() => {
+    setRecaptchaError(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (siteKey && !recaptchaToken) {
+      setLoading(false);
+      toast.error("Please complete the captcha verification");
+      setRecaptchaError(true);
+      return;
+    }
+
     try {
       const result = await signIn("credentials", {
         alias,
         password,
+        ...(recaptchaToken ? { recaptchaToken } : {}),
         redirect: false,
       });
 
@@ -30,6 +61,10 @@ export default function SignIn() {
           );
         } else {
           toast.error(result.error);
+        }
+        // If captcha was the issue, reset it
+        if (result.error?.toLowerCase().includes("captcha")) {
+          resetRecaptcha();
         }
       } else {
         toast.success("Signed in successfully");
@@ -117,6 +152,38 @@ export default function SignIn() {
             required
             autoComplete="current-password"
           />
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "12px",
+              color: "var(--fg-muted)",
+              marginBottom: "8px",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
+            Security Verification
+          </label>
+          <RecaptchaWidget
+            onVerify={handleRecaptchaVerify}
+            onExpire={handleRecaptchaExpire}
+            onError={handleRecaptchaError}
+          />
+          {recaptchaError && (
+            <p
+              style={{
+                color: "var(--danger)",
+                fontSize: "11px",
+                fontFamily: "var(--font-mono)",
+                marginTop: "8px",
+              }}
+            >
+              Captcha verification failed. Please try again.
+            </p>
+          )}
         </div>
 
         <button
