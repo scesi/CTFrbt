@@ -66,8 +66,8 @@ export function createFreezeWarningNotification(
   const id = `freeze-${freezeAt}`;
   const message =
     minutesRemaining > 0
-      ? `Leaderboard se congelará en ${minutesRemaining} minuto${minutesRemaining !== 1 ? "s" : ""}`
-      : "Leaderboard congelado — solo admins ven actualizaciones en tiempo real";
+      ? `Scoreboard will freeze in ${minutesRemaining} minute${minutesRemaining !== 1 ? "s" : ""}`
+      : "Scoreboard frozen — only admins see real-time updates";
 
   return {
     id,
