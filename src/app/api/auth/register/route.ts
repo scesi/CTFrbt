@@ -32,29 +32,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify reCAPTCHA token if provided
-    if (recaptchaToken === undefined || recaptchaToken === null) {
-      return NextResponse.json(
-        { error: "Captcha verification required" },
-        { status: 400 },
-      );
-    }
+    // Verify reCAPTCHA token if secret key is configured
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    if (secretKey) {
+      if (!recaptchaToken || typeof recaptchaToken !== "string") {
+        return NextResponse.json(
+          { error: "Captcha verification required" },
+          { status: 400 },
+        );
+      }
 
-    if (typeof recaptchaToken !== "string" || recaptchaToken.length === 0) {
-      return NextResponse.json(
-        { error: "Invalid captcha token" },
-        { status: 400 },
-      );
-    }
+      const clientIp = getClientIp(request.headers);
+      const recaptchaResult = await verifyRecaptcha(recaptchaToken, clientIp);
 
-    const clientIp = getClientIp(request.headers);
-    const recaptchaResult = await verifyRecaptcha(recaptchaToken, clientIp);
-
-    if (!recaptchaResult.success) {
-      return NextResponse.json(
-        { error: "Captcha verification failed. Please try again." },
-        { status: 400 },
-      );
+      if (!recaptchaResult.success) {
+        return NextResponse.json(
+          { error: "Captcha verification failed. Please try again." },
+          { status: 400 },
+        );
+      }
     }
 
     const trimmedAlias = alias.trim();

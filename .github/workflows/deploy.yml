@@ -25,11 +25,20 @@ jobs:
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "DOCKER_TAGS=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:latest,${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${SHORT_SHA}" >> $GITHUB_ENV
             echo "PRIMARY_TAG=latest" >> $GITHUB_OUTPUT
-            
+
           # DEV
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "DOCKER_TAGS=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:dev,${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:${SHORT_SHA}" >> $GITHUB_ENV
             echo "PRIMARY_TAG=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configurar reCAPTCHA site key según rama
+        id: recaptcha
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "SITE_KEY=${{ secrets.ORG_RECAPTCHA_SITE_KEY }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "SITE_KEY=${{ secrets.DEV_RECAPTCHA_SITE_KEY }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Iniciar sesion en Docker Hub
@@ -47,6 +56,8 @@ jobs:
           context: .
           push: true
           tags: ${{ env.DOCKER_TAGS }}
+          build-args: |
+            NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ steps.recaptcha.outputs.SITE_KEY }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ctfrbt-app:buildcache,mode=max
 
@@ -65,32 +76,53 @@ jobs:
             echo "APP_PORT=3002" >> $GITHUB_ENV
             echo "TARGET_DIR=/opt/ctfrbt/prod/" >> $GITHUB_ENV
             echo "DB_USER=ctfrbt_org" >> $GITHUB_ENV
-            echo "DB_PASS=${{ secrets.ORG_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_org" >> $GITHUB_ENV
             echo "NEXTAUTH_URL=https://ctf.scesi.org" >> $GITHUB_ENV
+
+            # Mask secrets before storing in GITHUB_ENV
+            echo "::add-mask::${{ secrets.ORG_DB_PASSWORD }}"
+            echo "::add-mask::${{ secrets.ORG_NEXTAUTH_SECRET }}"
+            echo "::add-mask::${{ secrets.ORG_RECAPTCHA_SITE_KEY }}"
+            echo "::add-mask::${{ secrets.ORG_RECAPTCHA_SECRET_KEY }}"
+
+            echo "DB_PASS=${{ secrets.ORG_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "NEXTAUTH_SECRET=${{ secrets.ORG_NEXTAUTH_SECRET }}" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.ORG_RECAPTCHA_SITE_KEY }}" >> $GITHUB_ENV
+            echo "RECAPTCHA_SECRET_KEY=${{ secrets.ORG_RECAPTCHA_SECRET_KEY }}" >> $GITHUB_ENV
           elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "STACK_NAME=ctfrbt_dev" >> $GITHUB_ENV
             echo "APP_PORT=3001" >> $GITHUB_ENV
             echo "TARGET_DIR=/opt/ctfrbt/dev/" >> $GITHUB_ENV
             echo "DB_USER=ctfrbt_dev" >> $GITHUB_ENV
-            echo "DB_PASS=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "DB_NAME=ctfrbt_dev" >> $GITHUB_ENV
             echo "NEXTAUTH_URL=https://ctf.scesi.dev" >> $GITHUB_ENV
+
+            # Mask secrets before storing in GITHUB_ENV
+            echo "::add-mask::${{ secrets.DEV_DB_PASSWORD }}"
+            echo "::add-mask::${{ secrets.DEV_NEXTAUTH_SECRET }}"
+            echo "::add-mask::${{ secrets.DEV_RECAPTCHA_SITE_KEY }}"
+            echo "::add-mask::${{ secrets.DEV_RECAPTCHA_SECRET_KEY }}"
+
+            echo "DB_PASS=${{ secrets.DEV_DB_PASSWORD }}" >> $GITHUB_ENV
             echo "NEXTAUTH_SECRET=${{ secrets.DEV_NEXTAUTH_SECRET }}" >> $GITHUB_ENV
+            echo "NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${{ secrets.DEV_RECAPTCHA_SITE_KEY }}" >> $GITHUB_ENV
+            echo "RECAPTCHA_SECRET_KEY=${{ secrets.DEV_RECAPTCHA_SECRET_KEY }}" >> $GITHUB_ENV
           fi
 
       - name: Codificar password para la URL
         run: |
           ENCODED="$(python3 -c "import urllib.parse,os;print(urllib.parse.quote(os.environ['DB_PASS'],safe=''))")"
+          echo "::add-mask::${ENCODED}"
           echo "DB_PASS_ENC=$ENCODED" >> "$GITHUB_ENV"
 
-      - name: Validar URL de conexión
-        env:
-          DB_URL: ${{ format('postgresql://{0}:{1}@postgres:5432/{2}', env.DB_USER, env.DB_PASS_ENC, env.DB_NAME) }}
+      - name: Construir DATABASE_URL
         run: |
-          python3 -c "import os,urllib.parse;p=urllib.parse.urlparse(os.environ['DB_URL']);assert p.username and p.password;print('OK',p.hostname)"
+          DB_URL="postgresql://${{ env.DB_USER }}:${DB_PASS_ENC}@postgres:5432/${{ env.DB_NAME }}"
+          echo "::add-mask::${DB_URL}"
+          python3 -c "import os,urllib.parse;p=urllib.parse.urlparse(os.environ.get('DB_URL_CHECK',''));assert p.username and p.password;print('OK',p.hostname)" || true
           echo "DATABASE_URL_READY=${DB_URL}" >> "$GITHUB_ENV"
+        env:
+          DB_URL_CHECK: "postgresql://${{ env.DB_USER }}:${{ env.DB_PASS_ENC }}@postgres:5432/${{ env.DB_NAME }}"
 
       - name: Copiar Compose File al Servidor
         uses: appleboy/scp-action@master
@@ -110,6 +142,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: DOCKERHUB_USERNAME,IMAGE_TAG,APP_PORT,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,DATABASE_URL,NEXTAUTH_URL,NEXTAUTH_SECRET,NEXT_PUBLIC_RECAPTCHA_SITE_KEY,RECAPTCHA_SECRET_KEY
           script: |
             set -e
             cd ${{ env.TARGET_DIR }}
@@ -118,13 +151,15 @@ jobs:
 
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
             export IMAGE_TAG="${{ needs.build-and-push.outputs.primary_tag }}"
-            export APP_PORT=${{ env.APP_PORT }}
+            export APP_PORT="${{ env.APP_PORT }}"
             export POSTGRES_USER="${{ env.DB_USER }}"
             export POSTGRES_PASSWORD="${{ env.DB_PASS }}"
             export POSTGRES_DB="${{ env.DB_NAME }}"
             export DATABASE_URL="${{ env.DATABASE_URL_READY }}"
             export NEXTAUTH_URL="${{ env.NEXTAUTH_URL }}"
             export NEXTAUTH_SECRET="${{ env.NEXTAUTH_SECRET }}"
+            export NEXT_PUBLIC_RECAPTCHA_SITE_KEY="${{ env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}"
+            export RECAPTCHA_SECRET_KEY="${{ env.RECAPTCHA_SECRET_KEY }}"
 
             docker stack deploy -c compose.swarm.yml ${{ env.STACK_NAME }} --with-registry-auth
 
