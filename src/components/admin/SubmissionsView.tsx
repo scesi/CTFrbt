@@ -90,14 +90,14 @@ export default function SubmissionsView() {
       <table className="table">
         <thead>
           <tr>
-            <th {...getThProps("time")}>Time{getSortIndicator("time")}</th>
+            <th {...getThProps("time", { width: "130px" })}>Time{getSortIndicator("time")}</th>
             <th {...getThProps("team")}>Team{getSortIndicator("team")}</th>
             <th {...getThProps("user")}>User{getSortIndicator("user")}</th>
             <th {...getThProps("challenge")}>
               Challenge{getSortIndicator("challenge")}
             </th>
             <th {...getThProps("flag")}>Flag{getSortIndicator("flag")}</th>
-            <th {...getThProps("correct")}>
+            <th {...getThProps("correct", { width: "60px", textAlign: "center" })}>
               Correct{getSortIndicator("correct")}
             </th>
           </tr>
