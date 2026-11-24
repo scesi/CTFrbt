@@ -1,0 +1,33 @@
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 55vh;
+  padding: 24px;
+}
+.panel {
+  width: 100%;
+  max-width: 560px;
+  border: 1px solid var(--warning);
+  background: var(--bg);
+  padding: 24px;
+  font-family: var(--font-mono);
+}
+.panel h1 {
+  color: var(--warning);
+  font-size: 22px;
+  margin: 12px 0 20px;
+}
+.panel p {
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+.label,
+.note {
+  color: var(--fg-muted);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

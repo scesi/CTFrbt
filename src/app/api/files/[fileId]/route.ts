@@ -1,3 +1,4 @@
+import { blockDuringPause } from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -21,6 +22,9 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const paused = await blockDuringPause(session.user.isAdmin === true);
+  if (paused) return paused;
 
   const { fileId } = await params;
 
@@ -65,6 +69,7 @@ export async function GET(
       return new NextResponse(fileBuffer, {
         headers: {
           "Content-Type": "application/octet-stream",
+          "Cache-Control": "private, no-store",
           "Content-Disposition": `attachment; filename="${sanitizeFilename(file.name)}"`,
           "Content-Length": String(fileBuffer.length),
         },

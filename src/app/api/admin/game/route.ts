@@ -125,3 +125,95 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Pause changes are separate from schedule edits: saving the form never resumes.
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (
+    !body ||
+    !["pause", "resume", "adjust"].includes(body.action) ||
+    (body.action === "pause" &&
+      (!Number.isInteger(body.minutes) ||
+        body.minutes < 1 ||
+        body.minutes > 1440)) ||
+    (body.action === "adjust" && ![5, -5].includes(body.minutes))
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Choose pause (1–1440 minutes), resume, or adjust (+5/−5 minutes)",
+      },
+      { status: 400 },
+    );
+  }
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(72461124)`;
+    const config = await tx.gameConfig.findFirst({
+      orderBy: { createdAt: "desc" },
+    });
+    const now = new Date();
+    if (
+      !config ||
+      (body.action !== "resume" &&
+        (!config.isActive ||
+          now < config.startTime ||
+          (config.endTime && now >= config.endTime)))
+    ) {
+      return null;
+    }
+    if (
+      body.action === "adjust" &&
+      (!config.pausedUntil || config.pausedUntil <= now)
+    )
+      return null;
+    const pausedUntil =
+      body.action === "resume"
+        ? null
+        : new Date(
+            Math.min(
+              (body.action === "adjust"
+                ? config.pausedUntil!.getTime()
+                : now.getTime()) +
+                body.minutes * 60_000,
+              now.getTime() + 1440 * 60_000,
+              config.endTime?.getTime() ?? Infinity,
+            ),
+          );
+    if (body.action === "adjust" && pausedUntil! <= now) return null;
+    const updated = await tx.gameConfig.update({
+      where: { id: config.id },
+      data: { pausedUntil },
+    });
+    await tx.activityLog.create({
+      data: {
+        type:
+          body.action === "adjust"
+            ? "EVENT_PAUSE_ADJUSTED"
+            : body.action === "pause"
+              ? "EVENT_PAUSED"
+              : "EVENT_RESUMED",
+        description: `${session.user.id}: ${body.action}${pausedUntil ? ` until ${pausedUntil.toISOString()}` : ""}`,
+      },
+    });
+    return updated;
+  });
+  if (!result)
+    return NextResponse.json(
+      {
+        error:
+          "The event must be active. Adjustments require an ongoing pause and must leave time remaining; use Resume event to end it.",
+      },
+      { status: 409 },
+    );
+  invalidate(CACHE_KEYS.GAME_CONFIG);
+  return NextResponse.json({ config: result });
+}

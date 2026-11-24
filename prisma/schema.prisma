@@ -237,6 +237,7 @@ model ActivityLog {
 }
 
 model GameConfig {
+  pausedUntil             DateTime? /// Automatic resume; does not extend endTime
   id                      String    @id @default(cuid())
   startTime               DateTime
   endTime                 DateTime?

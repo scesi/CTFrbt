@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { getOrSet, CACHE_KEYS } from "@/lib/cache";
-
-const GAME_CONFIG_TTL_MS = 5_000; // 5s — consulted on every submission
 
 export type GameWindowStatus =
   | { state: "not_configured" }
   | { state: "not_started"; startsAt: Date }
   | { state: "ended"; endedAt: Date }
-  | { state: "active" };
+  | { state: "active" }
+  | { state: "paused"; resumesAt: Date };
 
 /**
  * Resolves the current game window state from the most recent GameConfig.
@@ -18,11 +16,14 @@ export type GameWindowStatus =
  * - `active`         → CTF is live, all systems go.
  */
 export async function getGameWindowStatus(): Promise<GameWindowStatus> {
-  const config = await getOrSet(
-    CACHE_KEYS.GAME_CONFIG,
-    GAME_CONFIG_TTL_MS,
-    () => prisma.gameConfig.findFirst({ orderBy: { createdAt: "desc" } }),
-  );
+  // Read current state across workers: a process-local TTL cannot enforce a pause.
+  const config = await prisma.gameConfig.findFirst({
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (config?.pausedUntil && config.pausedUntil > new Date()) {
+    return { state: "paused", resumesAt: config.pausedUntil };
+  }
 
   if (!config || !config.isActive) {
     return { state: "not_configured" };

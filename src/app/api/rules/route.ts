@@ -1,8 +1,11 @@
+import { blockDuringPause } from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/rules - Public endpoint to get competition rules
 export async function GET() {
+  const paused = await blockDuringPause();
+  if (paused) return paused;
   try {
     const rulesConfig = await prisma.siteConfig.findUnique({
       where: { key: "rules" },
