@@ -25,7 +25,7 @@ const EventContext = createContext<{
   paused: boolean;
   ready: boolean;
   clockOffset: number;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<boolean>;
 } | null>(null);
 
 // One poll per visible tab, shared by the gate, timers and admin controls.
@@ -36,18 +36,20 @@ export function EventStateProvider({
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [clockOffset, setClockOffset] = useState(0);
-  const inFlight = useRef<Promise<void> | null>(null);
-  const refresh = useCallback((): Promise<void> => {
+  const inFlight = useRef<Promise<boolean> | null>(null);
+  const refresh = useCallback((): Promise<boolean> => {
     if (inFlight.current) return inFlight.current;
     inFlight.current = (async () => {
       try {
         const response = await fetch("/api/game", { cache: "no-store" });
-        if (!response.ok) return;
+        if (!response.ok) return false;
         const data: Snapshot = await response.json();
         setClockOffset(Date.parse(data.serverNow) - Date.now());
         setSnapshot(data);
+        return true;
       } catch {
         /* Retain last known state on a transient connection failure. */
+        return false;
       } finally {
         inFlight.current = null;
       }

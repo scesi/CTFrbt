@@ -128,6 +128,16 @@ and direct API submissions during the break. Automated checks:
 pnpm exec vitest run --project integration tests/integration/event-pause.test.ts
 ```
 
+Pause controls also support **+5 / −5 minutes** while paused. Adjustments apply
+atomically to the existing resume deadline, including concurrent admin actions;
+they never change the competition end time. Shortening cannot end the pause:
+use **Resume event** when five minutes or less remain. Extensions are capped at
+the event end and 24 hours from the current server time.
+
+On the participant pause screen, **Check status** shows a pending indicator and
+reports whether the event remains paused or the request failed. Background
+refreshes stay silent and retain the last known state if the connection fails.
+
 ## License
 
 See [LICENSE](./LICENSE).

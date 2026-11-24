@@ -140,14 +140,18 @@ export async function PATCH(request: Request) {
   }
   if (
     !body ||
-    (body.action !== "pause" && body.action !== "resume") ||
+    !["pause", "resume", "adjust"].includes(body.action) ||
     (body.action === "pause" &&
       (!Number.isInteger(body.minutes) ||
         body.minutes < 1 ||
-        body.minutes > 1440))
+        body.minutes > 1440)) ||
+    (body.action === "adjust" && ![5, -5].includes(body.minutes))
   ) {
     return NextResponse.json(
-      { error: "Choose pause (1–1440 minutes) or resume" },
+      {
+        error:
+          "Choose pause (1–1440 minutes), resume, or adjust (+5/−5 minutes)",
+      },
       { status: 400 },
     );
   }
@@ -159,29 +163,44 @@ export async function PATCH(request: Request) {
     const now = new Date();
     if (
       !config ||
-      (body.action === "pause" &&
+      (body.action !== "resume" &&
         (!config.isActive ||
           now < config.startTime ||
           (config.endTime && now >= config.endTime)))
     ) {
       return null;
     }
+    if (
+      body.action === "adjust" &&
+      (!config.pausedUntil || config.pausedUntil <= now)
+    )
+      return null;
     const pausedUntil =
       body.action === "resume"
         ? null
         : new Date(
             Math.min(
-              now.getTime() + body.minutes * 60_000,
+              (body.action === "adjust"
+                ? config.pausedUntil!.getTime()
+                : now.getTime()) +
+                body.minutes * 60_000,
+              now.getTime() + 1440 * 60_000,
               config.endTime?.getTime() ?? Infinity,
             ),
           );
+    if (body.action === "adjust" && pausedUntil! <= now) return null;
     const updated = await tx.gameConfig.update({
       where: { id: config.id },
       data: { pausedUntil },
     });
     await tx.activityLog.create({
       data: {
-        type: body.action === "pause" ? "EVENT_PAUSED" : "EVENT_RESUMED",
+        type:
+          body.action === "adjust"
+            ? "EVENT_PAUSE_ADJUSTED"
+            : body.action === "pause"
+              ? "EVENT_PAUSED"
+              : "EVENT_RESUMED",
         description: `${session.user.id}: ${body.action}${pausedUntil ? ` until ${pausedUntil.toISOString()}` : ""}`,
       },
     });
@@ -189,7 +208,10 @@ export async function PATCH(request: Request) {
   });
   if (!result)
     return NextResponse.json(
-      { error: "Configure an active competition before pausing" },
+      {
+        error:
+          "The event must be active. Adjustments require an ongoing pause and must leave time remaining; use Resume event to end it.",
+      },
       { status: 409 },
     );
   invalidate(CACHE_KEYS.GAME_CONFIG);

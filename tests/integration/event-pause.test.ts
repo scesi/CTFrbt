@@ -99,6 +99,83 @@ describe("event pause", () => {
     expect(await prisma.activityLog.count()).toBe(2);
   });
 
+  it("adjusts the existing deadline atomically, preserving concurrent adjustments", async () => {
+    const config = await pause();
+    mockSession(await createAdminUser());
+    const before = await prisma.gameConfig.findUniqueOrThrow({
+      where: { id: config.id },
+    });
+    const responses = await Promise.all([
+      PATCH(request({ action: "adjust", minutes: 5 })),
+      PATCH(request({ action: "adjust", minutes: 5 })),
+    ]);
+    expect(responses.map((r) => r.status)).toEqual([200, 200]);
+    const after = await prisma.gameConfig.findUniqueOrThrow({
+      where: { id: config.id },
+    });
+    expect(after.pausedUntil!.getTime()).toBe(
+      before.pausedUntil!.getTime() + 600_000,
+    );
+    const reduced = await PATCH(request({ action: "adjust", minutes: -5 }));
+    expect(reduced.status).toBe(200);
+    expect(Date.parse((await reduced.json()).config.pausedUntil)).toBe(
+      before.pausedUntil!.getTime() + 300_000,
+    );
+    expect(after.endTime).toEqual(before.endTime);
+    expect(
+      await prisma.activityLog.count({
+        where: { type: "EVENT_PAUSE_ADJUSTED" },
+      }),
+    ).toBe(3);
+  });
+
+  it("validates adjustments, enforces admin access and requires an ongoing pause", async () => {
+    await active();
+    mockSession((await createUserWithTeam()).user);
+    expect(
+      (await PATCH(request({ action: "adjust", minutes: 5 }))).status,
+    ).toBe(403);
+    mockSession(await createAdminUser());
+    for (const minutes of [0, 10, -10, "5", null]) {
+      expect((await PATCH(request({ action: "adjust", minutes }))).status).toBe(
+        400,
+      );
+    }
+    expect(
+      (await PATCH(request({ action: "adjust", minutes: 5 }))).status,
+    ).toBe(409);
+  });
+
+  it("caps extensions at the event end and rejects shortening past now or adjusting expired pauses", async () => {
+    const config = await active();
+    mockSession(await createAdminUser());
+    await prisma.gameConfig.update({
+      where: { id: config.id },
+      data: { pausedUntil: new Date(config.endTime!.getTime() - 60_000) },
+    });
+    const extended = await PATCH(request({ action: "adjust", minutes: 5 }));
+    expect((await extended.json()).config.pausedUntil).toBe(
+      config.endTime!.toISOString(),
+    );
+    const deadline = new Date(Date.now() + 120_000);
+    await prisma.gameConfig.update({
+      where: { id: config.id },
+      data: { pausedUntil: deadline },
+    });
+    expect(
+      (await PATCH(request({ action: "adjust", minutes: -5 }))).status,
+    ).toBe(409);
+    expect(
+      (await prisma.gameConfig.findUniqueOrThrow({ where: { id: config.id } }))
+        .pausedUntil,
+    ).toEqual(deadline);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(deadline);
+    expect(
+      (await PATCH(request({ action: "adjust", minutes: 5 }))).status,
+    ).toBe(409);
+  });
+
   it("blocks flags, purchases and every event content route without writes", async () => {
     await pause();
     const { user, team } = await createUserWithTeam();

@@ -4,11 +4,11 @@ import toast from "react-hot-toast";
 import { useEventState } from "../event/EventState";
 
 export default function EventPauseControls() {
-  const { config, paused, refresh, ready } = useEventState();
+  const { config, paused, refresh, ready, clockOffset } = useEventState();
   const [minutes, setMinutes] = useState("60");
   const [saving, setSaving] = useState(false);
 
-  const changePause = async () => {
+  const changePause = async (adjustment?: number) => {
     const duration = Number(minutes);
     if (
       !paused &&
@@ -23,9 +23,11 @@ export default function EventPauseControls() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          paused
-            ? { action: "resume" }
-            : { action: "pause", minutes: duration },
+          adjustment !== undefined
+            ? { action: "adjust", minutes: adjustment }
+            : paused
+              ? { action: "resume" }
+              : { action: "pause", minutes: duration },
         ),
       });
       const data = await response.json();
@@ -34,7 +36,13 @@ export default function EventPauseControls() {
         return;
       }
       await refresh();
-      toast.success(paused ? "Event resumed" : "Event paused");
+      toast.success(
+        adjustment !== undefined
+          ? "Pause updated"
+          : paused
+            ? "Event resumed"
+            : "Event paused",
+      );
     } catch {
       toast.error("Could not update pause");
     } finally {
@@ -85,6 +93,36 @@ export default function EventPauseControls() {
               style={{ display: "block", width: 160, marginTop: 6 }}
             />
           </label>
+        )}
+        {paused && (
+          <>
+            <button
+              type="button"
+              className="btn"
+              disabled={
+                saving ||
+                !config?.pausedUntil ||
+                Date.parse(config.pausedUntil) - (Date.now() + clockOffset) <=
+                  300_000
+              }
+              onClick={() => void changePause(-5)}
+            >
+              −5 minutes
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={
+                saving ||
+                (!!config?.endTime &&
+                  !!config.pausedUntil &&
+                  Date.parse(config.pausedUntil) >= Date.parse(config.endTime))
+              }
+              onClick={() => void changePause(5)}
+            >
+              +5 minutes
+            </button>
+          </>
         )}
         <button
           type="button"
