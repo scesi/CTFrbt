@@ -5,6 +5,7 @@ import React, {
   useReducer,
   useContext,
   useCallback,
+  useRef,
 } from "react";
 import {
   TerminalAction,
@@ -128,6 +129,9 @@ const TerminalContext = createContext<TerminalContextType | undefined>(
 
 export function TerminalProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(terminalReducer, initialState);
+  // Output IDs are local React keys, not security tokens. Keep the counter
+  // across history clears without requiring HTTPS-only browser APIs.
+  const nextOutputId = useRef(0);
   const { data: session } = useSession();
 
   const appendOutput = useCallback(
@@ -138,7 +142,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
       dispatch({
         type: "APPEND_BLOCK",
         payload: {
-          id: crypto.randomUUID(),
+          id: `output-${nextOutputId.current++}`,
           type,
           content,
         },
