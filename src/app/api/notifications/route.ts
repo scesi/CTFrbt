@@ -1,3 +1,4 @@
+import { blockDuringPause } from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -10,6 +11,8 @@ import {
 } from "@/lib/notifications";
 
 export async function GET() {
+  const paused = await blockDuringPause();
+  if (paused) return paused;
   try {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.isAdmin === true;

@@ -1,3 +1,4 @@
+import { blockDuringPause } from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -13,6 +14,8 @@ const MAX_ICON_LENGTH = 64;
 
 export async function GET() {
   const session = await getServerSession(authOptions);
+  const paused = await blockDuringPause(session?.user?.isAdmin === true);
+  if (paused) return paused;
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -45,6 +48,8 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
+  const paused = await blockDuringPause(session?.user?.isAdmin === true);
+  if (paused) return paused;
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -120,6 +125,8 @@ export async function PATCH(request: Request) {
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
+  const paused = await blockDuringPause(session?.user?.isAdmin === true);
+  if (paused) return paused;
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

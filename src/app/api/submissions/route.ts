@@ -1,3 +1,8 @@
+import {
+  pauseResponse,
+  assertEventNotPaused,
+  EventPausedError,
+} from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
 
   // Game window enforcement — block before rate limit to save DB queries
   const gameStatus = await getGameWindowStatus();
+  if (gameStatus.state === "paused") return pauseResponse(gameStatus.resumesAt);
   if (gameStatus.state === "not_started") {
     return NextResponse.json(
       { error: "The CTF hasn't started yet" },
@@ -133,15 +139,18 @@ export async function POST(request: Request) {
     }
 
     if (!isCorrect) {
-      await prisma.submission.create({
-        data: {
-          flag: submittedFlag,
-          isCorrect: false,
-          userId: session.user.id,
-          challengeId: challenge.id,
-          flagId: null,
-          teamId,
-        },
+      await prisma.$transaction(async (tx) => {
+        await assertEventNotPaused(tx);
+        await tx.submission.create({
+          data: {
+            flag: submittedFlag,
+            isCorrect: false,
+            userId: session.user.id,
+            challengeId: challenge.id,
+            flagId: null,
+            teamId,
+          },
+        });
       });
       return NextResponse.json({
         correct: false,
@@ -157,6 +166,7 @@ export async function POST(request: Request) {
     // alreadySubmitted instead of hitting a serialization error (P2034).
     const result = await prisma.$transaction(
       async (tx) => {
+        await assertEventNotPaused(tx);
         await tx.$queryRaw`SELECT "id" FROM "Team" WHERE "id" = ${teamId} FOR UPDATE`;
 
         const alreadySolved = await tx.submission.findFirst({
@@ -242,6 +252,7 @@ export async function POST(request: Request) {
       message: challenge.solveExplanation || "Correct!",
     });
   } catch (error: unknown) {
+    if (error instanceof EventPausedError) return pauseResponse();
     // Serialization conflict — concurrent solve attempt; client can retry
     if ((error as { code?: string }).code === "P2034") {
       return NextResponse.json({ error: "Please try again" }, { status: 409 });

@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEventState } from "../event/EventState";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
-
-interface GameConfig {
-  startTime: string | null;
-  endTime: string | null;
-  isActive: boolean;
-  leaderboardFreezeMinutes: number | null;
-}
 
 type GameTimerVariant = "titlebar" | "statusbar" | "full";
 
@@ -27,42 +21,20 @@ export default function GameTimer({
   const { data: sessionData } = useSession();
   const sessionToUse = session ?? sessionData;
   const isAdminUser = isAdmin || sessionToUse?.user?.isAdmin;
-  const [config, setConfig] = useState<GameConfig>({
-    startTime: null,
-    endTime: null,
-    isActive: false,
-    leaderboardFreezeMinutes: null,
-  });
+  const { config, paused, clockOffset } = useEventState();
   const [now, setNow] = useState(new Date());
-
-  const loadConfig = useCallback(async () => {
-    try {
-      const res = await fetch("/api/game", { cache: "no-store" });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.gameConfig) {
-        setConfig({
-          startTime: data.gameConfig.startTime || null,
-          endTime: data.gameConfig.endTime || null,
-          isActive: data.gameConfig.isActive ?? false,
-          leaderboardFreezeMinutes:
-            data.gameConfig.leaderboardFreezeMinutes ?? null,
-        });
-      }
-    } catch {
-      // Silently fail - timer just won't show
-    }
-  }, []);
-
   useEffect(() => {
-    loadConfig();
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
+    const interval = setInterval(
+      () => setNow(new Date(Date.now() + clockOffset)),
+      1000,
+    );
     return () => clearInterval(interval);
-  }, [loadConfig]);
-
-  if (!config.startTime) return null;
+  }, [clockOffset]);
+  if (paused)
+    return (
+      <span style={{ color: "var(--warning)", fontSize: 12 }}>CTF paused</span>
+    );
+  if (!config?.startTime) return null;
 
   const startTime = new Date(config.startTime);
   const endTime = config.endTime ? new Date(config.endTime) : null;

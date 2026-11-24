@@ -97,9 +97,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  if (path.startsWith("/uploads/")) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = `/api/downloads/${path.slice("/uploads/".length)}`;
+    return NextResponse.rewrite(destination);
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/api/:path*", "/uploads/:path*"],
 };

@@ -125,3 +125,73 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// Pause changes are separate from schedule edits: saving the form never resumes.
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (
+    !body ||
+    (body.action !== "pause" && body.action !== "resume") ||
+    (body.action === "pause" &&
+      (!Number.isInteger(body.minutes) ||
+        body.minutes < 1 ||
+        body.minutes > 1440))
+  ) {
+    return NextResponse.json(
+      { error: "Choose pause (1–1440 minutes) or resume" },
+      { status: 400 },
+    );
+  }
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(72461124)`;
+    const config = await tx.gameConfig.findFirst({
+      orderBy: { createdAt: "desc" },
+    });
+    const now = new Date();
+    if (
+      !config ||
+      (body.action === "pause" &&
+        (!config.isActive ||
+          now < config.startTime ||
+          (config.endTime && now >= config.endTime)))
+    ) {
+      return null;
+    }
+    const pausedUntil =
+      body.action === "resume"
+        ? null
+        : new Date(
+            Math.min(
+              now.getTime() + body.minutes * 60_000,
+              config.endTime?.getTime() ?? Infinity,
+            ),
+          );
+    const updated = await tx.gameConfig.update({
+      where: { id: config.id },
+      data: { pausedUntil },
+    });
+    await tx.activityLog.create({
+      data: {
+        type: body.action === "pause" ? "EVENT_PAUSED" : "EVENT_RESUMED",
+        description: `${session.user.id}: ${body.action}${pausedUntil ? ` until ${pausedUntil.toISOString()}` : ""}`,
+      },
+    });
+    return updated;
+  });
+  if (!result)
+    return NextResponse.json(
+      { error: "Configure an active competition before pausing" },
+      { status: 409 },
+    );
+  invalidate(CACHE_KEYS.GAME_CONFIG);
+  return NextResponse.json({ config: result });
+}

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
+import EventPauseControls from "./EventPauseControls";
+import { useEventState } from "../event/EventState";
 import TimeInput24 from "../ui/TimeInput24";
 
 interface GameConfig {
@@ -56,6 +58,7 @@ function getDefaultStart(): Date {
 }
 
 export default function GameConfiguration() {
+  const { refresh } = useEventState();
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -230,6 +233,7 @@ export default function GameConfiguration() {
         }
       }
 
+      await refresh();
       toast.success("Game config updated");
     } catch {
       toast.error("Network error");
@@ -281,212 +285,216 @@ export default function GameConfiguration() {
   };
 
   return (
-    <div className="card">
-      <h2
-        style={{
-          fontSize: "14px",
-          fontWeight: 600,
-          marginBottom: "12px",
-        }}
-      >
-        Game Configuration
-      </h2>
-
-      {loading ? (
-        <div
+    <>
+      <div className="card">
+        <h2
           style={{
-            fontSize: "12px",
-            color: "var(--fg-dim)",
-            fontFamily: "var(--font-mono)",
-            minHeight: "120px",
-            display: "flex",
-            alignItems: "center",
+            fontSize: "14px",
+            fontWeight: 600,
+            marginBottom: "12px",
           }}
         >
-          Loading game config...
-        </div>
-      ) : (
-        <form
-          onSubmit={saveConfig}
-          style={{
-            width: "100%",
-            maxWidth: "560px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "14px",
-          }}
-        >
-          <section
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "6px",
-            }}
-          >
-            <span style={headerSpan}>START</span>
-            <div style={fieldRow}>
-              <div style={dateWrapper}>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  disabled={saving}
-                  required
-                  aria-label="Start date"
-                  style={inputStyle}
-                />
-              </div>
-              <div style={timeWrapper}>
-                <TimeInput24
-                  value={startTime}
-                  onChange={setStartTime}
-                  disabled={saving}
-                  required
-                  ariaLabel="Start time in 24-hour format"
-                />
-              </div>
-            </div>
-          </section>
+          Game Configuration
+        </h2>
 
-          <section
+        {loading ? (
+          <div
             style={{
+              fontSize: "12px",
+              color: "var(--fg-dim)",
+              fontFamily: "var(--font-mono)",
+              minHeight: "120px",
               display: "flex",
-              flexDirection: "column",
-              gap: "6px",
+              alignItems: "center",
             }}
           >
-            <span style={headerSpan}>END (OPTIONAL)</span>
-            <div style={fieldRow}>
-              <div style={dateWrapper}>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  disabled={saving}
-                  aria-label="End date"
-                  style={inputStyle}
-                />
-              </div>
-              <div style={timeWrapper}>
-                <TimeInput24
-                  value={endTime}
-                  onChange={setEndTime}
-                  disabled={saving}
-                  ariaLabel="End time in 24-hour format"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={clearEnd}
-                disabled={saving}
-                style={fieldBtnStyle}
-                aria-label="Clear end time"
-              >
-                clear end
-              </button>
-            </div>
-          </section>
-
-          <section
+            Loading game config...
+          </div>
+        ) : (
+          <form
+            onSubmit={saveConfig}
             style={{
+              width: "100%",
+              maxWidth: "560px",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
+              gap: "14px",
             }}
           >
-            <span style={headerSpan}>LEADERBOARD FREEZE (OPTIONAL)</span>
-            <div style={fieldRow}>
-              <div style={dateWrapper}>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={
-                    leaderboardFreezeMinutes === null ||
-                    leaderboardFreezeMinutes === undefined
-                      ? ""
-                      : leaderboardFreezeMinutes
-                  }
-                  onChange={(e) =>
-                    setLeaderboardFreezeMinutes(
-                      e.target.value === "" ? null : Number(e.target.value),
-                    )
-                  }
-                  disabled={saving}
-                  min={0}
-                  aria-label="Leaderboard freeze minutes before end"
-                  style={inputStyle}
-                  placeholder="0"
-                />
-              </div>
-              <div style={timeWrapper}>
-                <span
-                  style={{
-                    color: "var(--fg-dim)",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  minutes before end
-                </span>
-              </div>
-            </div>
-            <p
+            <section
               style={{
-                fontSize: "11px",
-                color: "var(--fg-dim)",
-                lineHeight: 1.5,
-                margin: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
               }}
             >
-              Minutes before competition end to freeze leaderboard for
-              participants. Admins always see real-time scores. Leave empty or 0
-              to disable.
-            </p>
-          </section>
+              <span style={headerSpan}>START</span>
+              <div style={fieldRow}>
+                <div style={dateWrapper}>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    disabled={saving}
+                    required
+                    aria-label="Start date"
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={timeWrapper}>
+                  <TimeInput24
+                    value={startTime}
+                    onChange={setStartTime}
+                    disabled={saving}
+                    required
+                    ariaLabel="Start time in 24-hour format"
+                  />
+                </div>
+              </div>
+            </section>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={saving}
-            style={{
-              alignSelf: "flex-start",
-              width: "auto",
-              fontSize: "12px",
-              padding: "8px 16px",
-            }}
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-        </form>
-      )}
+            <section
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <span style={headerSpan}>END (OPTIONAL)</span>
+              <div style={fieldRow}>
+                <div style={dateWrapper}>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    disabled={saving}
+                    aria-label="End date"
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={timeWrapper}>
+                  <TimeInput24
+                    value={endTime}
+                    onChange={setEndTime}
+                    disabled={saving}
+                    ariaLabel="End time in 24-hour format"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={clearEnd}
+                  disabled={saving}
+                  style={fieldBtnStyle}
+                  aria-label="Clear end time"
+                >
+                  clear end
+                </button>
+              </div>
+            </section>
 
-      <div
-        style={{
-          marginTop: "12px",
-          padding: "8px",
-          border: "1px solid var(--border)",
-          background: "rgba(255, 255, 255, 0.02)",
-        }}
-      >
-        <p
+            <section
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <span style={headerSpan}>LEADERBOARD FREEZE (OPTIONAL)</span>
+              <div style={fieldRow}>
+                <div style={dateWrapper}>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={
+                      leaderboardFreezeMinutes === null ||
+                      leaderboardFreezeMinutes === undefined
+                        ? ""
+                        : leaderboardFreezeMinutes
+                    }
+                    onChange={(e) =>
+                      setLeaderboardFreezeMinutes(
+                        e.target.value === "" ? null : Number(e.target.value),
+                      )
+                    }
+                    disabled={saving}
+                    min={0}
+                    aria-label="Leaderboard freeze minutes before end"
+                    style={inputStyle}
+                    placeholder="0"
+                  />
+                </div>
+                <div style={timeWrapper}>
+                  <span
+                    style={{
+                      color: "var(--fg-dim)",
+                      fontSize: "12px",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    minutes before end
+                  </span>
+                </div>
+              </div>
+              <p
+                style={{
+                  fontSize: "11px",
+                  color: "var(--fg-dim)",
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
+                Minutes before competition end to freeze leaderboard for
+                participants. Admins always see real-time scores. Leave empty or
+                0 to disable.
+              </p>
+            </section>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={saving}
+              style={{
+                alignSelf: "flex-start",
+                width: "auto",
+                fontSize: "12px",
+                padding: "8px 16px",
+              }}
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </form>
+        )}
+
+        <div
           style={{
-            fontSize: "11px",
-            color: "var(--fg-dim)",
-            lineHeight: 1.6,
+            marginTop: "12px",
+            padding: "8px",
+            border: "1px solid var(--border)",
+            background: "rgba(255, 255, 255, 0.02)",
           }}
         >
-          • Antes del inicio: Los retos estan ocultos y los envios estan
-          bloqueados
-          <br />
-          • Durante el juego: Los retos son visibles y los envios son permitidos
-          <br />
-          • Despues del fin: Los retos permanecen visibles pero los envios estan
-          bloqueados
-          <br />• Sin hora de fin: La competencia continua indefinidamente
-        </p>
+          <p
+            style={{
+              fontSize: "11px",
+              color: "var(--fg-dim)",
+              lineHeight: 1.6,
+            }}
+          >
+            • Antes del inicio: Los retos estan ocultos y los envios estan
+            bloqueados
+            <br />
+            • Durante el juego: Los retos son visibles y los envios son
+            permitidos
+            <br />
+            • Despues del fin: Los retos permanecen visibles pero los envios
+            estan bloqueados
+            <br />• Sin hora de fin: La competencia continua indefinidamente
+          </p>
+        </div>
       </div>
-    </div>
+      <EventPauseControls />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { EventStateProvider } from "./event/EventState";
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { TerminalProvider } from "@/lib/terminal/TerminalContext";
@@ -13,7 +14,9 @@ export default function Providers({
 }) {
   return (
     <SessionProvider session={session}>
-      <TerminalProvider>{children}</TerminalProvider>
+      <EventStateProvider>
+        <TerminalProvider>{children}</TerminalProvider>
+      </EventStateProvider>
     </SessionProvider>
   );
 }

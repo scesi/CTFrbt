@@ -127,6 +127,7 @@ export async function GET() {
           endTime: true,
           isActive: true,
           registrationEnabled: true,
+          pausedUntil: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -614,6 +615,9 @@ export async function POST(request: Request) {
         imported.gameConfig = await tx.gameConfig.create({
           data: {
             startTime: new Date(gameConfig.startTime as string),
+            pausedUntil: gameConfig.pausedUntil
+              ? new Date(gameConfig.pausedUntil as string)
+              : null,
             endTime: gameConfig.endTime
               ? new Date(gameConfig.endTime as string)
               : null,

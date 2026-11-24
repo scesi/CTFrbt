@@ -1,3 +1,4 @@
+import { blockDuringPause } from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -8,6 +9,8 @@ const LEADERBOARD_TTL_MS = 10_000; // 10 seconds
 
 // GET /api/leaderboard — Get team rankings
 export async function GET() {
+  const paused = await blockDuringPause();
+  if (paused) return paused;
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.isAdmin === true;
 

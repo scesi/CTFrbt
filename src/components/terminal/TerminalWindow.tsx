@@ -1,5 +1,8 @@
 "use client";
 
+import { useEventState } from "../event/EventState";
+import EventPauseScreen from "../event/EventPauseScreen";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "next-auth";
@@ -18,6 +21,12 @@ export default function TerminalWindow({
   const [isMinimized, setIsMinimized] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { data: liveSession } = useSession();
+  const { paused, ready } = useEventState();
+  const blocked =
+    !liveSession?.user?.isAdmin &&
+    !pathname.startsWith("/auth/") &&
+    (paused || !ready);
 
   const goToTerminal = () => {
     if (pathname !== "/dashboard") router.push("/dashboard");
@@ -82,13 +91,15 @@ export default function TerminalWindow({
         {!isMinimized && (
           <>
             <div className="window-body">
-              <Sidebar session={session} />
+              {!blocked && <Sidebar session={session} />}
               <div className="main-panel">
-                <div className="main-content">{children}</div>
+                <div className="main-content">
+                  {blocked ? <EventPauseScreen /> : children}
+                </div>
               </div>
             </div>
 
-            <StatusBar />
+            {!blocked && <StatusBar />}
           </>
         )}
       </div>

@@ -1,3 +1,8 @@
+import {
+  pauseResponse,
+  assertEventNotPaused,
+  EventPausedError,
+} from "@/lib/event-pause";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -16,6 +21,8 @@ export async function GET(request: Request) {
   // starts. Once it ends, reads stay open so teams can review what they bought.
   if (!session.user.isAdmin) {
     const gameStatus = await getGameWindowStatus();
+    if (gameStatus.state === "paused")
+      return pauseResponse(gameStatus.resumesAt);
     if (gameStatus.state === "not_started") {
       return NextResponse.json(
         { error: "The CTF hasn't started yet" },
@@ -107,6 +114,7 @@ export async function POST(request: Request) {
 
   // Hint purchases change team scores — only allowed while the CTF runs
   const gameStatus = await getGameWindowStatus();
+  if (gameStatus.state === "paused") return pauseResponse(gameStatus.resumesAt);
   if (gameStatus.state === "not_started") {
     return NextResponse.json(
       { error: "The CTF hasn't started yet" },
@@ -146,6 +154,8 @@ export async function POST(request: Request) {
   try {
     await prisma.$transaction(
       async (tx) => {
+        await assertEventNotPaused(tx);
+        await tx.$queryRaw`SELECT "id" FROM "Team" WHERE "id" = ${teamId} FOR UPDATE`;
         await tx.teamHint.create({
           data: { teamId, hintId },
         });
@@ -179,9 +189,10 @@ export async function POST(request: Request) {
           });
         }
       },
-      { isolationLevel: "Serializable" },
+      { isolationLevel: "ReadCommitted" },
     );
   } catch (error: unknown) {
+    if (error instanceof EventPausedError) return pauseResponse();
     const err = error as { message?: string; code?: string };
     if (err.code === "P2002") {
       return NextResponse.json(
